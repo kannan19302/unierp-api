@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "@unerp/config/typescript/nestjs.json",
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./dist",
@@ -11,7 +11,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "typeRoots": [
-      "../../node_modules/@types"
+      "./node_modules/@types"
     ],
     "paths": {
       "@/*": [
