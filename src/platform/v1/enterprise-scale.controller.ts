@@ -15,11 +15,13 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { TwoPersonControl } from "../../common/decorators/two-person-control.decorator";
+import { TwoPersonControlGuard } from "../../common/guards/two-person-control.guard";
 import { SaasEnterpriseScaleMasterService } from "./enterprise-scale.service";
 
 @ApiTags("SaaS Enterprise Scale Master")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RbacGuard)
+@UseGuards(JwtAuthGuard, RbacGuard, TwoPersonControlGuard)
 @Controller("platform/v1/enterprise-scale")
 export class SaasEnterpriseScaleMasterController {
   constructor(private readonly service: SaasEnterpriseScaleMasterService) {}
@@ -187,6 +189,7 @@ export class SaasEnterpriseScaleMasterController {
   @Post("key-rotations")
   @ApiOperation({ summary: "Create key-rotations" })
   @Permissions("saas.security.write")
+  @TwoPersonControl()
   async createKeyRotation(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,

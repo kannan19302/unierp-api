@@ -17,6 +17,8 @@ import { RbacGuard } from "../../common/guards/rbac.guard";
 import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { SkipTenantScope } from "../../common/decorators/skip-tenant-scope.decorator";
+import { TwoPersonControl } from "../../common/decorators/two-person-control.decorator";
+import { TwoPersonControlGuard } from "../../common/guards/two-person-control.guard";
 import { SuperAdminService } from "./super-admin.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
@@ -26,7 +28,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 @ApiTags("admin")
 @ApiBearerAuth()
 @Controller("platform/v1/super-admin")
-@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard)
+@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard, TwoPersonControlGuard)
 @SkipTenantScope()
 export class SuperAdminController {
   constructor(private readonly superAdminService: SuperAdminService) {}
@@ -44,6 +46,7 @@ export class SuperAdminController {
   @ApiOperation({ summary: "Get tenants" })
   @Get("tenants")
   @Permissions("system.tenant.read")
+  @TwoPersonControl()
   async getTenants() {
     return this.superAdminService.getTenants();
   }
@@ -51,6 +54,7 @@ export class SuperAdminController {
   @ApiOperation({ summary: "Get tenant detail" })
   @Get("tenants/:id")
   @Permissions("system.tenant.read")
+  @TwoPersonControl()
   async getTenantDetail(@Param("id") id: string) {
     return this.superAdminService.getTenantDetail(id);
   }

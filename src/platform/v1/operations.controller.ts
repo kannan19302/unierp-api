@@ -14,6 +14,8 @@ import { RbacGuard } from "../../common/guards/rbac.guard";
 import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
 import { TenantInterceptor } from "../../common/guards/tenant.interceptor";
 import { SkipTenantScope } from "../../common/decorators/skip-tenant-scope.decorator";
+import { TwoPersonControl } from "../../common/decorators/two-person-control.decorator";
+import { TwoPersonControlGuard } from "../../common/guards/two-person-control.guard";
 import { OperationsService } from "./operations.service";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
@@ -30,7 +32,7 @@ interface AuthenticatedRequest extends Request {
 @ApiTags("admin")
 @ApiBearerAuth()
 @Controller("platform/v1/operations")
-@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard)
+@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard, TwoPersonControlGuard)
 @UseInterceptors(TenantInterceptor)
 export class OperationsController {
   constructor(private readonly operationsService: OperationsService) {}
@@ -107,6 +109,7 @@ export class OperationsController {
   @ApiOperation({ summary: "Get backups (platform-wide, Super Admin only)" })
   @Get("backups")
   @Permissions("system.operations.backup")
+  @TwoPersonControl()
   @SkipTenantScope()
   async getBackups(@Req() req: AuthenticatedRequest) {
     return this.operationsService.getBackups(req.user.tenantId);
@@ -115,6 +118,7 @@ export class OperationsController {
   @ApiOperation({ summary: "Create backup (platform-wide, Super Admin only)" })
   @Post("backups/create")
   @Permissions("system.operations.backup")
+  @TwoPersonControl()
   @SkipTenantScope()
   async createBackup(@Req() req: AuthenticatedRequest) {
     return this.operationsService.createBackup(

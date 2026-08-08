@@ -17,6 +17,8 @@ import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
 import { SkipTenantScope } from "../../common/decorators/skip-tenant-scope.decorator";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { TrackChanges } from "../../common/decorators/track-changes.decorator";
+import { TwoPersonControl } from "../../common/decorators/two-person-control.decorator";
+import { TwoPersonControlGuard } from "../../common/guards/two-person-control.guard";
 import { TenantLifecycleService } from "./tenant-lifecycle.service";
 import {
   offboardTenantSchema,
@@ -44,7 +46,7 @@ interface AuthenticatedRequest extends Request {
 // offboard any other tenant by id. Permissions are now `system.tenant.*` and
 // ControlPlaneGuard enforces the plane boundary independently of the codes.
 @Controller("platform/v1/tenants")
-@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard)
+@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard, TwoPersonControlGuard)
 @SkipTenantScope()
 export class TenantLifecycleController {
   constructor(
@@ -61,6 +63,7 @@ export class TenantLifecycleController {
   @ApiOperation({ summary: "Export all tenant data" })
   @Post(":id/export")
   @Permissions("system.tenant.export")
+  @TwoPersonControl()
   async exportTenant(
     @Param("id") tenantId: string,
     @Body() body: Record<string, unknown>,
@@ -136,6 +139,7 @@ export class TenantLifecycleController {
   @Post(":id/purge")
   @Permissions("system.tenant.purge")
   @TrackChanges("Tenant")
+  @TwoPersonControl()
   @HttpCode(200)
   async purgeTenant(
     @Param("id") tenantId: string,
