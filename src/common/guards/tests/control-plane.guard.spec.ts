@@ -42,6 +42,7 @@ describe("ControlPlaneGuard", () => {
                   userId: "u1",
                   permissions: ["system.tenant.read"],
                   amr: ["pwd", "otp"],
+                  realm: "provider",
                 }),
         }),
       }),
@@ -85,6 +86,7 @@ describe("ControlPlaneGuard", () => {
         userId: "u1",
         permissions: ["system.tenant.read"],
         amr: ["pwd", "otp"],
+        realm: "provider",
       },
     });
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
@@ -93,7 +95,7 @@ describe("ControlPlaneGuard", () => {
   it("refuses a control-plane session with no second factor (§ 5.2)", async () => {
     const ctx = contextFor({
       permissions: ["system.tenant.read"],
-      user: { userId: "u1", permissions: ["system.tenant.read"], amr: ["pwd"] },
+      user: { userId: "u1", permissions: ["system.tenant.read"], amr: ["pwd"], realm: "provider" },
     });
     await expect(guard.canActivate(ctx)).rejects.toThrow(/multi-factor/);
   });
@@ -110,7 +112,7 @@ describe("ControlPlaneGuard", () => {
     // so the stricter reading is the only safe one.
     const ctx = contextFor({
       permissions: ["system.tenant.read"],
-      user: { userId: "u1", permissions: ["system.tenant.read"] },
+      user: { userId: "u1", permissions: ["system.tenant.read"], realm: "provider" },
     });
     await expect(guard.canActivate(ctx)).rejects.toThrow(/multi-factor/);
   });
@@ -122,6 +124,7 @@ describe("ControlPlaneGuard", () => {
         userId: "u1",
         permissions: ["system.tenant.read"],
         amr: ["pwd", "webauthn"],
+        realm: "provider",
       },
     });
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
@@ -139,6 +142,7 @@ describe("ControlPlaneGuard", () => {
         userId: "u1",
         permissions: ["system.tenant.read"],
         mfaVerified: true,
+        realm: "provider",
       },
     });
     await expect(guard.canActivate(ctx)).rejects.toThrow(
@@ -152,10 +156,23 @@ describe("ControlPlaneGuard", () => {
     // bare "*" against anything — including system.tenant.read.
     const ctx = contextFor({
       permissions: ["system.tenant.read"],
-      user: { userId: "u1", permissions: ["*"], mfaVerified: true },
+      user: { userId: "u1", permissions: ["*"], mfaVerified: true, realm: "provider" },
     });
     await expect(guard.canActivate(ctx)).rejects.toThrow(
       /explicitly granted platform permission/,
     );
+  });
+
+  it("refuses a tenant-realm credential", async () => {
+    const ctx = contextFor({
+      permissions: ["system.tenant.read"],
+      user: {
+        userId: "u1",
+        permissions: ["system.tenant.read"],
+        mfaVerified: true,
+        realm: "tenant",
+      },
+    });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/provider realm/);
   });
 });

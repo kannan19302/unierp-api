@@ -79,6 +79,21 @@ export class ControlPlaneGuard implements CanActivate {
     const user = request.user;
     if (!user) throw new ForbiddenException("User session not found");
 
+    if (user.realm !== "provider") {
+      this.logger.warn(
+        JSON.stringify({
+          event: "control_plane_access",
+          outcome: "denied_wrong_realm",
+          userId: user.userId ?? user.sub ?? null,
+          realm: user.realm,
+          path: request.url,
+        }),
+      );
+      throw new ForbiddenException(
+        "Control-plane access requires a token issued by the provider realm.",
+      );
+    }
+
     // § 5.2: "mandatory hardware or TOTP MFA" on the control plane. No
     // password-only path exists.
     //
