@@ -10,7 +10,7 @@ describe("FixedAssetsController", () => {
     user: {
       tenantId: "tenant-123",
       userId: "user-456",
-      email: "admin@unerp.dev",
+      email: "admin@kannan19302.dev",
       roles: ["ADMIN"],
       orgId: "org-789",
     },

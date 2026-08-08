@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FinanceController } from "../finance.controller";
 import { FinanceService } from "../finance.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     organization: {
       findFirst: vi.fn().mockResolvedValue({ id: "org-system-default" }),

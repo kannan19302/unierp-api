@@ -1,4 +1,4 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventEmitter2 } from "@nestjs/event-emitter";
@@ -11,7 +11,7 @@ import { InvoiceOverdueNotificationService } from "../invoice-overdue-notificati
  * them, tenant-scoped, without leaking across tenants or notifying unrelated roles.
  */
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -39,7 +39,7 @@ describe("InvoiceOverdueNotificationService — finance.invoice.overdue consumer
   });
 
   it("emits notification.send for every finance-team user in the tenant", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.invoice.findFirst).mockResolvedValue({
       invoiceNumber: "INV-1001",
       totalAmount: { toString: () => "500.00" },
@@ -88,7 +88,7 @@ describe("InvoiceOverdueNotificationService — finance.invoice.overdue consumer
   });
 
   it("does nothing when the tenant has no finance-permissioned roles", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.invoice.findFirst).mockResolvedValue({
       invoiceNumber: "INV-2",
       totalAmount: { toString: () => "100.00" },
@@ -113,7 +113,7 @@ describe("InvoiceOverdueNotificationService — finance.invoice.overdue consumer
   });
 
   it("is a no-op when the invoice cannot be found in the tenant (tenant isolation)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.invoice.findFirst).mockResolvedValue(null as never);
 
     await service.handleInvoiceOverdue({
@@ -130,7 +130,7 @@ describe("InvoiceOverdueNotificationService — finance.invoice.overdue consumer
   });
 
   it("ignores events missing tenantId or invoiceId", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     await service.handleInvoiceOverdue({
       tenantId: "",
       invoiceId: "",

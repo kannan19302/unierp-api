@@ -40,7 +40,7 @@ const { mockAutomationRule, mockAutomationRuleExecution, mockBackgroundJob } =
     },
   }));
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     automationRule: mockAutomationRule,
     automationRuleExecution: mockAutomationRuleExecution,

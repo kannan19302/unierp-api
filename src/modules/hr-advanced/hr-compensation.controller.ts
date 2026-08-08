@@ -24,7 +24,7 @@ import {
   createFlexibleBenefitCreditSchema,
   createCompensationReviewSchema,
   createCompensationBenchmarkSchema,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 
 interface AuthenticatedRequest extends Request {
   user: {

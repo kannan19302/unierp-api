@@ -4,7 +4,7 @@ import {
   BadRequestException,
   Inject,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import {
@@ -17,7 +17,7 @@ import {
   UpdateApprovalProcessInput,
   CreateQuotationTemplateInput,
   UpdateQuotationTemplateInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import * as crypto from "crypto";
 import { resolveOrgId } from "./crm-shared";
 import { CrmLeadsService } from "./crm-leads.service";

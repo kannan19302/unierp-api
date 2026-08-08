@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GlobalTaxDeepService } from "../services/global-tax-deep.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
@@ -18,7 +18,7 @@ vi.mock("@prisma/client", () => ({
     },
   },
 }));
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const m = () => ({
     findMany: vi.fn(),
     findFirst: vi.fn(),

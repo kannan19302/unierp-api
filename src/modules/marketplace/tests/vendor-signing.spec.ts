@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { generateKeyPairSync, sign } from "node:crypto";
-import { prisma } from "@unerp/database";
-import { bundleDigestInput } from "@unerp/extension-api";
+import { prisma } from "@kannan19302/database";
+import { bundleDigestInput } from "@kannan19302/extension-api";
 import { VendorService } from "../vendor.service";
 import { BundleStoreService } from "../bundle-store.service";
 

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MinMaxReplenService } from "../minmax-replen.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     minMaxLevel: {
       findMany: vi.fn(),
@@ -51,7 +51,7 @@ describe("MinMaxReplenService", () => {
   // ── Level Config ──────────────────────────────────────────────────────────
 
   it("upsertLevel creates a new level", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.minMaxLevel.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.minMaxLevel.create).mockResolvedValue({
       id: "lv1",
@@ -68,7 +68,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("upsertLevel updates existing level", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.minMaxLevel.findUnique).mockResolvedValue({
       id: "lv1",
     } as any);
@@ -109,7 +109,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("deactivateLevel throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.minMaxLevel.findFirst).mockResolvedValue(null);
     await expect(svc.deactivateLevel(T, "lv-none", "u1")).rejects.toThrow(
       NotFoundException,
@@ -119,7 +119,7 @@ describe("MinMaxReplenService", () => {
   // ── Replenishment Run ─────────────────────────────────────────────────────
 
   it("runReplenishment creates suggestions for below-min products", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenRunLog.count).mockResolvedValue(0);
     vi.mocked(prisma.minMaxLevel.findMany).mockResolvedValue([
       {
@@ -165,7 +165,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("runReplenishment uses reorderQty override when set", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenRunLog.count).mockResolvedValue(0);
     vi.mocked(prisma.minMaxLevel.findMany).mockResolvedValue([
       {
@@ -198,7 +198,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("runReplenishment skips products at or above min", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenRunLog.count).mockResolvedValue(0);
     vi.mocked(prisma.minMaxLevel.findMany).mockResolvedValue([
       {
@@ -226,7 +226,7 @@ describe("MinMaxReplenService", () => {
   // ── Suggestion Lifecycle ──────────────────────────────────────────────────
 
   it("approveSuggestion transitions OPEN → APPROVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenSuggestion.findFirst).mockResolvedValue({
       id: "sg1",
       status: "OPEN",
@@ -240,7 +240,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("approveSuggestion throws BadRequestException for non-OPEN", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenSuggestion.findFirst).mockResolvedValue({
       id: "sg1",
       status: "APPROVED",
@@ -251,7 +251,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("markOrdered throws BadRequestException for non-APPROVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenSuggestion.findFirst).mockResolvedValue({
       id: "sg1",
       status: "OPEN",
@@ -262,7 +262,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("markReceived transitions ORDERED → RECEIVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenSuggestion.findFirst).mockResolvedValue({
       id: "sg1",
       status: "ORDERED",
@@ -276,7 +276,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("cancelSuggestion throws BadRequestException for RECEIVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenSuggestion.findFirst).mockResolvedValue({
       id: "sg1",
       status: "RECEIVED",
@@ -287,7 +287,7 @@ describe("MinMaxReplenService", () => {
   });
 
   it("cancelSuggestion cancels OPEN suggestion", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.replenSuggestion.findFirst).mockResolvedValue({
       id: "sg1",
       status: "OPEN",
@@ -308,7 +308,7 @@ describe("MinMaxReplenService", () => {
   // ── Dashboard ─────────────────────────────────────────────────────────────
 
   it("getDashboard returns aggregate stats", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.minMaxLevel.count)
       .mockResolvedValueOnce(45) // active
       .mockResolvedValueOnce(50); // total

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotificationsService } from "../notifications.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       notificationChannel: {
@@ -29,7 +29,7 @@ describe("NotificationsService", () => {
   });
 
   it("should get channels", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockChannels = [{ id: "ch-1", name: "Web", isEnabled: true }];
     vi.mocked(prisma.notificationChannel.findMany).mockResolvedValue(
       mockChannels as never,

@@ -6,13 +6,13 @@ import {
   Logger,
   Optional,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { RoleAccessPackage } from "@prisma/client";
 import {
   CreateUserInput,
   UpdateUserInput,
   PERMISSION_REGISTRY,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import {
   CreateAccessPackageInput,
   UpdateAccessPackageInput,
@@ -330,7 +330,7 @@ export class AdminService {
    */
   async updateSettings(
     tenantId: string,
-    dto: import("@unerp/shared").UpdateAdminSettingsInput,
+    dto: import("@kannan19302/shared").UpdateAdminSettingsInput,
   ): Promise<unknown> {
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },

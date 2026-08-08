@@ -11,7 +11,7 @@ vi.mock("@prisma/client", () => ({
   },
 }));
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     project: { findMany: vi.fn() },
     employee: { findMany: vi.fn() },
@@ -19,7 +19,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 const TENANT = "tenant-1";

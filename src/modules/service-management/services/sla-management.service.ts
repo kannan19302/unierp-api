@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "@unerp/database";
+import { PrismaService } from "@kannan19302/database";
 
 @Injectable()
 export class SlaManagementService {

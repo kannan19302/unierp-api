@@ -30,7 +30,7 @@ import { OperationsController } from "../../../platform/v1/operations.controller
  * real `@Permissions(...)` decorator on the real controller class prototypes.
  */
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` Ã¢â‚¬â€ this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -47,7 +47,7 @@ vi.mock("@unerp/database", () => {
   return { ...mocked, idpPrisma: mocked.prisma };
 });
 
-import { prisma, runWithTenantSession } from "@unerp/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 function buildContext(

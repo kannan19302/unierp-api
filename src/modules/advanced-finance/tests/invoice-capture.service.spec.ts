@@ -61,11 +61,11 @@ const { mockPrisma } = vi.hoisted(() => {
   return { mockPrisma: m };
 });
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: mockPrisma,
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("InvoiceCaptureService", () => {

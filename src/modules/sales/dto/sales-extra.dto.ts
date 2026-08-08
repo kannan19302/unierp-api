@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Local zod schemas for sales endpoints whose bodies are not (yet) modelled in
- * `@unerp/shared`. Pair each with `z.infer<>` so the validated shape and the
+ * `@kannan19302/shared`. Pair each with `z.infer<>` so the validated shape and the
  * handler parameter type stay in sync.
  */
 

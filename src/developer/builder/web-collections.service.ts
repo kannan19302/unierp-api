@@ -3,7 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import type {
@@ -13,7 +13,7 @@ import type {
   UpdateWebCollectionItemInput,
   CreateWebFormSubmissionInput,
   WebCheckoutInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import { COLLECTION_PRESETS } from "./web-collections.presets";
 import { resolveUniqueSlug } from "../../common/utils/slug.util";
 

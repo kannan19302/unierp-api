@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     hrHeadcountPlan: {
       findMany: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { AdvancedHrWorkforceDeepService } from "../services/advanced-hr-workforce-deep.service";
 

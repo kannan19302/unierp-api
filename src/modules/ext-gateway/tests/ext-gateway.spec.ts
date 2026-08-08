@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { signTenantToken, verifyTenantToken } from "@unerp/service-kit";
+import { signTenantToken, verifyTenantToken } from "@kannan19302/service-kit";
 import { validateManifest } from "../../marketplace/manifest";
 import { ExtProxyService } from "../ext-proxy.service";
 import { CircuitBreakerService } from "../circuit-breaker.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     installedApp: { findFirst: vi.fn() },
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { ServiceRegistryService } from "../service-registry.service";
 

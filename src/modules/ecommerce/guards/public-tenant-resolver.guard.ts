@@ -4,7 +4,7 @@ import {
   ExecutionContext,
   NotFoundException,
 } from "@nestjs/common";
-import { prisma, runWithTenantSession } from "@unerp/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 /**
@@ -26,7 +26,7 @@ import { idpClient as idpPrisma } from "@/common/idp-client";
  * app-wide `TenantInterceptor` (apps/api/src/common/guards/tenant.interceptor.ts,
  * registered as a global APP_INTERCEPTOR) already knows how to turn any
  * `request.user.tenantId` into a real `runWithTenantSession(...)` call via
- * `@unerp/database`'s `AsyncLocalStorage`-based tenant-context module
+ * `@kannan19302/database`'s `AsyncLocalStorage`-based tenant-context module
  * (packages/database/src/tenant-context.ts) — it doesn't care whether that
  * `request.user` came from a verified JWT or, as here, from a guard. Guards
  * run before interceptors in Nest's request lifecycle, so by the time

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { TENANT_PLAN_LIMITS } from "./tenant-plan-limits";
 
 const CACHE_TTL_MS = 60_000;

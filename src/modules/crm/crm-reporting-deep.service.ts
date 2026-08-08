@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
-import { prisma, Prisma } from "@unerp/database";
+import { prisma, Prisma } from "@kannan19302/database";
 import { z } from "zod";
 
 export const createCrmSavedReportSchema = z.object({

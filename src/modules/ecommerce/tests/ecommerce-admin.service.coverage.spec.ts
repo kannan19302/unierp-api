@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EcommerceAdminService } from "../ecommerce-admin.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       storefrontConfig: {
@@ -43,7 +43,7 @@ describe("EcommerceAdminService", () => {
 
   describe("StorefrontConfig", () => {
     it("returns null when no config exists yet for the tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.storefrontConfig.findUnique).mockResolvedValue(null);
 
       const result = await service.getConfig("tenant-1");
@@ -51,7 +51,7 @@ describe("EcommerceAdminService", () => {
     });
 
     it("upserts config scoped to the tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.storefrontConfig.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.storefrontConfig.upsert).mockResolvedValue({
         id: "cfg-1",
@@ -72,7 +72,7 @@ describe("EcommerceAdminService", () => {
     });
 
     it("rejects a store slug already used by a different tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.storefrontConfig.findUnique).mockResolvedValue({
         id: "cfg-other",
         tenantId: "tenant-2",
@@ -92,7 +92,7 @@ describe("EcommerceAdminService", () => {
 
   describe("StorefrontCategory", () => {
     it("creates a category and rejects a duplicate slug within the same tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.storefrontCategory.findUnique).mockResolvedValueOnce(
         null,
       );
@@ -127,7 +127,7 @@ describe("EcommerceAdminService", () => {
     });
 
     it("throws NotFoundException updating a category that does not belong to the tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.storefrontCategory.findFirst).mockResolvedValue(null);
 
       await expect(
@@ -136,7 +136,7 @@ describe("EcommerceAdminService", () => {
     });
 
     it("unassigns listings before deleting a category", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.storefrontCategory.findFirst).mockResolvedValue({
         id: "cat-1",
         tenantId: "tenant-1",
@@ -162,7 +162,7 @@ describe("EcommerceAdminService", () => {
 
   describe("ProductListing", () => {
     it("rejects linking a Product that belongs to a different tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       // Product.findFirst is scoped by tenantId in the query itself — simulate
       // "not found for this tenant" even though the id exists globally.
       vi.mocked(prisma.product.findFirst).mockResolvedValue(null);
@@ -185,7 +185,7 @@ describe("EcommerceAdminService", () => {
     });
 
     it("rejects a duplicate listing for the same product", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.product.findFirst).mockResolvedValue({
         id: "prod-1",
         tenantId: "tenant-1",
@@ -204,7 +204,7 @@ describe("EcommerceAdminService", () => {
     });
 
     it("creates a listing when the product belongs to the tenant and is not already listed", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.product.findFirst).mockResolvedValue({
         id: "prod-1",
         tenantId: "tenant-1",
@@ -223,7 +223,7 @@ describe("EcommerceAdminService", () => {
     });
 
     it("joins Product + Category fields when listing storefront listings", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.productListing.findMany).mockResolvedValue([
         {
           id: "listing-1",

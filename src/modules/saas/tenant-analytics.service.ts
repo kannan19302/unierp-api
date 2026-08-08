@@ -1,6 +1,6 @@
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Injectable } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 
 @Injectable()
 export class TenantAnalyticsService {

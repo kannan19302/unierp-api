@@ -88,7 +88,7 @@ export class CommunicationSettingsController extends SettingsControllerBase {
     "from-email": {
       type: "string",
       label: "Default From Email",
-      default: "noreply@unerp.dev",
+      default: "noreply@kannan19302.dev",
       validation: z.string().email(),
     },
     "from-name": {

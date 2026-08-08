@@ -13,7 +13,7 @@ import {
   type CreateWebFormSubmissionInput,
   webCheckoutSchema,
   type WebCheckoutInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { WebCollectionsService } from "./web-collections.service";
 import { WebStudioService } from "./web-studio.service";

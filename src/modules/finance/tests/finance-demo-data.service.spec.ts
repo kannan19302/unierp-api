@@ -12,7 +12,7 @@ vi.mock("@prisma/client", () => {
   };
 });
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       tenant: {
@@ -73,7 +73,7 @@ describe("FinanceDemoDataService", () => {
 
   describe("getDemoStatus", () => {
     it("should return loaded: false when no demo records exist", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.tenant.findUnique).mockResolvedValue({
         id: "tenant-1",
       } as never);
@@ -87,7 +87,7 @@ describe("FinanceDemoDataService", () => {
     });
 
     it("should return loaded: true when demo records exist", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.tenant.findUnique).mockResolvedValue({
         id: "tenant-1",
       } as never);
@@ -106,7 +106,7 @@ describe("FinanceDemoDataService", () => {
 
   describe("loadFinanceDemoData", () => {
     it("should seed finance demo data successfully", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.tenant.findUnique).mockResolvedValue({
         id: "tenant-1",
       } as never);
@@ -123,7 +123,7 @@ describe("FinanceDemoDataService", () => {
     });
 
     it("should throw BadRequestException if demo data is already loaded", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.tenant.findUnique).mockResolvedValue({
         id: "tenant-1",
       } as never);
@@ -139,7 +139,7 @@ describe("FinanceDemoDataService", () => {
 
   describe("unloadFinanceDemoData", () => {
     it("should unload demo records safely", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demoDataRecord.findMany).mockResolvedValue([
         { id: "rec-1", entityType: "invoice", entityId: "inv-1" },
         { id: "rec-2", entityType: "payment", entityId: "pay-1" },
@@ -155,7 +155,7 @@ describe("FinanceDemoDataService", () => {
     });
 
     it("should handle unload gracefully when no records exist", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demoDataRecord.findMany).mockResolvedValue([] as never);
 
       const result = await service.unloadFinanceDemoData("tenant-1");

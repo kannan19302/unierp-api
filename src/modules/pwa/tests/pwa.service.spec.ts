@@ -116,7 +116,7 @@ const {
   };
 });
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     pwaManifest: {
       findFirst: vi.fn().mockResolvedValue(mockManifest),
@@ -222,7 +222,7 @@ describe("PwaService", () => {
   });
 
   it("should throw on missing cache rule for delete", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.pwaOfflineCacheRule.findFirst as any).mockResolvedValueOnce(null);
     await expect(service.deleteCacheRule("t1", "bad")).rejects.toThrow(
       NotFoundException,
@@ -265,7 +265,7 @@ describe("PwaService", () => {
   });
 
   it("should throw on missing sync item", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.pwaSyncQueue.findFirst as any).mockResolvedValueOnce(null);
     await expect(
       service.updateSyncStatus("t1", "bad", "COMPLETED"),

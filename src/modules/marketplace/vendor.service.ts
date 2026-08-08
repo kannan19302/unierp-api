@@ -6,8 +6,8 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { createPublicKey, verify } from "node:crypto";
-import { prisma } from "@unerp/database";
-import { bundleDigestInput } from "@unerp/extension-api";
+import { prisma } from "@kannan19302/database";
+import { bundleDigestInput } from "@kannan19302/extension-api";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { BundleStoreService } from "./bundle-store.service";
 import { validateManifest, AppManifest } from "./manifest";

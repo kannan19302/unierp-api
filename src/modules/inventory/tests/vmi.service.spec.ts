@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { VmiService } from "../vmi.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     vmiAgreement: {
       findMany: vi.fn(),
@@ -37,7 +37,7 @@ describe("VmiService", () => {
   // ── Agreements ────────────────────────────────────────────────────────────
 
   it("createAgreement auto-numbers VMI-XXXXXX", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.count).mockResolvedValue(2);
     vi.mocked(prisma.vmiAgreement.create).mockResolvedValue({
       id: "ag1",
@@ -86,7 +86,7 @@ describe("VmiService", () => {
   });
 
   it("activateAgreement transitions DRAFT → ACTIVE", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.findFirst).mockResolvedValue({
       id: "ag1",
       status: "DRAFT",
@@ -100,7 +100,7 @@ describe("VmiService", () => {
   });
 
   it("activateAgreement throws for non-DRAFT", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.findFirst).mockResolvedValue({
       id: "ag1",
       status: "ACTIVE",
@@ -111,7 +111,7 @@ describe("VmiService", () => {
   });
 
   it("suspendAgreement transitions ACTIVE → SUSPENDED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.findFirst).mockResolvedValue({
       id: "ag1",
       status: "ACTIVE",
@@ -125,7 +125,7 @@ describe("VmiService", () => {
   });
 
   it("terminateAgreement throws when already terminated", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.findFirst).mockResolvedValue({
       id: "ag1",
       status: "TERMINATED",
@@ -138,7 +138,7 @@ describe("VmiService", () => {
   // ── Stock Snapshots ───────────────────────────────────────────────────────
 
   it("recordSnapshot creates snapshot and auto-triggers order when below min", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.findFirst)
       .mockResolvedValueOnce({
         id: "ag1",
@@ -180,7 +180,7 @@ describe("VmiService", () => {
   });
 
   it("recordSnapshot does not trigger order when at or above min", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.findFirst).mockResolvedValue({
       id: "ag1",
       status: "ACTIVE",
@@ -205,7 +205,7 @@ describe("VmiService", () => {
   // ── VMI Orders ────────────────────────────────────────────────────────────
 
   it("createOrder auto-numbers VMIO-XXXXXX", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.findFirst).mockResolvedValue({
       id: "ag1",
       vendorId: "v1",
@@ -240,7 +240,7 @@ describe("VmiService", () => {
   });
 
   it("advanceOrderStatus PENDING → CONFIRMED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiOrder.findFirst).mockResolvedValue({
       id: "ord1",
       status: "PENDING",
@@ -256,7 +256,7 @@ describe("VmiService", () => {
   });
 
   it("advanceOrderStatus throws for invalid transition", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiOrder.findFirst).mockResolvedValue({
       id: "ord1",
       status: "PENDING",
@@ -267,7 +267,7 @@ describe("VmiService", () => {
   });
 
   it("getDashboard returns aggregate stats", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.count)
       .mockResolvedValueOnce(10)
       .mockResolvedValueOnce(7)
@@ -285,7 +285,7 @@ describe("VmiService", () => {
   });
 
   it("getAgreement throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.vmiAgreement.findFirst).mockResolvedValue(null);
     await expect(svc.getAgreement(T, "ag-none")).rejects.toThrow(
       NotFoundException,

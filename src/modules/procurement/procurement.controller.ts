@@ -27,7 +27,7 @@ import {
   CreatePurchaseRequisitionInput,
   createBlanketPurchaseAgreementSchema,
   CreateBlanketPurchaseAgreementInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 interface AuthenticatedRequest extends Request {

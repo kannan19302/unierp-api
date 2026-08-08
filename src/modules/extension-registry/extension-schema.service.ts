@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { Prisma } from "@prisma/client";
 import {
   ExtensionSchemaSchema,
@@ -9,7 +9,7 @@ import {
   IDENTIFIER,
   type ExtensionEntity,
   type ExtensionSchema,
-} from "@unerp/extension-api";
+} from "@kannan19302/extension-api";
 
 /**
  * Generates an extension's tables in the extension namespace — § 8.2.

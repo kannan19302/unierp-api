@@ -12,7 +12,7 @@ vi.mock("@prisma/client", () => ({
   },
 }));
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     salesTerritory: {
       findMany: vi.fn(),
@@ -47,7 +47,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { SalesTerritoryService } from "../sales-territory.service";
 

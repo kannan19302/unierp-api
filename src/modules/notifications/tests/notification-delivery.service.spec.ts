@@ -1,9 +1,9 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotificationDeliveryService } from "../notification-delivery.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -31,7 +31,7 @@ describe("NotificationDeliveryService — DND notification suppression (US-B6)",
   });
 
   it("delivers both inApp and Email when user presence is active/non-DND", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(idpPrisma.userPresence.findFirst).mockResolvedValue({
       presence: "ACTIVE",
     } as never);
@@ -55,7 +55,7 @@ describe("NotificationDeliveryService — DND notification suppression (US-B6)",
   });
 
   it("suppresses Email delivery when user presence is DND, but keeps inApp", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(idpPrisma.userPresence.findFirst).mockResolvedValue({
       presence: "DND",
     } as never);

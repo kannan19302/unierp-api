@@ -1,10 +1,10 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { WebCollectionsService } from "../web-collections.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const gen = () => ({
     findMany: vi.fn(),
     findFirst: vi.fn(),

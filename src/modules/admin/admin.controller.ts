@@ -26,7 +26,7 @@ import {
   updateUserSchema,
   CreateUserInput,
   UpdateUserInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import {
   createAccessPackageSchema,
   updateAccessPackageSchema,
@@ -138,7 +138,7 @@ export class AdminController {
     @ZodBody(z.any()) body: Record<string, unknown>,
   ): Promise<unknown> {
     const validationPipe = new ZodValidationPipe(
-      require("@unerp/shared").updateAdminSettingsSchema,
+      require("@kannan19302/shared").updateAdminSettingsSchema,
     );
     const dto = validationPipe.transform(body, {
       type: "body",

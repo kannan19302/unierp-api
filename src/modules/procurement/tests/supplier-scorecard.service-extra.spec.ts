@@ -3,7 +3,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { SupplierScorecardService } from "../supplier-scorecard.service";
 import { NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     supplierScorecard: {
       findMany: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("SupplierScorecardService (extra)", () => {

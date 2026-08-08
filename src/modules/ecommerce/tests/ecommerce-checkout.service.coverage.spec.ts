@@ -3,7 +3,7 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { EcommerceCheckoutService } from "../ecommerce-checkout.service";
 import { MockPaymentGatewayService } from "../payments/mock-payment-gateway.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const mockPrisma = {
     $transaction: vi.fn(async (cb) => cb(mockPrisma)),
     cart: { findFirst: vi.fn(), update: vi.fn() },
@@ -81,7 +81,7 @@ describe("EcommerceCheckoutService", () => {
       new MockPaymentGatewayService(),
     );
 
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.organization).findFirst.mockResolvedValue({
       id: "org-1",
       tenantId: "t1",
@@ -108,7 +108,7 @@ describe("EcommerceCheckoutService", () => {
   });
 
   it("rejects checkout for a cart that does not exist", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cart).findFirst.mockResolvedValue(null);
 
     await expect(
@@ -118,7 +118,7 @@ describe("EcommerceCheckoutService", () => {
   });
 
   it("rejects checkout for an empty cart — creates zero SalesOrders", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cart).findFirst.mockResolvedValue({
       ...baseCart,
       items: [],
@@ -131,7 +131,7 @@ describe("EcommerceCheckoutService", () => {
   });
 
   it("rejects checkout for a cart that is not ACTIVE (already converted)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cart).findFirst.mockResolvedValue({
       ...baseCart,
       status: "CONVERTED",
@@ -144,7 +144,7 @@ describe("EcommerceCheckoutService", () => {
   });
 
   it("happy path: creates exactly one SalesOrder, one SUCCEEDED StorefrontOrderPayment, and marks the cart CONVERTED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cart).findFirst.mockResolvedValue(baseCart as never);
 
     const result = await checkoutService.checkout("t1", "default", checkoutDto);
@@ -177,7 +177,7 @@ describe("EcommerceCheckoutService", () => {
   });
 
   it("decline path: creates zero SalesOrders, does not convert the cart, and surfaces a retry-able error", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cart).findFirst.mockResolvedValue(baseCart as never);
 
     await expect(
@@ -192,7 +192,7 @@ describe("EcommerceCheckoutService", () => {
   });
 
   it("finds an existing Customer by tenant+email instead of creating a duplicate", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cart).findFirst.mockResolvedValue(baseCart as never);
     vi.mocked(prisma.customer).findFirst.mockResolvedValue({
       id: "existing-cust",

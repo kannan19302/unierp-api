@@ -61,7 +61,7 @@ import {
   UpdateCrmDashboardInput,
   CreateDashboardWidgetInput,
   UpdateDashboardWidgetInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 
 import { CrmCustomersService } from "./crm-customers.service";
 import { CrmContactsService } from "./crm-contacts.service";

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommDeepExpansionService } from "../services/comm-deep-expansion.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     emailInbox: { create: vi.fn(), findMany: vi.fn() },
     emailMessage: { create: vi.fn() },
@@ -31,7 +31,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("creates an email inbox with rules", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockInbox = { id: "inbox1", emailRules: [] };
     vi.mocked(prisma.emailInbox.create).mockResolvedValue(mockInbox as never);
     const res = await svc.createEmailInbox("t1", { name: "Support" });
@@ -44,7 +44,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("lists email inboxes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.emailInbox.findMany).mockResolvedValue([
       { id: "inbox1", emails: [] },
     ] as never);
@@ -57,7 +57,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("creates a video room with auto-generated code", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.videoRoom.create).mockImplementation((args: never) => {
       const data = (args as any).data;
       return Promise.resolve({
@@ -72,7 +72,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("creates a wiki page with an initial version", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.wikiPage.create).mockResolvedValue({
       id: "page1",
       title: "Docs",
@@ -94,7 +94,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("creates an intranet post", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.intranetPost.create).mockResolvedValue({
       id: "post1",
       intranetComments: [],
@@ -110,7 +110,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("adds a comment to an intranet post and increments count", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.intranetComment.create).mockResolvedValue({
       id: "comment1",
       postId: "post1",
@@ -125,7 +125,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("submits a survey answer and increments response count", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.internalSurveyAnswer.create).mockResolvedValue({
       id: "ans1",
     } as never);
@@ -141,7 +141,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("upserts an event RSVP", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.eventRsvp.upsert).mockResolvedValue({
       userId: "u1",
       status: "ATTENDING",
@@ -164,7 +164,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("creates a phone extension", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.phoneExtension.create).mockResolvedValue({
       id: "ext1",
       extension: "101",
@@ -179,7 +179,7 @@ describe("CommDeepExpansionService", () => {
   });
 
   it("records a phone call log", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.phoneCallLog.create).mockResolvedValue({
       id: "log1",
       caller: "+123",

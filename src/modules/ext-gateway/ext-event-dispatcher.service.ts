@@ -5,7 +5,7 @@ import {
   WEBHOOK_SIGNATURE_HEADER,
   WEBHOOK_TIMESTAMP_HEADER,
   REQUEST_ID_HEADER,
-} from "@unerp/service-kit";
+} from "@kannan19302/service-kit";
 import { ServiceRegistryService } from "./service-registry.service";
 import { secretForApp } from "./ext-secret.util";
 import { extEventsTotal } from "./ext-metrics";

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HrService } from "../hr.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       employee: {
@@ -28,7 +28,7 @@ describe("HrService", () => {
 
   describe("getEmployees", () => {
     it("should return all employees in the tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       const mockEmployees = [
         {
           id: "emp-1",

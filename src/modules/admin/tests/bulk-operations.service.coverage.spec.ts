@@ -12,7 +12,7 @@ vi.mock("@prisma/client", () => ({
   },
 }));
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     bulkOperation: {
       findMany: vi.fn().mockResolvedValue([]),

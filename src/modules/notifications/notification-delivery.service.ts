@@ -1,7 +1,7 @@
 import { Injectable, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { OnEvent } from "@nestjs/event-emitter";
 import { createHmac } from "node:crypto";
@@ -21,7 +21,7 @@ export type NotificationChannel =
  * single choke point that applies per-user preferences, quiet hours, template
  * rendering and delivery logging before anything reaches a transport.
  *
- * Mirrors `@unerp/contracts` `NotificationSendEvent` (L0, zero-dependency).
+ * Mirrors `@kannan19302/contracts` `NotificationSendEvent` (L0, zero-dependency).
  */
 export interface NotificationPayload {
   tenantId: string;

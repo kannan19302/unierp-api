@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { prisma, runWithTenantSession } from "@unerp/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "../../common/idp-client";
 
 @Injectable()

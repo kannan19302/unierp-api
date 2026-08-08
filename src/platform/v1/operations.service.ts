@@ -1,7 +1,7 @@
 import { Injectable, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import * as os from "os";
 
@@ -309,7 +309,7 @@ export class OperationsService {
           id: "bak-2",
           filename: "unerp_backup_2026-06-19.sql",
           sizeBytes: 15410900,
-          createdBy: "admin@unerp.dev",
+          createdBy: "admin@kannan19302.dev",
           createdAt: new Date(Date.now() - 172800000).toISOString(),
           source: "SIMULATED",
         },

@@ -4,8 +4,8 @@ import {
   SupplyChainTraceabilityContract,
   BlockchainTxStatus,
   FABRIC_CHAINCODES,
-} from "@unerp/blockchain";
-import type { SupplyChainArgs, OnChainRecord } from "@unerp/blockchain";
+} from "@kannan19302/blockchain";
+import type { SupplyChainArgs, OnChainRecord } from "@kannan19302/blockchain";
 
 @Injectable()
 export class SupplyChainBlockchainService {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { AslService } from "../asl.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     approvedSupplier: {
       findMany: vi.fn(),
@@ -99,7 +99,7 @@ describe("AslService", () => {
 
   describe("listApprovedSuppliers", () => {
     it("returns entries for tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findMany).mockResolvedValue([
         mkAsl(),
       ] as never);
@@ -108,7 +108,7 @@ describe("AslService", () => {
     });
 
     it("filters by productId", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findMany).mockResolvedValue(
         [] as never,
       );
@@ -123,7 +123,7 @@ describe("AslService", () => {
 
   describe("createApprovedSupplier", () => {
     it("creates a new ASL entry", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         null as never,
       );
@@ -139,7 +139,7 @@ describe("AslService", () => {
     });
 
     it("throws if vendor already in ASL for product", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl() as never,
       );
@@ -154,7 +154,7 @@ describe("AslService", () => {
 
   describe("approveSupplier", () => {
     it("approves a PENDING_APPROVAL supplier", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl() as never,
       );
@@ -167,7 +167,7 @@ describe("AslService", () => {
     });
 
     it("throws if already approved", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl({ status: "APPROVED" }) as never,
       );
@@ -179,7 +179,7 @@ describe("AslService", () => {
 
   describe("disqualifySupplier", () => {
     it("disqualifies a supplier", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl({ status: "APPROVED" }) as never,
       );
@@ -197,7 +197,7 @@ describe("AslService", () => {
     });
 
     it("throws if already disqualified", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl({ status: "DISQUALIFIED" }) as never,
       );
@@ -209,7 +209,7 @@ describe("AslService", () => {
 
   describe("setPreferred", () => {
     it("sets an APPROVED supplier as preferred", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl({ status: "APPROVED" }) as never,
       );
@@ -222,7 +222,7 @@ describe("AslService", () => {
     });
 
     it("throws if not APPROVED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl() as never,
       );
@@ -234,7 +234,7 @@ describe("AslService", () => {
 
   describe("addPriceTier", () => {
     it("creates a price tier", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl({ status: "APPROVED" }) as never,
       );
@@ -252,7 +252,7 @@ describe("AslService", () => {
 
   describe("getEffectivePrice", () => {
     it("returns tier price for matching qty", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.supplierPriceTier.findMany).mockResolvedValue([
         mkTier({ fromQty: "1", toQty: "100", unitPrice: "9.5000" }),
       ] as never);
@@ -264,7 +264,7 @@ describe("AslService", () => {
     });
 
     it("falls back to base price when no tier matches", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.supplierPriceTier.findMany).mockResolvedValue(
         [] as never,
       );
@@ -278,7 +278,7 @@ describe("AslService", () => {
 
   describe("upsertAttribute", () => {
     it("upserts a vendor item attribute", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorItemAttribute.upsert).mockResolvedValue(
         mkAttr() as never,
       );
@@ -294,7 +294,7 @@ describe("AslService", () => {
 
   describe("upsertComplianceRule", () => {
     it("creates or updates compliance rule", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.aslComplianceRule.upsert).mockResolvedValue(
         mkRule() as never,
       );
@@ -308,7 +308,7 @@ describe("AslService", () => {
 
   describe("checkProductCompliance", () => {
     it("marks compliant when requirements are met", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.count)
         .mockResolvedValueOnce(2 as never) // approved
         .mockResolvedValueOnce(1 as never) // preferred
@@ -326,7 +326,7 @@ describe("AslService", () => {
     });
 
     it("flags non-compliance when below min vendors", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.count)
         .mockResolvedValueOnce(1 as never)
         .mockResolvedValueOnce(1 as never)
@@ -346,7 +346,7 @@ describe("AslService", () => {
 
   describe("getDashboard", () => {
     it("returns aggregated counts", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.count).mockResolvedValue(5 as never);
       const result = await svc.getDashboard(TENANT);
       expect(result.total).toBe(5);
@@ -355,7 +355,7 @@ describe("AslService", () => {
 
   describe("getVendorSourcingReport", () => {
     it("returns sourcing summary for a product", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findMany).mockResolvedValue([
         mkAsl({
           status: "APPROVED",
@@ -381,7 +381,7 @@ describe("AslService", () => {
 
   describe("getExpiringSuppliers", () => {
     it("returns expiring suppliers", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findMany).mockResolvedValue([
         mkAsl({ status: "APPROVED" }),
       ] as never);
@@ -392,7 +392,7 @@ describe("AslService", () => {
 
   describe("getChangeLog", () => {
     it("returns change log for an ASL entry", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         mkAsl() as never,
       );
@@ -406,7 +406,7 @@ describe("AslService", () => {
 
   describe("getApprovedSupplier - not found", () => {
     it("throws NotFoundException", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.approvedSupplier.findFirst).mockResolvedValue(
         null as never,
       );

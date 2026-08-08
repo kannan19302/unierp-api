@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { PayoutService, ManualPayoutProvider } from "../payout.service";
 
 /**

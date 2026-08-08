@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { RtvService } from "../rtv.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     returnReasonCode: {
       findMany: vi.fn(),
@@ -44,7 +44,7 @@ describe("RtvService", () => {
 
   describe("listReasonCodes", () => {
     it("returns active reason codes by default", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.returnReasonCode.findMany).mockResolvedValue([
         { id: "rc-1", code: "DEFECTIVE", isActive: true },
       ] as never);
@@ -58,7 +58,7 @@ describe("RtvService", () => {
     });
 
     it("includes inactive codes when flag set", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.returnReasonCode.findMany).mockResolvedValue([]);
       await service.listReasonCodes("t-1", true);
       const call = vi.mocked(prisma.returnReasonCode.findMany).mock
@@ -69,7 +69,7 @@ describe("RtvService", () => {
 
   describe("createReasonCode", () => {
     it("creates a new reason code", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.returnReasonCode.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.returnReasonCode.create).mockResolvedValue({
         id: "rc-1",
@@ -84,7 +84,7 @@ describe("RtvService", () => {
     });
 
     it("throws ConflictException if code already exists", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.returnReasonCode.findUnique).mockResolvedValue({
         id: "rc-1",
       } as never);
@@ -101,7 +101,7 @@ describe("RtvService", () => {
 
   describe("createRmaRequest", () => {
     it("creates an RMA request and emits event", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorRmaRequest.create).mockResolvedValue({
         id: "rma-1",
         status: "PENDING",
@@ -120,7 +120,7 @@ describe("RtvService", () => {
 
   describe("submitRmaRequest", () => {
     it("submits a PENDING RMA", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorRmaRequest.findFirst).mockResolvedValue({
         id: "rma-1",
         status: "PENDING",
@@ -135,7 +135,7 @@ describe("RtvService", () => {
     });
 
     it("throws if RMA is not PENDING", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorRmaRequest.findFirst).mockResolvedValue({
         id: "rma-1",
         status: "AUTHORIZED",
@@ -149,7 +149,7 @@ describe("RtvService", () => {
 
   describe("rejectRmaRequest", () => {
     it("rejects a SUBMITTED RMA with a reason", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorRmaRequest.findFirst).mockResolvedValue({
         id: "rma-1",
         status: "SUBMITTED",
@@ -170,7 +170,7 @@ describe("RtvService", () => {
 
   describe("createShipment", () => {
     it("creates a shipment for an AUTHORIZED RMA", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorRmaRequest.findFirst).mockResolvedValue({
         id: "rma-1",
         status: "AUTHORIZED",
@@ -189,7 +189,7 @@ describe("RtvService", () => {
     });
 
     it("throws if RMA is not AUTHORIZED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorRmaRequest.findFirst).mockResolvedValue({
         id: "rma-1",
         status: "SUBMITTED",
@@ -205,7 +205,7 @@ describe("RtvService", () => {
 
   describe("shipment lifecycle", () => {
     it("advances pack → ship → deliver in order", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
 
       vi.mocked(prisma.vendorReturnShipment.findFirst).mockResolvedValue({
         id: "ship-1",
@@ -248,7 +248,7 @@ describe("RtvService", () => {
     });
 
     it("throws if pack attempted on non-PENDING shipment", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorReturnShipment.findFirst).mockResolvedValue({
         id: "ship-1",
         status: "SHIPPED",
@@ -263,7 +263,7 @@ describe("RtvService", () => {
 
   describe("getRtvDashboard", () => {
     it("returns aggregate counts and credit total", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.vendorRmaRequest.count).mockResolvedValue(5);
       vi.mocked(prisma.vendorRmaRequest.groupBy).mockResolvedValue([
         { status: "AUTHORIZED", _count: { _all: 2 } },

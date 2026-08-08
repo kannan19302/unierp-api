@@ -46,7 +46,7 @@ const { db } = vi.hoisted(() => {
   return { db: mockDb };
 });
 
-vi.mock("@unerp/database", () => ({ prisma: db }));
+vi.mock("@kannan19302/database", () => ({ prisma: db }));
 
 describe("FieldServicePartsService", () => {
   let service: FieldServicePartsService;

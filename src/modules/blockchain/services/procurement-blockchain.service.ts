@@ -3,7 +3,7 @@ import { FabricGatewayProvider } from "../providers/fabric-gateway.provider";
 import {
   ProcurementLifecycleContract,
   FABRIC_CHAINCODES,
-} from "@unerp/blockchain";
+} from "@kannan19302/blockchain";
 
 @Injectable()
 export class ProcurementBlockchainService {

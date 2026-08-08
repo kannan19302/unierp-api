@@ -95,7 +95,7 @@ const mockPrisma = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@unerp/database", () => ({ prisma: mockPrisma }));
+vi.mock("@kannan19302/database", () => ({ prisma: mockPrisma }));
 
 function makeCreditNoteRow(overrides: Record<string, unknown> = {}) {
   return {

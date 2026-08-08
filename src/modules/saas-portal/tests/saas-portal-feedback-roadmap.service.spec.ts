@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     saasPortalFeatureRequest: {
       findMany: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { SaasPortalFeedbackRoadmapService } from "../saas-portal-feedback-roadmap.service";
 

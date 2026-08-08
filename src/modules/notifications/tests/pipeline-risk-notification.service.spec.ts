@@ -1,4 +1,4 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventEmitter2 } from "@nestjs/event-emitter";
@@ -11,7 +11,7 @@ import { PipelineRiskNotificationService } from "../pipeline-risk-notification.s
  * to CRM-permissioned tenant users on unassigned deals, and stays tenant-scoped.
  */
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -39,7 +39,7 @@ describe("PipelineRiskNotificationService — pipeline.deal.at_risk consumer", (
   });
 
   it("notifies the assigned rep directly when the opportunity has one", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.opportunity.findFirst).mockResolvedValue({
       id: "opp-1",
       name: "Acme Renewal",
@@ -72,7 +72,7 @@ describe("PipelineRiskNotificationService — pipeline.deal.at_risk consumer", (
   });
 
   it("falls back to CRM-permissioned users when the deal is unassigned", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.opportunity.findFirst).mockResolvedValue({
       id: "opp-2",
       name: "Beta Deal",
@@ -104,7 +104,7 @@ describe("PipelineRiskNotificationService — pipeline.deal.at_risk consumer", (
   });
 
   it("falls back to CRM-permissioned users when the assigned rep is no longer active", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.opportunity.findFirst).mockResolvedValue({
       id: "opp-3",
       name: "Gamma Deal",
@@ -133,7 +133,7 @@ describe("PipelineRiskNotificationService — pipeline.deal.at_risk consumer", (
   });
 
   it("is a no-op when the opportunity cannot be found in the tenant (tenant isolation)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.opportunity.findFirst).mockResolvedValue(null as never);
 
     await service.handleDealAtRisk({
@@ -150,7 +150,7 @@ describe("PipelineRiskNotificationService — pipeline.deal.at_risk consumer", (
   });
 
   it("ignores events missing tenantId or opportunityId", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     await service.handleDealAtRisk({
       tenantId: "",
       opportunityId: "",
@@ -163,7 +163,7 @@ describe("PipelineRiskNotificationService — pipeline.deal.at_risk consumer", (
   });
 
   it("does nothing when there are no fallback recipients either", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.opportunity.findFirst).mockResolvedValue({
       id: "opp-4",
       name: "Delta Deal",

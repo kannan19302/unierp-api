@@ -1,4 +1,4 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Controller, Get, Post, Patch, Param, UseGuards } from "@nestjs/common";
 import { z } from "zod";

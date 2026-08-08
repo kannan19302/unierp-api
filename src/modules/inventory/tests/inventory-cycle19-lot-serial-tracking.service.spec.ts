@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { LotSerialTrackingService } from "../lot-serial-tracking.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   PrismaService: vi.fn(),
   prisma: {
     batch: {
@@ -69,7 +69,7 @@ describe("LotSerialTrackingService", () => {
   // ── Batch/Lot ─────────────────────────────────────────────────────────────
   describe("listBatches", () => {
     it("returns batches with status filter", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findMany).mockResolvedValue([
         { id: "b1", batchNo: "LOT-001" },
       ] as any);
@@ -88,7 +88,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("createBatch", () => {
     it("creates a batch when batchNo is unique", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.batch.create).mockResolvedValue({
         id: "b1",
@@ -105,7 +105,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if batchNo already exists for product", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findFirst).mockResolvedValue({ id: "b1" } as any);
       await expect(
         svc.createBatch(TENANT, {
@@ -120,7 +120,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("quarantineBatch", () => {
     it("quarantines an ACTIVE batch", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findFirst).mockResolvedValue({
         id: "b1",
         status: "ACTIVE",
@@ -134,7 +134,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if batch is already in quarantine", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findFirst).mockResolvedValue({
         id: "b1",
         status: "QUARANTINE",
@@ -147,7 +147,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("releaseBatchFromQuarantine", () => {
     it("releases a QUARANTINE batch", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findFirst).mockResolvedValue({
         id: "b1",
         status: "QUARANTINE",
@@ -161,7 +161,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if batch is not in quarantine", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findFirst).mockResolvedValue({
         id: "b1",
         status: "ACTIVE",
@@ -174,7 +174,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("recordLotMovement", () => {
     it("records a movement for a valid batch", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findFirst).mockResolvedValue({ id: "b1" } as any);
       vi.mocked(prisma.lotMovement.create).mockResolvedValue({
         id: "m1",
@@ -189,7 +189,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if batch not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findFirst).mockResolvedValue(null);
       await expect(
         svc.recordLotMovement(TENANT, USER, {
@@ -204,7 +204,7 @@ describe("LotSerialTrackingService", () => {
   // ── Serial Numbers ────────────────────────────────────────────────────────
   describe("createSerial", () => {
     it("creates a serial when serialNo is unique", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.serialNumber.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.serialNumber.create).mockResolvedValue({
         id: "s1",
@@ -220,7 +220,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if serialNo already exists", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.serialNumber.findFirst).mockResolvedValue({
         id: "s1",
       } as any);
@@ -236,7 +236,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("markSerialSold", () => {
     it("marks an AVAILABLE serial as SOLD", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.serialNumber.findFirst).mockResolvedValue({
         id: "s1",
         status: "AVAILABLE",
@@ -251,7 +251,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if serial is neither AVAILABLE nor RESERVED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.serialNumber.findFirst).mockResolvedValue({
         id: "s1",
         status: "SOLD",
@@ -264,7 +264,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("markSerialReturned", () => {
     it("marks a SOLD serial as RETURNED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.serialNumber.findFirst).mockResolvedValue({
         id: "s1",
         status: "SOLD",
@@ -282,7 +282,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if serial is not SOLD", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.serialNumber.findFirst).mockResolvedValue({
         id: "s1",
         status: "AVAILABLE",
@@ -296,7 +296,7 @@ describe("LotSerialTrackingService", () => {
   // ── Pick Suggestions ──────────────────────────────────────────────────────
   describe("generatePickSuggestions", () => {
     it("generates FEFO suggestions from active batches", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findMany).mockResolvedValue([
         {
           id: "b1",
@@ -328,7 +328,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("reports unallocatedQty when batches are insufficient", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findMany).mockResolvedValue([
         {
           id: "b1",
@@ -354,7 +354,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("confirmPickSuggestion", () => {
     it("confirms a PENDING suggestion with valid qty", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.pickSuggestion.findFirst).mockResolvedValue({
         id: "ps1",
         status: "PENDING",
@@ -371,7 +371,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if picked qty exceeds suggested qty", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.pickSuggestion.findFirst).mockResolvedValue({
         id: "ps1",
         status: "PENDING",
@@ -386,7 +386,7 @@ describe("LotSerialTrackingService", () => {
   // ── Expiry Alerts ─────────────────────────────────────────────────────────
   describe("generateExpiryAlerts", () => {
     it("generates alerts for batches expiring within threshold", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.findMany).mockResolvedValue([
         {
           id: "b1",
@@ -408,7 +408,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("acknowledgeExpiryAlert", () => {
     it("acknowledges an alert", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.expiryAlert.findFirst).mockResolvedValue({
         id: "a1",
         acknowledged: false,
@@ -422,7 +422,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if alert not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.expiryAlert.findFirst).mockResolvedValue(null);
       await expect(
         svc.acknowledgeExpiryAlert(TENANT, "a1", USER),
@@ -433,7 +433,7 @@ describe("LotSerialTrackingService", () => {
   // ── Quarantine Orders ─────────────────────────────────────────────────────
   describe("createQuarantineOrder", () => {
     it("creates a quarantine order with auto-number and quarantines batch", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.quarantineOrder.count).mockResolvedValue(2);
       vi.mocked(prisma.quarantineOrder.create).mockResolvedValue({
         id: "qo1",
@@ -457,7 +457,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("releaseQuarantineOrder", () => {
     it("releases an ACTIVE quarantine order and restores batch", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.quarantineOrder.findFirst).mockResolvedValue({
         id: "qo1",
         status: "ACTIVE",
@@ -479,7 +479,7 @@ describe("LotSerialTrackingService", () => {
     });
 
     it("throws if order is not ACTIVE", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.quarantineOrder.findFirst).mockResolvedValue({
         id: "qo1",
         status: "RELEASED",
@@ -495,7 +495,7 @@ describe("LotSerialTrackingService", () => {
   // ── Dashboard ─────────────────────────────────────────────────────────────
   describe("getLotSerialDashboard", () => {
     it("returns combined dashboard metrics", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.count).mockResolvedValue(5);
       vi.mocked(prisma.serialNumber.count).mockResolvedValue(10);
       vi.mocked(prisma.pickSuggestion.count).mockResolvedValue(3);
@@ -510,7 +510,7 @@ describe("LotSerialTrackingService", () => {
 
   describe("getExpiryReport", () => {
     it("returns expiry bucketing counts", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.batch.count)
         .mockResolvedValueOnce(2) // expired
         .mockResolvedValueOnce(1) // in7

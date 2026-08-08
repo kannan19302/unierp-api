@@ -11,7 +11,7 @@ const mockTx = {
   },
 };
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       $transaction: vi.fn((cb: any) => cb(mockTx)),
@@ -42,7 +42,7 @@ vi.mock("@unerp/database", () => {
   };
 });
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("ApDeepService", () => {

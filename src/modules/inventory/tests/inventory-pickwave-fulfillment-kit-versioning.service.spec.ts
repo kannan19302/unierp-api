@@ -42,7 +42,7 @@ const { db } = vi.hoisted(() => {
   return { db };
 });
 
-vi.mock("@unerp/database", () => ({ prisma: db }));
+vi.mock("@kannan19302/database", () => ({ prisma: db }));
 
 const kit = {
   id: "kit-1",

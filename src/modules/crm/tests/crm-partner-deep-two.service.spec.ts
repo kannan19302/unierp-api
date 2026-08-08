@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CrmPartnerDeepTwoService } from "../crm-partner-deep-two.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     salesPartner: { findFirst: vi.fn(), findMany: vi.fn() },
     salesPartnerContract: {
@@ -38,7 +38,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 const TENANT = "tenant-1";
 const ORG = "org-1";

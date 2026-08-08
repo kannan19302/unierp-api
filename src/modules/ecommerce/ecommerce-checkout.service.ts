@@ -4,11 +4,11 @@ import {
   BadRequestException,
   Inject,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import * as crypto from "crypto";
-import { OutboxService, type OutboxTxClient } from "@unerp/shared";
+import { OutboxService, type OutboxTxClient } from "@kannan19302/shared";
 import { PaymentGatewayAdapter } from "./payments/payment-gateway.interface";
 import { CheckoutDto } from "./dto/ecommerce.dto";
 import { AppLogger } from "../../common/services/logger.service";

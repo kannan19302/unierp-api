@@ -12,7 +12,7 @@ vi.mock("@prisma/client", () => ({
   },
 }));
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     changeHistory: {
       findMany: vi.fn().mockResolvedValue([]),

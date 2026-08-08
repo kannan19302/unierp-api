@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { OnEvent, EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { AutomationRulesService } from "./automation-rules.service";
 import { enqueueTrackedJob } from "../../common/queues/job-tracking.util";

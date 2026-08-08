@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { StockValuationService } from "../stock-valuation.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     stockValuationPolicy: {
       findMany: vi.fn(),
@@ -77,7 +77,7 @@ describe("StockValuationService", () => {
 
   describe("listPolicies", () => {
     it("returns all policies for tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationPolicy.findMany).mockResolvedValue([
         mockPolicy(),
       ] as never);
@@ -88,7 +88,7 @@ describe("StockValuationService", () => {
 
   describe("getPolicy", () => {
     it("returns policy when found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationPolicy.findFirst).mockResolvedValue(
         mockPolicy() as never,
       );
@@ -97,7 +97,7 @@ describe("StockValuationService", () => {
     });
 
     it("throws NotFoundException when not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationPolicy.findFirst).mockResolvedValue(
         null as never,
       );
@@ -109,7 +109,7 @@ describe("StockValuationService", () => {
 
   describe("upsertPolicy", () => {
     it("creates or updates policy", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationPolicy.upsert).mockResolvedValue(
         mockPolicy() as never,
       );
@@ -123,7 +123,7 @@ describe("StockValuationService", () => {
 
   describe("deactivatePolicy", () => {
     it("deactivates active policy", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationPolicy.findFirst).mockResolvedValue(
         mockPolicy() as never,
       );
@@ -137,7 +137,7 @@ describe("StockValuationService", () => {
 
   describe("postLedgerEntry", () => {
     it("posts entry with running totals", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationLedger.findFirst).mockResolvedValue({
         runningQty: "100",
         runningValue: "1000",
@@ -161,7 +161,7 @@ describe("StockValuationService", () => {
     });
 
     it("starts from zero when no prior entries", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationLedger.findFirst).mockResolvedValue(
         null as never,
       );
@@ -182,7 +182,7 @@ describe("StockValuationService", () => {
 
   describe("computeIssueCost", () => {
     it("uses weighted average for WEIGHTED_AVG method", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationLedger.findMany).mockResolvedValue(
         [] as never,
       );
@@ -201,7 +201,7 @@ describe("StockValuationService", () => {
     });
 
     it("returns FIFO cost from oldest layers", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationLedger.findMany).mockResolvedValue([
         { qty: "50", unitCost: "10" },
         { qty: "100", unitCost: "12" },
@@ -219,7 +219,7 @@ describe("StockValuationService", () => {
 
   describe("createAdjustment", () => {
     it("creates adjustment with impact amount", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.costAdjustment.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.costAdjustment.create).mockResolvedValue(
         mockAdj() as never,
@@ -237,7 +237,7 @@ describe("StockValuationService", () => {
 
   describe("approveAdjustment", () => {
     it("approves PENDING adjustment", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.costAdjustment.findFirst).mockResolvedValue(
         mockAdj() as never,
       );
@@ -249,7 +249,7 @@ describe("StockValuationService", () => {
     });
 
     it("throws if not PENDING", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.costAdjustment.findFirst).mockResolvedValue(
         mockAdj({ status: "APPROVED" }) as never,
       );
@@ -261,7 +261,7 @@ describe("StockValuationService", () => {
 
   describe("postAdjustment", () => {
     it("posts APPROVED adjustment and creates ledger entry", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.costAdjustment.findFirst).mockResolvedValue(
         mockAdj({ status: "APPROVED" }) as never,
       );
@@ -277,7 +277,7 @@ describe("StockValuationService", () => {
     });
 
     it("throws if not APPROVED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.costAdjustment.findFirst).mockResolvedValue(
         mockAdj({ status: "PENDING" }) as never,
       );
@@ -289,7 +289,7 @@ describe("StockValuationService", () => {
 
   describe("rejectAdjustment", () => {
     it("rejects PENDING adjustment", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.costAdjustment.findFirst).mockResolvedValue(
         mockAdj() as never,
       );
@@ -303,7 +303,7 @@ describe("StockValuationService", () => {
 
   describe("createRevaluation", () => {
     it("creates revaluation with total impact", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockRevaluation.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.stockRevaluation.create).mockResolvedValue(
         mockReval() as never,
@@ -325,7 +325,7 @@ describe("StockValuationService", () => {
 
   describe("postRevaluation", () => {
     it("posts DRAFT revaluation", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockRevaluation.findFirst).mockResolvedValue(
         mockReval({
           lines: [
@@ -352,7 +352,7 @@ describe("StockValuationService", () => {
     });
 
     it("throws if not DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockRevaluation.findFirst).mockResolvedValue(
         mockReval({ status: "POSTED", lines: [] }) as never,
       );
@@ -364,7 +364,7 @@ describe("StockValuationService", () => {
 
   describe("getDashboard", () => {
     it("returns all dashboard stats", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockValuationPolicy.count).mockResolvedValue(
         5 as never,
       );

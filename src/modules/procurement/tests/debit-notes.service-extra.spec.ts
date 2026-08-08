@@ -3,7 +3,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { DebitNotesService } from "../debit-notes.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     debitNote: {
       findMany: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("DebitNotesService (extra)", () => {

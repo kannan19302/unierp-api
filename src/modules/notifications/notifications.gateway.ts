@@ -9,7 +9,7 @@ import {
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { OnEvent } from "@nestjs/event-emitter";
-import { verifyToken } from "@unerp/auth";
+import { verifyToken } from "@kannan19302/auth";
 import { RealtimeClient } from "../../common/integrations/realtime-client";
 
 @WebSocketGateway({

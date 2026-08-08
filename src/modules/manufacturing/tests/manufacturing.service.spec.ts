@@ -3,7 +3,7 @@ import { ManufacturingService } from "../manufacturing.service";
 import { Prisma } from "@prisma/client";
 
 // Mock all Prisma delegates
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     bOM: {
       findMany: vi.fn(),
@@ -159,7 +159,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("ManufacturingService", () => {

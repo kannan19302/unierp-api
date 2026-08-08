@@ -6,11 +6,11 @@ import { BuilderStatsService } from "../builder-stats.service";
 import { BuilderDashboardsService } from "../builder-dashboards.service";
 import { BuilderDevOpsService } from "../builder-devops.service";
 import { BuilderWebContentService } from "../builder-web-content.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const generateMock = () => ({
     findMany: vi.fn(),
     findFirst: vi.fn(),

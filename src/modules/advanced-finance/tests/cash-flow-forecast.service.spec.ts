@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CashFlowForecastService } from "../services/cash-flow-forecast.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import { NotFoundException } from "@nestjs/common";
@@ -27,7 +27,7 @@ vi.mock("@prisma/client", () => {
   };
 });
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const createMockPrismaCollection = () => ({
     findMany: vi.fn(),
     findFirst: vi.fn(),

@@ -22,7 +22,7 @@ const mockPrisma = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@unerp/database", () => ({ prisma: mockPrisma }));
+vi.mock("@kannan19302/database", () => ({ prisma: mockPrisma }));
 
 describe("EducationFeesService", () => {
   let svc: EducationFeesService;

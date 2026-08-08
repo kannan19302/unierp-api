@@ -1,7 +1,7 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { Request, Response } from "express";
 import { Readable } from "stream";
-import { TENANT_TOKEN_HEADER, REQUEST_ID_HEADER } from "@unerp/service-kit";
+import { TENANT_TOKEN_HEADER, REQUEST_ID_HEADER } from "@kannan19302/service-kit";
 import { ResolvedService } from "./service-registry.service";
 import { CircuitBreakerService } from "./circuit-breaker.service";
 import { extRequestsTotal, extRequestDuration } from "./ext-metrics";

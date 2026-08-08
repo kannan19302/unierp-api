@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     capaRecord: {
       findMany: vi.fn(),
@@ -51,7 +51,7 @@ describe("QualityComplianceService", () => {
   // ─── CAPA ─────────────────────────────────────────────────────────────────
 
   it("listCapas — returns filtered results", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -69,7 +69,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("createCapa — generates CAPA number and creates record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -98,7 +98,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("getCapa — throws NotFoundException for unknown id", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -109,7 +109,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("transitionCapaStatus — allows OPEN → IN_PROGRESS", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -130,7 +130,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("transitionCapaStatus — rejects invalid transition from CLOSED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -144,7 +144,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("transitionCapaStatus — sets closedAt when closing", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -168,7 +168,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("addCapaAction — creates action linked to CAPA", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -188,7 +188,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("completeCapaAction — marks action complete with timestamp", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -213,7 +213,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("completeCapaAction — rejects already completed action", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -227,7 +227,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("getCapaDashboard — returns aggregate counts", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -240,7 +240,7 @@ describe("QualityComplianceService", () => {
   // ─── Calibration ──────────────────────────────────────────────────────────
 
   it("scheduleCalibration — creates calibration with DUE status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -265,7 +265,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("recordCalibrationResult — marks PASSED and sets nextDueDate when interval set", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -294,7 +294,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("recordCalibrationResult — rejects duplicate result recording", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -309,7 +309,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("getOverdueCalibrations — queries past scheduled_date with DUE/OVERDUE status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -330,7 +330,7 @@ describe("QualityComplianceService", () => {
   // ─── Deviations ───────────────────────────────────────────────────────────
 
   it("createDeviation — generates deviation number", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -350,7 +350,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("reviewDeviation — transitions OPEN to UNDER_REVIEW", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -371,7 +371,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("reviewDeviation — rejects non-OPEN deviation", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -385,7 +385,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("closeDeviation — links optional CAPA id", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -406,7 +406,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("getDeviationDashboard — counts by severity", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -418,7 +418,7 @@ describe("QualityComplianceService", () => {
   // ─── SOP Documents ────────────────────────────────────────────────────────
 
   it("createSop — generates docNumber and creates SOP", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -442,7 +442,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("submitSopForReview — transitions DRAFT to UNDER_REVIEW", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -459,7 +459,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("submitSopForReview — rejects non-DRAFT document", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -473,7 +473,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("approveSop — sets APPROVED + approvedAt + effectiveDate", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -497,7 +497,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("reviseSOp — bumps version and logs revision", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -528,7 +528,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("getSopsDueSoon — returns approved SOPs with review dates within window", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();
@@ -545,7 +545,7 @@ describe("QualityComplianceService", () => {
   });
 
   it("getComplianceDashboard — aggregates all sub-dashboards", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
       await import("../quality-compliance.service");
     const svc = new QualityComplianceService();

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { CrmMailboxService } from "../crm-mailbox.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     mailboxConnection: {
       findMany: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock("@unerp/database", () => ({
   decryptField: (v: string) => v.replace(/^enc:/, ""),
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 const TENANT = "tenant-1";

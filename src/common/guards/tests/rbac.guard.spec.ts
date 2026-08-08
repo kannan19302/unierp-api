@@ -16,7 +16,7 @@ import { RbacGuard } from "../rbac.guard";
 // Consequence worth knowing: because permissions ride on the token, a revoked
 // role stays effective until the token is refreshed. Session revocation is
 // handled separately, in JwtAuthGuard.
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const mocked = {
     prisma: { userRole: { findMany: vi.fn() } },
     runWithTenantSession: vi.fn((_session: unknown, fn: () => unknown) => fn()),

@@ -3,7 +3,7 @@ import { AiCopilotService } from "../ai-copilot.service";
 import { AiService } from "../ai.service";
 import { ReportingEngineService } from "../../reporting/reporting-engine.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     $queryRaw: vi.fn().mockResolvedValue([]),
     invoice: { findFirst: vi.fn().mockResolvedValue(null) },

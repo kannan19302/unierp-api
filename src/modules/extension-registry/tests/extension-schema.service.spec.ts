@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { prisma, runWithTenantSession } from "@unerp/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { ExtensionSchemaService } from "../extension-schema.service";
-import { extensionTableName } from "@unerp/extension-api";
+import { extensionTableName } from "@kannan19302/extension-api";
 
 /**
  * The same database, reached as the `NOBYPASSRLS` application role.

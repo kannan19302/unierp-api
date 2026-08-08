@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 /**

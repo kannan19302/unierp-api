@@ -1,7 +1,7 @@
 import { BuilderAdvancedFormsService } from "../services/builder-advanced-forms.service";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     advancedForm: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -40,7 +40,7 @@ describe("BuilderAdvancedFormsService", () => {
   });
 
   it("createConditionalForm succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue(null);
     const result = await service.createConditionalForm("t1", {
       name: "Form",
@@ -50,7 +50,7 @@ describe("BuilderAdvancedFormsService", () => {
   });
 
   it("createConditionalForm rejects duplicate slug", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({ id: "form-1" });
     await expect(
       service.createConditionalForm("t1", { slug: "dup" }),
@@ -58,7 +58,7 @@ describe("BuilderAdvancedFormsService", () => {
   });
 
   it("updateAdvancedForm updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({ id: "form-1" });
     const result = await service.updateAdvancedForm("t1", "form-1", {
       name: "U",
@@ -67,14 +67,14 @@ describe("BuilderAdvancedFormsService", () => {
   });
 
   it("deleteAdvancedForm deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({ id: "form-1" });
     const result = await service.deleteAdvancedForm("t1", "form-1");
     expect(result).toBeDefined();
   });
 
   it("addCalculatedField adds field", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({
       id: "form-1",
       calculatedFields: [],
@@ -87,7 +87,7 @@ describe("BuilderAdvancedFormsService", () => {
   });
 
   it("addFormPage adds page", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({
       id: "form-1",
       pages: [],
@@ -99,14 +99,14 @@ describe("BuilderAdvancedFormsService", () => {
   });
 
   it("getFormAnalytics returns analytics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({ id: "form-1" });
     const result = await service.getFormAnalytics("t1", "form-1");
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("createFormVersion creates version", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({
       id: "form-1",
       version: 1,
@@ -120,14 +120,14 @@ describe("BuilderAdvancedFormsService", () => {
   });
 
   it("getFormVersions returns versions", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({ id: "form-1" });
     const result = await service.getFormVersions("t1", "form-1");
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("previewForm returns form", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({ id: "form-1" });
     const result = await service.previewForm("t1", "form-1");
     expect(result).toBeDefined();

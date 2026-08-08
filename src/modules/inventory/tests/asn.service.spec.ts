@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     advanceShippingNotice: {
       count: vi.fn(),
@@ -41,7 +41,7 @@ describe("AsnService", () => {
   });
 
   it("createAsn — auto-numbers ASN-000001", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.count).mockResolvedValue(0);
     vi.mocked(prisma.advanceShippingNotice.create).mockResolvedValue({
       id: asnId,
@@ -61,7 +61,7 @@ describe("AsnService", () => {
   });
 
   it("addLineItem — zero qty throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "PENDING",
@@ -72,7 +72,7 @@ describe("AsnService", () => {
   });
 
   it("addLineItem — throws on RECEIVED ASN", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "RECEIVED",
@@ -83,7 +83,7 @@ describe("AsnService", () => {
   });
 
   it("markInTransit — PENDING→IN_TRANSIT", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "PENDING",
@@ -102,7 +102,7 @@ describe("AsnService", () => {
   });
 
   it("markInTransit — non-PENDING throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "IN_TRANSIT",
@@ -113,7 +113,7 @@ describe("AsnService", () => {
   });
 
   it("receiveLineItem — auto-creates SHORTAGE discrepancy", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "ARRIVED",
@@ -145,7 +145,7 @@ describe("AsnService", () => {
   });
 
   it("receiveLineItem — auto-creates OVERAGE discrepancy", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "RECEIVING",
@@ -174,7 +174,7 @@ describe("AsnService", () => {
   });
 
   it("receiveLineItem — exact qty, no discrepancy created", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "RECEIVING",
@@ -195,7 +195,7 @@ describe("AsnService", () => {
   });
 
   it("finalizeReceiving — all received → RECEIVED status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "RECEIVING",
@@ -218,7 +218,7 @@ describe("AsnService", () => {
   });
 
   it("finalizeReceiving — partial received → PARTIALLY_RECEIVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "RECEIVING",
@@ -240,7 +240,7 @@ describe("AsnService", () => {
   });
 
   it("cancelAsn — RECEIVED throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: asnId,
       status: "RECEIVED",
@@ -251,7 +251,7 @@ describe("AsnService", () => {
   });
 
   it("resolveDiscrepancy — already resolved throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.asnDiscrepancy.findFirst).mockResolvedValue({
       id: "d1",
       resolvedAt: new Date(),
@@ -262,7 +262,7 @@ describe("AsnService", () => {
   });
 
   it("getDashboard — returns aggregates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.advanceShippingNotice.groupBy).mockResolvedValue([
       { status: "PENDING", _count: { id: 3 } },
     ] as never);

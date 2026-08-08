@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { SandboxRunner, type HostCapabilities } from "@unerp/sandbox";
+import { SandboxRunner, type HostCapabilities } from "@kannan19302/sandbox";
 
 export interface ScriptResult {
   success: boolean;

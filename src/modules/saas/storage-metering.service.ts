@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import { TRACKED_MODELS, ownerForModel } from "../../common/app-data-ownership";

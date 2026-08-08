@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Param, Body } from "@nestjs/common";
 import { ProcurementService } from "./procurement.service";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
-import { submitPublicBidSchema, SubmitPublicBidInput } from "@unerp/shared";
+import { submitPublicBidSchema, SubmitPublicBidInput } from "@kannan19302/shared";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
 

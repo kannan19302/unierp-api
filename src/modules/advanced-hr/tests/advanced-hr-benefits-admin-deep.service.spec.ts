@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     advancedHrBenefitsPlanDeep: { findMany: vi.fn(), create: vi.fn() },
     advancedHrBenefitsEnrollment: { create: vi.fn() },
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { AdvancedHrBenefitsAdminDeepService } from "../advanced-hr-benefits-admin-deep.service";
 

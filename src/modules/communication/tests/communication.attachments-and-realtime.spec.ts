@@ -1,9 +1,9 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationService } from "../communication.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -57,7 +57,7 @@ describe("CommunicationService — real file attachments (US-A1/US-A2)", () => {
     }) as Express.Multer.File;
 
   it("rejects upload if the channel does not belong to the caller tenant (tenant isolation)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue(null as never);
 
     await expect(
@@ -70,7 +70,7 @@ describe("CommunicationService — real file attachments (US-A1/US-A2)", () => {
   });
 
   it("rejects a missing file", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -83,7 +83,7 @@ describe("CommunicationService — real file attachments (US-A1/US-A2)", () => {
   });
 
   it("rejects a file over the size cap before ever calling Drive", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -97,7 +97,7 @@ describe("CommunicationService — real file attachments (US-A1/US-A2)", () => {
   });
 
   it("stores the file via Drive service and returns a durable documentId + download URL, not a blob URL", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -152,7 +152,7 @@ describe("CommunicationService — WebSocket gateway wiring (US-A3/US-A4/US-A5)"
   });
 
   it("broadcasts the persisted message (real id/createdAt) into the channel room after createMessage", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -196,7 +196,7 @@ describe("CommunicationService — WebSocket gateway wiring (US-A3/US-A4/US-A5)"
   });
 
   it("does not broadcast when message creation fails validation (empty message)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -209,7 +209,7 @@ describe("CommunicationService — WebSocket gateway wiring (US-A3/US-A4/US-A5)"
   });
 
   it("broadcasts a presence update via the gateway when setPresence is called", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(idpPrisma.userPresence.upsert).mockResolvedValue({
       tenantId: "t1",
       userId: "u1",
@@ -245,7 +245,7 @@ describe("CommunicationService — getMessageReadReceipts (US-B4)", () => {
   });
 
   it("rejects if message not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.message.findFirst).mockResolvedValue(null as never);
 
     await expect(svc.getMessageReadReceipts("t1", "m1", "u1")).rejects.toThrow(
@@ -254,7 +254,7 @@ describe("CommunicationService — getMessageReadReceipts (US-B4)", () => {
   });
 
   it("rejects if caller is not a member of the channel", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.message.findFirst).mockResolvedValue({
       id: "m1",
       channelId: "c1",
@@ -267,7 +267,7 @@ describe("CommunicationService — getMessageReadReceipts (US-B4)", () => {
   });
 
   it("returns read receipts for small groups showing who read the message", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const msgCreatedAt = new Date("2026-07-02T10:00:00Z");
     vi.mocked(prisma.message.findFirst).mockResolvedValue({
       id: "m1",
@@ -306,7 +306,7 @@ describe("CommunicationService — getMessageReadReceipts (US-B4)", () => {
   });
 
   it("returns empty array if channel has more than 8 members (budgeting constraints)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.message.findFirst).mockResolvedValue({
       id: "m1",
       channelId: "c1",

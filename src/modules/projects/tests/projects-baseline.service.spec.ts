@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ProjectsBaselineService } from "../services/projects-baseline.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     project: { findFirst: vi.fn() },
     evmBaseline: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
@@ -15,7 +15,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("ProjectsBaselineService", () => {

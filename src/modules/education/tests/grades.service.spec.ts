@@ -19,7 +19,7 @@ const mockPrisma = vi.hoisted(() => ({
   grade: { findMany: vi.fn(), create: vi.fn() },
 }));
 
-vi.mock("@unerp/database", () => ({ prisma: mockPrisma }));
+vi.mock("@kannan19302/database", () => ({ prisma: mockPrisma }));
 
 describe("EducationGradesService", () => {
   let svc: EducationGradesService;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationKnowledgeService } from "../services/communication-knowledge.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     knowledgeArticleRating: {
       findUnique: vi.fn().mockResolvedValue(null),
@@ -57,7 +57,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("returns paginated articles", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticle.findMany).mockResolvedValue([
       { id: "a1", category: null, ratings: [] },
     ] as never);
@@ -68,7 +68,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("throws on missing article", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticle.findFirst).mockResolvedValue(
       null as never,
     );
@@ -78,7 +78,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("creates an article with initial version", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticle.create).mockResolvedValue({
       id: "a1",
       title: "How-to",
@@ -96,7 +96,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("publishes an article", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticle.findFirst).mockResolvedValue({
       id: "a1",
       tenantId: "t1",
@@ -110,7 +110,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("deletes an article", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticle.findFirst).mockResolvedValue({
       id: "a1",
       tenantId: "t1",
@@ -123,7 +123,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("searches articles", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticle.findMany).mockResolvedValue([
       { id: "a1", title: "Test", category: null, ratings: [] },
     ] as never);
@@ -133,7 +133,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("returns article versions", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticleVersion.findMany).mockResolvedValue([
       { version: 1, title: "v1" },
     ] as never);
@@ -142,7 +142,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("rates an article and updates average", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticle.findFirst).mockResolvedValue({
       id: "a1",
       tenantId: "t1",
@@ -162,7 +162,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("creates a category", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeCategory.create).mockResolvedValue({
       id: "cat1",
       name: "Guides",
@@ -172,7 +172,7 @@ describe("CommunicationKnowledgeService", () => {
   });
 
   it("returns knowledge dashboard stats", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.knowledgeArticle.count).mockResolvedValue(10);
     vi.mocked(prisma.knowledgeCategory.count).mockResolvedValue(3);
     vi.mocked(prisma.knowledgeArticle.findMany).mockResolvedValue([] as never);

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AnalyticsDeepService } from "../analytics-deep.service";
 import { NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     analyticsKpiDefinition: {
       findMany: vi.fn(),
@@ -54,7 +54,7 @@ describe("AnalyticsDeepService", () => {
 
   beforeEach(async () => {
     service = new AnalyticsDeepService();
-    prisma = (await import("@unerp/database")).prisma;
+    prisma = (await import("@kannan19302/database")).prisma;
     vi.clearAllMocks();
   });
 

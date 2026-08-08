@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { StockTakeService } from "../stock-take.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     stockTake: {
       findMany: vi.fn(),
@@ -106,7 +106,7 @@ describe("StockTakeService", () => {
 
   describe("listStockTakes", () => {
     it("returns stock takes for tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findMany).mockResolvedValue([
         mockSt(),
       ] as never);
@@ -115,7 +115,7 @@ describe("StockTakeService", () => {
     });
 
     it("filters by status", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findMany).mockResolvedValue([] as never);
       await svc.listStockTakes(TENANT, undefined, "POSTED");
       expect(prisma.stockTake.findMany).toHaveBeenCalledWith(
@@ -128,7 +128,7 @@ describe("StockTakeService", () => {
 
   describe("getStockTake", () => {
     it("returns stock take when found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt() as never,
       );
@@ -137,7 +137,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws NotFoundException when not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(null as never);
       await expect(svc.getStockTake(TENANT, "bad")).rejects.toThrow(
         NotFoundException,
@@ -147,7 +147,7 @@ describe("StockTakeService", () => {
 
   describe("createStockTake", () => {
     it("creates with auto-number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.stockTake.create).mockResolvedValue(mockSt() as never);
       await svc.createStockTake(TENANT, USER, {
@@ -164,7 +164,7 @@ describe("StockTakeService", () => {
 
   describe("startStockTake", () => {
     it("starts a DRAFT stock take with sheets", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ sheets: [mockSheet()] }) as never,
       );
@@ -176,7 +176,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if no sheets", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ sheets: [] }) as never,
       );
@@ -186,7 +186,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if not DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ status: "POSTED" }) as never,
       );
@@ -198,7 +198,7 @@ describe("StockTakeService", () => {
 
   describe("cancelStockTake", () => {
     it("cancels non-terminal stock take", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ sheets: [] }) as never,
       );
@@ -210,7 +210,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if already posted", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ status: "POSTED", sheets: [] }) as never,
       );
@@ -222,7 +222,7 @@ describe("StockTakeService", () => {
 
   describe("createCountSheet", () => {
     it("creates a sheet with auto-number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ sheets: [] }) as never,
       );
@@ -240,7 +240,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if stock take is not DRAFT or IN_PROGRESS", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ status: "POSTED", sheets: [] }) as never,
       );
@@ -252,7 +252,7 @@ describe("StockTakeService", () => {
 
   describe("approveVariance", () => {
     it("approves a PENDING variance", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTakeVariance.findFirst).mockResolvedValue(
         mockVariance() as never,
       );
@@ -264,7 +264,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if not PENDING", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTakeVariance.findFirst).mockResolvedValue(
         mockVariance({ status: "APPROVED" }) as never,
       );
@@ -274,7 +274,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTakeVariance.findFirst).mockResolvedValue(
         null as never,
       );
@@ -286,7 +286,7 @@ describe("StockTakeService", () => {
 
   describe("rejectVariance", () => {
     it("rejects a PENDING variance", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTakeVariance.findFirst).mockResolvedValue(
         mockVariance() as never,
       );
@@ -304,7 +304,7 @@ describe("StockTakeService", () => {
 
   describe("approveStockTake", () => {
     it("approves when no pending variances remain", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ status: "VARIANCE_REVIEW", sheets: [] }) as never,
       );
@@ -317,7 +317,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if pending variances remain", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ status: "VARIANCE_REVIEW", sheets: [] }) as never,
       );
@@ -328,7 +328,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if not VARIANCE_REVIEW", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ status: "DRAFT", sheets: [] }) as never,
       );
@@ -340,7 +340,7 @@ describe("StockTakeService", () => {
 
   describe("postStockTake", () => {
     it("posts an APPROVED stock take", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ status: "APPROVED", sheets: [] }) as never,
       );
@@ -358,7 +358,7 @@ describe("StockTakeService", () => {
     });
 
     it("throws if not APPROVED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ status: "DRAFT", sheets: [] }) as never,
       );
@@ -370,7 +370,7 @@ describe("StockTakeService", () => {
 
   describe("getDashboard", () => {
     it("returns all status counts and variance metrics", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.count).mockResolvedValue(10 as never);
       vi.mocked(prisma.stockTakeVariance.count).mockResolvedValue(5 as never);
       const result = await svc.getDashboard(TENANT);
@@ -381,7 +381,7 @@ describe("StockTakeService", () => {
 
   describe("listVariances", () => {
     it("returns variances for a stock take", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findFirst).mockResolvedValue(
         mockSt({ sheets: [] }) as never,
       );
@@ -395,7 +395,7 @@ describe("StockTakeService", () => {
 
   describe("getAccuracyReport", () => {
     it("returns accuracy metrics for posted stock takes", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockTake.findMany).mockResolvedValue([
         mockSt({
           status: "POSTED",

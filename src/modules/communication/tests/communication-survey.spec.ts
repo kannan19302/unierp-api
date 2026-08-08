@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationSurveyService } from "../services/communication-survey.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     commSurvey: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -46,7 +46,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("returns paginated surveys", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurvey.findMany).mockResolvedValue([
       { id: "s1", _count: { questions: 3, responses: 5 } },
     ] as never);
@@ -57,7 +57,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("throws on missing survey", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurvey.findFirst).mockResolvedValue(null as never);
     await expect(svc.getSurvey("t1", "bad")).rejects.toThrow(
       "Survey not found",
@@ -65,7 +65,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("creates a survey", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurvey.create).mockResolvedValue({
       id: "s1",
       title: "Feedback",
@@ -78,7 +78,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("publishes a survey", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurvey.findFirst).mockResolvedValue({
       id: "s1",
       tenantId: "t1",
@@ -96,7 +96,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("deletes a survey", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurvey.findFirst).mockResolvedValue({
       id: "s1",
       tenantId: "t1",
@@ -109,7 +109,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("adds a question to a survey", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurvey.findFirst).mockResolvedValue({
       id: "s1",
       tenantId: "t1",
@@ -128,7 +128,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("collects a survey response", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurvey.findFirst).mockResolvedValue({
       id: "s1",
       tenantId: "t1",
@@ -148,7 +148,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("analyzes survey results", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurvey.findFirst).mockResolvedValue({
       id: "s1",
       tenantId: "t1",
@@ -170,7 +170,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("returns survey templates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurveyTemplate.findMany).mockResolvedValue([
       { id: "t1", title: "NPS Template" },
     ] as never);
@@ -179,7 +179,7 @@ describe("CommunicationSurveyService", () => {
   });
 
   it("creates a survey template", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.commSurveyTemplate.create).mockResolvedValue({
       id: "t1",
       title: "Feedback",

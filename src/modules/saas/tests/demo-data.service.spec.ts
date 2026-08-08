@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   executeRaw: vi.fn().mockResolvedValue(1),
 }));
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const prisma = {
     tenant: { findUnique: mocks.tenantFindUnique, update: mocks.tenantUpdate },
     organization: { findFirst: mocks.orgFindFirst },

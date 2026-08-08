@@ -24,7 +24,7 @@ import { ExportV2Controller } from "./controllers/export-v2.controller";
 import { TenantGuard } from "./guards/tenant.guard";
 import { TenantPlanService } from "./guards/tenant-plan.service";
 
-import { PrismaService } from "@unerp/database";
+import { PrismaService } from "@kannan19302/database";
 import { AppSettingsService } from "./settings/settings.service";
 
 @Global()

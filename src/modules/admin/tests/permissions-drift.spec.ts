@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join } from "path";
-import { PERMISSION_REGISTRY } from "@unerp/shared";
+import { PERMISSION_REGISTRY } from "@kannan19302/shared";
 
 /**
  * Project-wide RBAC permission drift check & stacked decorators guard.

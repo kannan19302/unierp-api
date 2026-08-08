@@ -1,10 +1,10 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationService } from "../communication.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -83,7 +83,7 @@ describe("CommunicationService (Connect)", () => {
   });
 
   it("builds a directory merging users with presence", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(idpPrisma.user.findMany).mockResolvedValue([
       {
         id: "u1",
@@ -106,7 +106,7 @@ describe("CommunicationService (Connect)", () => {
   });
 
   it("serializes messages with grouped reactions and deleted tombstones", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -157,7 +157,7 @@ describe("CommunicationService (Connect)", () => {
   });
 
   it("adds a reaction when none exists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.message.findFirst).mockResolvedValue({
       id: "m1",
       tenantId: "t1",
@@ -175,7 +175,7 @@ describe("CommunicationService (Connect)", () => {
   });
 
   it("upserts presence", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(idpPrisma.userPresence.upsert).mockResolvedValue({
       userId: "u1",
       presence: "AWAY",
@@ -187,7 +187,7 @@ describe("CommunicationService (Connect)", () => {
   });
 
   it("creates a meeting and posts a system message into the conversation", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectMeeting.create).mockResolvedValue({
       id: "meet1",
       code: "aaaa-bbbb-cccc",
@@ -208,7 +208,7 @@ describe("CommunicationService (Connect)", () => {
   });
 
   it("upserts read state when marking a conversation read", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelRead.upsert).mockResolvedValue({} as never);
 
     const res = await svc.markRead("t1", "c1", "u1");
@@ -217,7 +217,7 @@ describe("CommunicationService (Connect)", () => {
   });
 
   it("creates mention notifications when sending a message with @names", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -266,7 +266,7 @@ describe("CommunicationService (Connect)", () => {
   });
 
   it("fetches notifications", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.notification.findMany).mockResolvedValue([
       { id: "n1", title: "Alert" },
     ] as never);

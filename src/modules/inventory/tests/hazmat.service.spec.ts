@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { HazmatService } from "../hazmat.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     hazmatClassification: {
       findMany: vi.fn(),
@@ -119,7 +119,7 @@ describe("HazmatService", () => {
 
   describe("listClassifications", () => {
     it("returns classifications for tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findMany).mockResolvedValue([
         mkClass(),
       ] as never);
@@ -128,7 +128,7 @@ describe("HazmatService", () => {
     });
 
     it("filters by productId", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findMany).mockResolvedValue(
         [] as never,
       );
@@ -143,7 +143,7 @@ describe("HazmatService", () => {
 
   describe("getClassification", () => {
     it("returns classification when found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findFirst).mockResolvedValue(
         mkClass() as never,
       );
@@ -152,7 +152,7 @@ describe("HazmatService", () => {
     });
 
     it("throws NotFoundException when not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findFirst).mockResolvedValue(
         null as never,
       );
@@ -164,7 +164,7 @@ describe("HazmatService", () => {
 
   describe("createClassification", () => {
     it("creates classification with auto-number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findFirst).mockResolvedValue(
         null as never,
       );
@@ -182,7 +182,7 @@ describe("HazmatService", () => {
     });
 
     it("throws if classification already exists for product+regulation", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findFirst).mockResolvedValue(
         mkClass() as never,
       );
@@ -200,7 +200,7 @@ describe("HazmatService", () => {
 
   describe("deleteClassification", () => {
     it("deletes when no manifest references", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findFirst).mockResolvedValue(
         mkClass() as never,
       );
@@ -213,7 +213,7 @@ describe("HazmatService", () => {
     });
 
     it("throws when manifest lines reference the classification", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findFirst).mockResolvedValue(
         mkClass() as never,
       );
@@ -226,7 +226,7 @@ describe("HazmatService", () => {
 
   describe("listSds", () => {
     it("returns SDS records", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.safetyDataSheet.findMany).mockResolvedValue([
         mkSds(),
       ] as never);
@@ -237,7 +237,7 @@ describe("HazmatService", () => {
 
   describe("createSds", () => {
     it("creates SDS with auto-number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.safetyDataSheet.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.hazmatClassification.findFirst).mockResolvedValue(
         mkClass() as never,
@@ -260,7 +260,7 @@ describe("HazmatService", () => {
     });
 
     it("throws if classification not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.safetyDataSheet.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.hazmatClassification.findFirst).mockResolvedValue(
         null as never,
@@ -279,7 +279,7 @@ describe("HazmatService", () => {
 
   describe("acknowledgeSds", () => {
     it("acknowledges an unacknowledged SDS", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.safetyDataSheet.findFirst).mockResolvedValue(
         mkSds() as never,
       );
@@ -291,7 +291,7 @@ describe("HazmatService", () => {
     });
 
     it("throws if already acknowledged", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.safetyDataSheet.findFirst).mockResolvedValue(
         mkSds({ acknowledgedBy: "someone" }) as never,
       );
@@ -303,7 +303,7 @@ describe("HazmatService", () => {
 
   describe("getExpiringSds", () => {
     it("returns SDS expiring within window", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.safetyDataSheet.findMany).mockResolvedValue([
         mkSds(),
       ] as never);
@@ -314,7 +314,7 @@ describe("HazmatService", () => {
 
   describe("upsertStorageRule", () => {
     it("creates or updates a storage compatibility rule", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatStorageRule.upsert).mockResolvedValue({
         id: "rule1",
         tenantId: TENANT,
@@ -336,7 +336,7 @@ describe("HazmatService", () => {
 
   describe("checkCompatibility", () => {
     it("returns rule when found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatStorageRule.findFirst).mockResolvedValue({
         result: "INCOMPATIBLE",
         condition: null,
@@ -350,7 +350,7 @@ describe("HazmatService", () => {
     });
 
     it("returns COMPATIBLE when no rule defined", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatStorageRule.findFirst).mockResolvedValue(
         null as never,
       );
@@ -365,7 +365,7 @@ describe("HazmatService", () => {
 
   describe("createManifest", () => {
     it("creates manifest with auto-number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.hazmatManifest.create).mockResolvedValue(
         mkManifest() as never,
@@ -385,7 +385,7 @@ describe("HazmatService", () => {
 
   describe("submitManifest", () => {
     it("submits a DRAFT manifest with lines", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.findFirst).mockResolvedValue(
         mkManifest({ lines: [{ id: "l1" }] }) as never,
       );
@@ -397,7 +397,7 @@ describe("HazmatService", () => {
     });
 
     it("throws if manifest has no lines", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.findFirst).mockResolvedValue(
         mkManifest({ lines: [] }) as never,
       );
@@ -407,7 +407,7 @@ describe("HazmatService", () => {
     });
 
     it("throws if not DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.findFirst).mockResolvedValue(
         mkManifest({ status: "DELIVERED", lines: [{ id: "l1" }] }) as never,
       );
@@ -419,7 +419,7 @@ describe("HazmatService", () => {
 
   describe("manifest lifecycle", () => {
     it("acknowledges SUBMITTED manifest", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.findFirst).mockResolvedValue(
         mkManifest({ status: "SUBMITTED", lines: [] }) as never,
       );
@@ -431,7 +431,7 @@ describe("HazmatService", () => {
     });
 
     it("marks ACKNOWLEDGED manifest as IN_TRANSIT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.findFirst).mockResolvedValue(
         mkManifest({ status: "ACKNOWLEDGED", lines: [] }) as never,
       );
@@ -443,7 +443,7 @@ describe("HazmatService", () => {
     });
 
     it("delivers IN_TRANSIT manifest", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.findFirst).mockResolvedValue(
         mkManifest({ status: "IN_TRANSIT", lines: [] }) as never,
       );
@@ -455,7 +455,7 @@ describe("HazmatService", () => {
     });
 
     it("cancels a DRAFT manifest", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.findFirst).mockResolvedValue(
         mkManifest({ lines: [] }) as never,
       );
@@ -467,7 +467,7 @@ describe("HazmatService", () => {
     });
 
     it("throws on cancel of DELIVERED manifest", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatManifest.findFirst).mockResolvedValue(
         mkManifest({ status: "DELIVERED", lines: [] }) as never,
       );
@@ -479,7 +479,7 @@ describe("HazmatService", () => {
 
   describe("createIncident", () => {
     it("creates incident with auto-number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatIncident.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.hazmatIncident.create).mockResolvedValue(
         mkIncident() as never,
@@ -500,7 +500,7 @@ describe("HazmatService", () => {
 
   describe("closeIncident", () => {
     it("closes an open incident", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatIncident.findFirst).mockResolvedValue(
         mkIncident() as never,
       );
@@ -512,7 +512,7 @@ describe("HazmatService", () => {
     });
 
     it("throws if already closed", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatIncident.findFirst).mockResolvedValue(
         mkIncident({ closedAt: new Date() }) as never,
       );
@@ -524,7 +524,7 @@ describe("HazmatService", () => {
 
   describe("getDashboard", () => {
     it("returns aggregated counts", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.count).mockResolvedValue(
         5 as never,
       );
@@ -538,7 +538,7 @@ describe("HazmatService", () => {
 
   describe("getComplianceReport", () => {
     it("marks product compliant when current SDS is acknowledged", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findMany).mockResolvedValue([
         mkClass({ sdsRecords: [{ ...mkSds(), acknowledgedBy: USER }] }),
       ] as never);
@@ -547,7 +547,7 @@ describe("HazmatService", () => {
     });
 
     it("marks product non-compliant when SDS is unacknowledged", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.hazmatClassification.findMany).mockResolvedValue([
         mkClass({ sdsRecords: [mkSds()] }),
       ] as never);

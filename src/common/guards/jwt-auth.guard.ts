@@ -4,9 +4,9 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from "@nestjs/common";
-import { verifyTypedToken, TOKEN_TYPE } from "@unerp/auth";
+import { verifyTypedToken, TOKEN_TYPE } from "@kannan19302/auth";
 import { idpClient } from "../idp-client";
-import { runWithTenantSession } from "@unerp/database";
+import { runWithTenantSession } from "@kannan19302/database";
 
 const AUTH_COOKIE = "auth_token";
 

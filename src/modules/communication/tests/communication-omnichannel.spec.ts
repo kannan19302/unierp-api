@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationOmnichannelService } from "../services/communication-omnichannel.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     omnichannelConversation: {
       findMany: vi.fn(),
@@ -30,7 +30,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("returns paginated unified inbox", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.omnichannelConversation.findMany).mockResolvedValue([
       { id: "c1", messages: [] },
     ] as never);
@@ -42,7 +42,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("throws on missing conversation", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.omnichannelConversation.findFirst).mockResolvedValue(
       null as never,
     );
@@ -52,7 +52,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("sends a message and updates lastMessageAt", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.omnichannelConversation.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -76,7 +76,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("assigns a conversation", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.omnichannelConversation.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -90,7 +90,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("closes a conversation", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.omnichannelConversation.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -104,7 +104,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("merges tags on smart tag", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.omnichannelConversation.findFirst).mockResolvedValue({
       id: "c1",
       tags: ["bug"],
@@ -122,7 +122,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("auto-routes using the highest-priority matching rule", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.omnichannelConversation.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -149,7 +149,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("returns integrations", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelIntegration.findMany).mockResolvedValue([
       { id: "i1", platform: "slack" },
     ] as never);
@@ -158,7 +158,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("returns routing rules sorted by priority", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.routingRule.findMany).mockResolvedValue([
       { id: "r1", priority: 1 },
     ] as never);
@@ -167,7 +167,7 @@ describe("CommunicationOmnichannelService", () => {
   });
 
   it("returns omnichannel dashboard metrics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.omnichannelConversation.count).mockResolvedValue(5);
     vi.mocked(prisma.conversationMessage.count).mockResolvedValue(100);
     vi.mocked(prisma.omnichannelConversation.groupBy).mockResolvedValue([

@@ -3,12 +3,12 @@ import {
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import type {
   CreateBuilderFormInput,
   UpdateBuilderFormInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 
 // Some historical rows have `fields` double-encoded (a JSON string stored
 // inside the Json column instead of the array itself) — normalise on the way

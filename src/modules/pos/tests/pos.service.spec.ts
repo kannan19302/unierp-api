@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PosService } from "../pos.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       pOSTerminal: {
@@ -28,7 +28,7 @@ vi.mock("@unerp/database", () => {
       organization: {
         findFirst: vi.fn(),
       },
-      $transaction: vi.fn((cb) => cb(require("@unerp/database").prisma)),
+      $transaction: vi.fn((cb) => cb(require("@kannan19302/database").prisma)),
     },
   };
 });
@@ -42,7 +42,7 @@ describe("PosService", () => {
   });
 
   it("should fetch terminals", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockTerminals = [
       { id: "t-1", name: "Main Terminal", code: "TERM-01" },
     ];
@@ -56,7 +56,7 @@ describe("PosService", () => {
   });
 
   it("should fetch register sessions", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockRegisters = [{ id: "reg-1", status: "OPEN", startingCash: 250 }];
     vi.mocked(prisma.pOSRegister.findMany).mockResolvedValue(
       mockRegisters as never,

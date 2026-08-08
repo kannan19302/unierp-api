@@ -49,7 +49,7 @@ const mockDispatcher = vi.hoisted(() => ({
   updatedAt: new Date(),
 }));
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -113,7 +113,7 @@ describe("OutboxDeepService", () => {
   });
 
   it("should throw on missing DLQ entry", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.outboxDLQ.findFirst as any).mockResolvedValueOnce(null);
     await expect(service.getDlqEntry("t1", "bad")).rejects.toThrow(
       NotFoundException,
@@ -202,7 +202,7 @@ describe("OutboxDeepService", () => {
   });
 
   it("should detect poison messages", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.outboxDelivery.findMany as any).mockResolvedValueOnce([]);
     const result = await service.detectPoisonMessages("t1");
     expect(result.poisonCount).toBe(0);

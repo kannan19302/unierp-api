@@ -7,7 +7,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { prisma, runWithTenantSession } from "@unerp/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { BundleStoreService } from "./bundle-store.service";
 import { AppProvisioningService } from "./app-provisioning.service";
@@ -16,7 +16,7 @@ import { validateManifest } from "./manifest";
 import { isUninstallable } from "../../common/module-tiers";
 import { KERNEL_SLUGS } from "../../common/app-slug-map";
 import { ExtensionGatewayClient } from "../../common/integrations/extension-gateway-client";
-import { satisfiesMinCoreVersion, compareSemver } from "@unerp/service-kit";
+import { satisfiesMinCoreVersion, compareSemver } from "@kannan19302/service-kit";
 
 /** Core platform version for bundle minCoreVersion checks (#7). */
 const CORE_VERSION = process.env.CORE_VERSION || "2.0.0";

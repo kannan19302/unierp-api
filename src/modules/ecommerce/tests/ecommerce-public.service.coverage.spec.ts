@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { EcommercePublicService } from "../ecommerce-public.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       storefrontConfig: { findUnique: vi.fn() },
@@ -29,7 +29,7 @@ describe("EcommercePublicService", () => {
 
   describe("getPublicConfig", () => {
     it("404s when the storefront is disabled, even if a config row exists", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.storefrontConfig.findUnique).mockResolvedValue({
         tenantId: "t1",
         isEnabled: false,
@@ -41,7 +41,7 @@ describe("EcommercePublicService", () => {
     });
 
     it("never leaks internal fields like id in the public response", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.storefrontConfig.findUnique).mockResolvedValue({
         id: "internal-cfg-id",
         tenantId: "t1",
@@ -62,7 +62,7 @@ describe("EcommercePublicService", () => {
 
   describe("tenant isolation", () => {
     it("scopes getProducts strictly by the resolved tenantId — a second tenant never sees the first tenant's listings", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.productListing.findMany).mockResolvedValue([]);
       vi.mocked(prisma.productListing.count).mockResolvedValue(0);
 
@@ -79,7 +79,7 @@ describe("EcommercePublicService", () => {
     });
 
     it("404s a cart lookup across tenants — tenant-a cannot read tenant-b's cart via sessionToken alone", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.cart.findFirst).mockResolvedValue(null);
 
       await expect(
@@ -98,7 +98,7 @@ describe("EcommercePublicService", () => {
 
   describe("cart", () => {
     it("rejects adding an item for a listing that is not published", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.cart.findFirst).mockResolvedValue({
         id: "cart-1",
         tenantId: "t1",
@@ -116,7 +116,7 @@ describe("EcommercePublicService", () => {
     });
 
     it("rejects modifying a cart that is not ACTIVE", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.cart.findFirst).mockResolvedValue({
         id: "cart-1",
         tenantId: "t1",
@@ -133,7 +133,7 @@ describe("EcommercePublicService", () => {
     });
 
     it("snapshots the effective price (priceOverride wins over Product.sellPrice) when adding an item", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.cart.findFirst)
         .mockResolvedValueOnce({
           id: "cart-1",
@@ -172,7 +172,7 @@ describe("EcommercePublicService", () => {
     });
 
     it("merges quantity into an existing line instead of duplicating it", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.cart.findFirst)
         .mockResolvedValueOnce({
           id: "cart-1",

@@ -1,4 +1,4 @@
-import * as database from "@unerp/database";
+import * as database from "@kannan19302/database";
 
 /**
  * The API's view of identity data.
@@ -12,7 +12,7 @@ import * as database from "@unerp/database";
  * silently discarded every write, while typechecking green because of the cast.
  *
  * A real, fully generated Prisma client for the IdP schema already existed at
- * `packages/database/src/idp-client` and is exported from `@unerp/database` as
+ * `packages/database/src/idp-client` and is exported from `@kannan19302/database` as
  * `idpPrisma`. This module now routes to it.
  *
  * Two models need care. `UserPresence` and `UserStatusSchedule` are declared in
@@ -27,7 +27,7 @@ import * as database from "@unerp/database";
  *
  * Delegates are resolved on access rather than bound at module load. Binding
  * eagerly coupled every importer to both clients being constructed at import
- * time, which broke collection in the 33 suites that mock `@unerp/database`
+ * time, which broke collection in the 33 suites that mock `@kannan19302/database`
  * with a partial factory: the named import alone was enough to fail, whether or
  * not the suite touched identity at all. Resolving lazily means a suite only
  * needs `idpPrisma` in its mock if it actually reads identity data — and an

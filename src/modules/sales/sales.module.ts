@@ -8,7 +8,7 @@ import { SalesFulfillmentService } from "./sales-fulfillment.service";
 import { SalesExpansionController } from "./sales-expansion.controller";
 import { SalesOutboxHandler } from "./sales-outbox.handler";
 import { OutboxHandlerRegistry } from "../outbox/outbox-handler.registry";
-import { OutboxService } from "@unerp/shared";
+import { OutboxService } from "@kannan19302/shared";
 import { OutboxModule } from "../outbox/outbox.module";
 
 import { SalesPromotionsService } from "./sales-promotions.service";

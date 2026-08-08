@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import {
@@ -11,7 +11,7 @@ import {
   CreateCommissionRuleInput,
   UpdateCommissionRuleInput,
   CalculateCommissionsInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import { resolveOrgId } from "./crm-shared";
 
 /** Resolves a target's `period` string (e.g. "2026-01", "2026-Q1", "2026") into a closed date range. */

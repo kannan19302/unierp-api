@@ -35,7 +35,7 @@ const { db } = vi.hoisted(() => {
   return { db };
 });
 
-vi.mock("@unerp/database", () => ({ prisma: db }));
+vi.mock("@kannan19302/database", () => ({ prisma: db }));
 
 describe("InventoryService — scan-out serial verification at pick", () => {
   let service: InventoryService;

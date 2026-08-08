@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { LandedCostService } from "../landed-cost.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     landedCostVoucher: {
       findMany: vi.fn(),
@@ -60,7 +60,7 @@ describe("LandedCostService", () => {
 
   describe("listVouchers", () => {
     it("returns vouchers for tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findMany).mockResolvedValue([
         mockVoucher(),
       ] as never);
@@ -72,7 +72,7 @@ describe("LandedCostService", () => {
     });
 
     it("filters by status", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findMany).mockResolvedValue(
         [] as never,
       );
@@ -87,7 +87,7 @@ describe("LandedCostService", () => {
 
   describe("getVoucher", () => {
     it("returns voucher when found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher() as never,
       );
@@ -96,7 +96,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws NotFoundException when not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         null as never,
       );
@@ -108,7 +108,7 @@ describe("LandedCostService", () => {
 
   describe("createVoucher", () => {
     it("creates voucher with generated number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.landedCostVoucher.create).mockResolvedValue(
         mockVoucher() as never,
@@ -124,7 +124,7 @@ describe("LandedCostService", () => {
 
   describe("submitVoucher", () => {
     it("transitions DRAFT to SUBMITTED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ chargeLines: [{ id: "cl1" }] }) as never,
       );
@@ -136,7 +136,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws if no charge lines", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ chargeLines: [] }) as never,
       );
@@ -146,7 +146,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws if not DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ status: "ALLOCATED" }) as never,
       );
@@ -158,7 +158,7 @@ describe("LandedCostService", () => {
 
   describe("cancelVoucher", () => {
     it("cancels SUBMITTED voucher", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ status: "SUBMITTED" }) as never,
       );
@@ -172,7 +172,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws if ALLOCATED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ status: "ALLOCATED" }) as never,
       );
@@ -184,7 +184,7 @@ describe("LandedCostService", () => {
 
   describe("deleteVoucher", () => {
     it("deletes DRAFT voucher", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher() as never,
       );
@@ -196,7 +196,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws if not DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ status: "SUBMITTED" }) as never,
       );
@@ -208,7 +208,7 @@ describe("LandedCostService", () => {
 
   describe("addChargeLine", () => {
     it("adds line to DRAFT voucher and recalcs total", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher() as never,
       );
@@ -231,7 +231,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws if voucher not DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ status: "SUBMITTED" }) as never,
       );
@@ -243,7 +243,7 @@ describe("LandedCostService", () => {
 
   describe("removeChargeLine", () => {
     it("removes charge line from DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher() as never,
       );
@@ -263,7 +263,7 @@ describe("LandedCostService", () => {
 
   describe("linkReceipt", () => {
     it("links a receipt to DRAFT voucher", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher() as never,
       );
@@ -279,7 +279,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws if not DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ status: "SUBMITTED" }) as never,
       );
@@ -295,7 +295,7 @@ describe("LandedCostService", () => {
 
   describe("allocate", () => {
     it("allocates SUBMITTED voucher", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({
           status: "SUBMITTED",
@@ -330,7 +330,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws if not SUBMITTED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ status: "DRAFT" }) as never,
       );
@@ -340,7 +340,7 @@ describe("LandedCostService", () => {
     });
 
     it("throws if no receipt links", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.findFirst).mockResolvedValue(
         mockVoucher({ status: "SUBMITTED", receiptLinks: [] }) as never,
       );
@@ -352,7 +352,7 @@ describe("LandedCostService", () => {
 
   describe("getDashboard", () => {
     it("returns dashboard counts", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostVoucher.count).mockResolvedValue(5 as never);
       vi.mocked(prisma.landedCostVoucher.aggregate).mockResolvedValue({
         _sum: { totalAmount: "12000" },
@@ -365,7 +365,7 @@ describe("LandedCostService", () => {
 
   describe("getAllocationReport", () => {
     it("returns report with charge type breakdown", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.landedCostAllocation.findMany).mockResolvedValue([
         {
           id: "a1",

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AiDeepService } from "../ai-deep.service";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     aiIntentTrainingExample: {
       findMany: vi.fn(),
@@ -47,7 +47,7 @@ describe("AiDeepService", () => {
   });
 
   it("should classify intent from training examples", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiIntentTrainingExample.findMany).mockResolvedValue([
       {
         id: "1",
@@ -77,7 +77,7 @@ describe("AiDeepService", () => {
   });
 
   it("should throw BadRequestException when no training data", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiIntentTrainingExample.findMany).mockResolvedValue([]);
     await expect(
       service.classifyIntent("t1", { text: "test" }),
@@ -85,7 +85,7 @@ describe("AiDeepService", () => {
   });
 
   it("should get intent training data", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiIntentTrainingExample.findMany).mockResolvedValue([
       {
         id: "1",
@@ -105,7 +105,7 @@ describe("AiDeepService", () => {
   });
 
   it("should create intent training data", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiIntentTrainingExample.create).mockResolvedValue({
       id: "new-1",
       intent: "test",
@@ -125,7 +125,7 @@ describe("AiDeepService", () => {
   });
 
   it("should update intent training data", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiIntentTrainingExample.findFirst).mockResolvedValue({
       id: "1",
       tenantId: "t1",
@@ -147,7 +147,7 @@ describe("AiDeepService", () => {
   });
 
   it("should throw NotFoundException when updating nonexistent training data", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiIntentTrainingExample.findFirst).mockResolvedValue(null);
     await expect(
       service.updateIntentTrainingData("t1", "nonexistent", { intent: "x" }),
@@ -155,7 +155,7 @@ describe("AiDeepService", () => {
   });
 
   it("should delete intent training data", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiIntentTrainingExample.findFirst).mockResolvedValue({
       id: "1",
       tenantId: "t1",
@@ -167,7 +167,7 @@ describe("AiDeepService", () => {
   });
 
   it("should get NLU training data (delegates to intent training)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiIntentTrainingExample.findMany).mockResolvedValue([
       {
         id: "nlu1",
@@ -186,7 +186,7 @@ describe("AiDeepService", () => {
   });
 
   it("should get models with metrics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiModel.findMany).mockResolvedValue([
       {
         id: "m1",
@@ -216,7 +216,7 @@ describe("AiDeepService", () => {
   });
 
   it("should record model accuracy metric", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiModel.findFirst).mockResolvedValue({
       id: "m1",
       tenantId: "t1",
@@ -237,7 +237,7 @@ describe("AiDeepService", () => {
   });
 
   it("should get prompts with variables", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiPrompt.findMany).mockResolvedValue([
       {
         id: "p1",
@@ -258,7 +258,7 @@ describe("AiDeepService", () => {
   });
 
   it("should create prompt", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.aiPrompt.create).mockResolvedValue({
       id: "p1",
       name: "Test",

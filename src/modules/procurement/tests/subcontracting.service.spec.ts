@@ -3,7 +3,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { SubcontractingService } from "../subcontracting.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     subcontractingOrder: {
       findMany: vi.fn(),
@@ -18,7 +18,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("SubcontractingService", () => {

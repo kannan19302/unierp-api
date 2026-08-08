@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CostingMethodsService } from "../costing-methods.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     inventoryCostProfile: {
       findMany: vi.fn(),
@@ -37,7 +37,7 @@ describe("CostingMethodsService", () => {
   // ── Profiles ──────────────────────────────────────────────────────────────
 
   it("upsertProfile creates when no existing profile", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryCostProfile.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.inventoryCostProfile.create).mockResolvedValue({
       id: "cp1",
@@ -53,7 +53,7 @@ describe("CostingMethodsService", () => {
   });
 
   it("upsertProfile updates existing profile", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryCostProfile.findUnique).mockResolvedValue({
       id: "cp1",
       method: "WAC",
@@ -75,7 +75,7 @@ describe("CostingMethodsService", () => {
   });
 
   it("getProfile throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryCostProfile.findFirst).mockResolvedValue(null);
     await expect(svc.getProfile(T, "cp-none")).rejects.toThrow(
       NotFoundException,
@@ -85,7 +85,7 @@ describe("CostingMethodsService", () => {
   // ── Cost Layers ───────────────────────────────────────────────────────────
 
   it("addCostLayer creates layer and updates WAC", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryCostProfile.findFirst).mockResolvedValue({
       id: "cp1",
       method: "WAC",
@@ -133,7 +133,7 @@ describe("CostingMethodsService", () => {
   });
 
   it("consumeLayer FIFO deducts from oldest layer first", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryCostProfile.findFirst).mockResolvedValue({
       id: "cp1",
       method: "FIFO",
@@ -152,7 +152,7 @@ describe("CostingMethodsService", () => {
   });
 
   it("consumeLayer throws when insufficient stock", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryCostProfile.findFirst).mockResolvedValue({
       id: "cp1",
       method: "FIFO",
@@ -170,7 +170,7 @@ describe("CostingMethodsService", () => {
   // ── Adjustments ───────────────────────────────────────────────────────────
 
   it("createAdjustment auto-numbers ICA-XXXXXX", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryCostProfile.findFirst).mockResolvedValue({
       id: "cp1",
       currency: "USD",
@@ -197,7 +197,7 @@ describe("CostingMethodsService", () => {
   // ── Dashboard ─────────────────────────────────────────────────────────────
 
   it("getDashboard returns costing method breakdown", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryCostProfile.count)
       .mockResolvedValueOnce(20)
       .mockResolvedValueOnce(8)

@@ -60,7 +60,7 @@ const { db } = vi.hoisted(() => {
   return { db };
 });
 
-vi.mock("@unerp/database", () => ({ prisma: db }));
+vi.mock("@kannan19302/database", () => ({ prisma: db }));
 vi.mock("../../../common/utils/pagination.util", async () => {
   const actual = await vi.importActual<any>(
     "../../../common/utils/pagination.util",

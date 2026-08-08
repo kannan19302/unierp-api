@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationSearchService } from "../services/communication-search.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     helpdeskTicket: { findMany: vi.fn().mockResolvedValue([]) },
     channel: { findMany: vi.fn().mockResolvedValue([]) },
@@ -43,7 +43,7 @@ describe("CommunicationSearchService", () => {
   });
 
   it("performs full-text search across messages", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.message.findMany).mockResolvedValue([
       {
         id: "m1",
@@ -66,7 +66,7 @@ describe("CommunicationSearchService", () => {
   });
 
   it("saves a search query", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.savedSearch.create).mockResolvedValue({
       id: "s1",
       name: "Test Search",
@@ -79,7 +79,7 @@ describe("CommunicationSearchService", () => {
   });
 
   it("lists saved searches", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.savedSearch.findMany).mockResolvedValue([
       { id: "s1", name: "Saved" },
     ] as never);
@@ -88,7 +88,7 @@ describe("CommunicationSearchService", () => {
   });
 
   it("deletes a saved search with ownership check", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.savedSearch.findFirst).mockResolvedValue({
       id: "s1",
       userId: "u1",
@@ -101,7 +101,7 @@ describe("CommunicationSearchService", () => {
   });
 
   it("rejects delete of another user saved search", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.savedSearch.findFirst).mockResolvedValue({
       id: "s1",
       userId: "other",
@@ -112,7 +112,7 @@ describe("CommunicationSearchService", () => {
   });
 
   it("gets search history", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.searchHistory.findMany).mockResolvedValue([
       { query: "test", createdAt: new Date() },
     ] as never);
@@ -121,14 +121,14 @@ describe("CommunicationSearchService", () => {
   });
 
   it("returns search analytics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.searchHistory.findMany).mockResolvedValue([] as never);
     const res = await svc.getSearchAnalytics("t1");
     expect(res.totalSearches).toBe(0);
   });
 
   it("lists synonyms", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.synonymDictionary.findMany).mockResolvedValue([
       { term: "bug", synonyms: ["issue", "defect"] },
     ] as never);
@@ -137,7 +137,7 @@ describe("CommunicationSearchService", () => {
   });
 
   it("creates a synonym", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.synonymDictionary.create).mockResolvedValue({
       id: "syn1",
       term: "bug",

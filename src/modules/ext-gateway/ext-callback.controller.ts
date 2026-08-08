@@ -16,7 +16,7 @@ import {
   decodeTokenUnverified,
   TENANT_TOKEN_HEADER,
   TenantContextClaims,
-} from "@unerp/service-kit";
+} from "@kannan19302/service-kit";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { secretForApp } from "./ext-secret.util";
 import { ExtCallbackService } from "./ext-callback.service";

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AdvancedFinanceService } from "../advanced-finance.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { BadRequestException } from "@nestjs/common";
 import {
@@ -28,7 +28,7 @@ vi.mock("@prisma/client", () => {
   };
 });
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const createGenericPrismaMock = () => ({
     findMany: vi.fn().mockResolvedValue([]),
     findFirst: vi.fn().mockResolvedValue(null),
@@ -202,7 +202,7 @@ describe("AdvancedFinanceService", () => {
 
   getMethods.forEach((method) => {
     it(`should run ${method} without errors`, async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       // Mocking whatever entity model might be called inside by generically making all findMany return []
       Object.keys(prisma).forEach((key) => {
         if (
@@ -375,7 +375,7 @@ describe("AdvancedFinanceService", () => {
 
   createMethods.forEach(({ method, args }) => {
     it(`should run ${method} without errors`, async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       Object.keys(prisma).forEach((key) => {
         if (
           (
@@ -441,7 +441,7 @@ describe("AdvancedFinanceService", () => {
     });
 
     it(`should run ${method} with fallback orgId without errors`, async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.organization.findFirst).mockResolvedValue({
         id: "org-fallback",
       } as never);
@@ -461,7 +461,7 @@ describe("AdvancedFinanceService", () => {
 
   describe("createJournal", () => {
     it("should create a journal successfully", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.account.findUnique).mockResolvedValue({
         id: "acc-1",
         type: "ASSET",
@@ -498,7 +498,7 @@ describe("AdvancedFinanceService", () => {
 
   describe("getProfitAndLoss", () => {
     it("should return P&L report with revenue and expenses", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
 
       // Mock revenue accounts
       vi.mocked(prisma.account.findMany).mockResolvedValueOnce([
@@ -587,7 +587,7 @@ describe("AdvancedFinanceService", () => {
 
   describe("getBalanceSheet", () => {
     it("should return balance sheet with assets, liabilities, equity", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
 
       vi.mocked(prisma.account.findMany).mockResolvedValueOnce([
         {
@@ -679,7 +679,7 @@ describe("AdvancedFinanceService", () => {
 
   describe("getCashFlow", () => {
     it("should return cash flow with classified activities", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
 
       // Mock accounts
       vi.mocked(prisma.account.findMany).mockResolvedValueOnce([
@@ -812,7 +812,7 @@ describe("AdvancedFinanceService", () => {
 
   describe("getTrialBalance", () => {
     it("should return trial balance with balanced totals", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
 
       // Mock accounts
       vi.mocked(prisma.account.findMany).mockResolvedValueOnce([
@@ -887,7 +887,7 @@ describe("AdvancedFinanceService", () => {
 
   describe("getAgingReport", () => {
     it("should return AR aging report with correct buckets", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
 
       const today = new Date("2026-06-13");
       const daysAgo = (n: number) => {
@@ -971,7 +971,7 @@ describe("AdvancedFinanceService", () => {
     });
 
     it("should return AP aging report", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
 
       const today = new Date("2026-06-13");
       const daysAgo = (n: number) => {
@@ -1024,7 +1024,7 @@ describe("AdvancedFinanceService", () => {
 
   describe("runCurrencyRevaluation", () => {
     it("recognises an unrealized FX gain when the current rate exceeds the booking rate", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       // findMany is shared across models in this harness: 1st call = AR invoices, 2nd = AP purchase orders (none).
       // One open EUR invoice: 1000 EUR outstanding, booked at 1.10, current 1.25 -> +150 base gain
       vi.mocked(prisma.invoice.findMany)
@@ -1063,7 +1063,7 @@ describe("AdvancedFinanceService", () => {
     });
 
     it("skips fully paid and base-currency balances and posts no journal", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.invoice.findMany)
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
@@ -1084,7 +1084,7 @@ describe("AdvancedFinanceService", () => {
     });
 
     it("recognises an unrealized FX loss on an open foreign-currency payable when the rate rises", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       // No AR; one EUR PO: 1000 EUR owed, booked 1.10, current 1.25 -> owe more base -> 150 loss
       vi.mocked(prisma.invoice.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.purchaseOrder.findMany).mockResolvedValueOnce([
@@ -1120,7 +1120,7 @@ describe("AdvancedFinanceService", () => {
 
   describe("generateEInvoice", () => {
     it("produces a UBL document for an issued invoice", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.invoice.findFirst).mockResolvedValueOnce({
         id: "inv-1",
         orgId: "org-1",
@@ -1171,7 +1171,7 @@ describe("AdvancedFinanceService", () => {
     });
 
     it("computes a deterministic IRN and QR payload for the GST format", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.invoice.findFirst).mockResolvedValueOnce({
         id: "inv-2",
         orgId: "org-1",
@@ -1222,7 +1222,7 @@ describe("AdvancedFinanceService", () => {
     });
 
     it("rejects e-invoicing a draft invoice", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.invoice.findFirst).mockResolvedValueOnce({
         id: "inv-3",
         orgId: "org-1",

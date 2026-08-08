@@ -21,7 +21,7 @@ import {
   UpdateDispatcherSchema,
   DeadLetterActionSchema,
   OutboxAnalyticsQuerySchema,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 
 interface AuthReq extends Request {
   user: { tenantId: string; userId: string; email: string; roles: string[] };

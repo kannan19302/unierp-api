@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SaasService } from "../saas.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     saaSPlan: {
       findMany: vi.fn(),
@@ -35,7 +35,7 @@ describe("SaasService", () => {
   });
 
   it("should list all SaaS plans", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     // Catalog already has >= 3 paid tiers — skip ensurePlanCatalog's self-heal.
     vi.mocked(prisma.saaSPlan.count).mockResolvedValue(3);
     vi.mocked(prisma.saaSPlan.findMany).mockResolvedValue([
@@ -67,7 +67,7 @@ describe("SaasService", () => {
   });
 
   it("should get active subscription for a tenant", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.tenantSubscription.findFirst).mockResolvedValue({
       id: "sub-1",
       tenantId: "t1",
@@ -82,7 +82,7 @@ describe("SaasService", () => {
   });
 
   it("should get usage records for a tenant", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.usageRecord.findMany).mockResolvedValue([
       {
         id: "ur-1",
@@ -106,7 +106,7 @@ describe("SaasService", () => {
   });
 
   it("should create usage record when none exists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.usageRecord.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.usageRecord.create).mockImplementation(
       (args: unknown) =>

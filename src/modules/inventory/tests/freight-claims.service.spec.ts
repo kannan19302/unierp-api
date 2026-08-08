@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FreightClaimsService } from "../freight-claims.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     cargoDamageReport: {
       findMany: vi.fn(),
@@ -39,7 +39,7 @@ describe("FreightClaimsService", () => {
   // ── Damage Reports ────────────────────────────────────────────────────────
 
   it("createDamageReport auto-numbers CDR-XXXXXX", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.count).mockResolvedValue(3);
     vi.mocked(prisma.cargoDamageReport.create).mockResolvedValue({
       id: "dr1",
@@ -59,7 +59,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("listDamageReports filters by status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findMany).mockResolvedValue([
       { id: "dr1" },
     ] as any);
@@ -74,7 +74,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("getDamageReport throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findFirst).mockResolvedValue(null);
     await expect(svc.getDamageReport(T, "dr-none")).rejects.toThrow(
       NotFoundException,
@@ -82,7 +82,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("submitDamageReport transitions DRAFT → SUBMITTED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findFirst).mockResolvedValue({
       id: "dr1",
       status: "DRAFT",
@@ -96,7 +96,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("submitDamageReport throws BadRequestException for non-DRAFT", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findFirst).mockResolvedValue({
       id: "dr1",
       status: "SUBMITTED",
@@ -107,7 +107,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("reviewDamageReport sets reviewedById and reviewedAt", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findFirst).mockResolvedValue({
       id: "dr1",
       status: "SUBMITTED",
@@ -131,7 +131,7 @@ describe("FreightClaimsService", () => {
   // ── Freight Claims ────────────────────────────────────────────────────────
 
   it("fileClaim auto-numbers FC-XXXXXX and marks report CLAIM_FILED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findFirst).mockResolvedValue({
       id: "dr1",
       status: "SUBMITTED",
@@ -163,7 +163,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("fileClaim throws when damage report not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findFirst).mockResolvedValue(null);
     await expect(
       svc.fileClaim(T, "u1", {
@@ -176,7 +176,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("fileClaim throws when duplicate claim exists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findFirst).mockResolvedValue({
       id: "dr1",
     } as any);
@@ -194,7 +194,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("fileClaim throws for non-positive claimedAmount", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.findFirst).mockResolvedValue({
       id: "dr1",
     } as any);
@@ -210,7 +210,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("updateClaimStatus transitions DRAFT → FILED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.freightClaim.findFirst).mockResolvedValue({
       id: "fc1",
       status: "DRAFT",
@@ -227,7 +227,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("updateClaimStatus throws for invalid transition", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.freightClaim.findFirst).mockResolvedValue({
       id: "fc1",
       status: "DRAFT",
@@ -238,7 +238,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("addClaimEvent creates event record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.freightClaimEvent.create).mockResolvedValue({
       id: "ev1",
     } as any);
@@ -258,7 +258,7 @@ describe("FreightClaimsService", () => {
   });
 
   it("getDashboard returns aggregate stats", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cargoDamageReport.count)
       .mockResolvedValueOnce(10)
       .mockResolvedValueOnce(3)

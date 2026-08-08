@@ -1,4 +1,4 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationAdminService } from "../communication-admin.service";
@@ -6,7 +6,7 @@ import { CommunicationBotsService } from "../communication-bots.service";
 import { CommunicationEnterpriseService } from "../communication-enterprise.service";
 
 /* â”€â”€ CommunicationAdminService â”€â”€ */
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` â€” this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -68,7 +68,7 @@ describe("CommunicationAdminService", () => {
   });
 
   it("returns default moderation when none exists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelModeration.findFirst).mockResolvedValue(
       null as never,
     );
@@ -81,7 +81,7 @@ describe("CommunicationAdminService", () => {
   });
 
   it("sets slow mode with valid value", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelMember.findFirst).mockResolvedValue({
       role: "OWNER",
     } as never);
@@ -99,7 +99,7 @@ describe("CommunicationAdminService", () => {
   });
 
   it("lists channel tabs", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelTab.findMany).mockResolvedValue([
       { id: "tab1", label: "Wiki" },
     ] as never);
@@ -108,7 +108,7 @@ describe("CommunicationAdminService", () => {
   });
 
   it("returns pinned messages for a channel", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -121,7 +121,7 @@ describe("CommunicationAdminService", () => {
   });
 
   it("aggregates channel analytics from the daily snapshots", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     // getChannelAnalytics reads precomputed `channelAnalytics` snapshots and
     // folds them; it does not count messages live. The old stubs
     // (message.count/findMany, channelMember.findMany) were for a different
@@ -156,7 +156,7 @@ describe("CommunicationBotsService", () => {
   });
 
   it("lists bots for a channel", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectBot.findMany).mockResolvedValue([
       { id: "bot1", name: "Helper" },
     ] as never);
@@ -165,7 +165,7 @@ describe("CommunicationBotsService", () => {
   });
 
   it("creates a bot with a token", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelMember.findFirst).mockResolvedValue({
       role: "OWNER",
     } as never);
@@ -180,7 +180,7 @@ describe("CommunicationBotsService", () => {
   });
 
   it("rejects duplicate bot name", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelMember.findFirst).mockResolvedValue({
       role: "OWNER",
     } as never);
@@ -194,7 +194,7 @@ describe("CommunicationBotsService", () => {
   });
 
   it("regenerates a bot token", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectBot.findFirst).mockResolvedValue({
       id: "bot1",
       name: "Bot",
@@ -225,7 +225,7 @@ describe("CommunicationEnterpriseService", () => {
   // assertions checked fields the methods do not return.
 
   it("merges announcements, messages and tasks into the unified inbox", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.chatMessage.findMany).mockResolvedValue([
       {
         id: "m1",
@@ -253,7 +253,7 @@ describe("CommunicationEnterpriseService", () => {
   });
 
   it("derives message analytics by folding rooms and their messages", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.chatRoom.findMany).mockResolvedValue([
       {
         id: "r1",
@@ -287,7 +287,7 @@ describe("CommunicationEnterpriseService", () => {
   });
 
   it("returns collaboration dashboard KPIs", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.chatRoom.findMany).mockResolvedValue([
       { id: "r1" },
     ] as never);

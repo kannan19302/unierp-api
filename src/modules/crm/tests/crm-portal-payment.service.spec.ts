@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CustomerPortalService } from "../customer-portal.service";
 import { CrmPortalPaymentGatewayService } from "../crm-portal-payment-gateway.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     customer: { findFirst: vi.fn() },
     customerPortalUser: {
@@ -22,13 +22,13 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-vi.mock("@unerp/auth", () => ({
+vi.mock("@kannan19302/auth", () => ({
   hashPassword: vi.fn(),
   comparePassword: vi.fn(),
   signToken: vi.fn(),
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 const TENANT = "tenant-1";

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { FabricGatewayProvider } from "../providers/fabric-gateway.provider";
 import {
@@ -7,7 +7,7 @@ import {
   VerificationResult,
   BlockchainEntityType,
   FABRIC_CHAINCODES,
-} from "@unerp/blockchain";
+} from "@kannan19302/blockchain";
 
 @Injectable()
 export class DocumentBlockchainService {

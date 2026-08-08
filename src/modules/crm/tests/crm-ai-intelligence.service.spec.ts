@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CrmAiIntelligenceService } from "../crm-ai-intelligence.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     opportunity: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn() },
     lead: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn() },
@@ -10,7 +10,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 const TENANT = "tenant-1";

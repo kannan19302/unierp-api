@@ -2,9 +2,9 @@ import { Test } from "@nestjs/testing";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { WarehouseOpsService } from "../warehouse-ops.service";
-import { PrismaService } from "@unerp/database";
+import { PrismaService } from "@kannan19302/database";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   PrismaService: vi.fn(),
   prisma: {
     warehouseTask: {
@@ -68,7 +68,7 @@ describe("WarehouseOpsService", () => {
   // ── Tasks ─────────────────────────────────────────────────────────────────
   describe("listTasks", () => {
     it("returns tasks with filters", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.findMany).mockResolvedValue([
         { id: "t1" },
       ] as any);
@@ -87,7 +87,7 @@ describe("WarehouseOpsService", () => {
 
   describe("createTask", () => {
     it("creates a task and generates a task number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.count).mockResolvedValue(5);
       vi.mocked(prisma.warehouseTask.create).mockResolvedValue({
         id: "t1",
@@ -104,7 +104,7 @@ describe("WarehouseOpsService", () => {
 
   describe("assignTask", () => {
     it("assigns a QUEUED task to a worker", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.findFirst).mockResolvedValue({
         id: "t1",
         status: "QUEUED",
@@ -118,7 +118,7 @@ describe("WarehouseOpsService", () => {
     });
 
     it("throws if task not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.findFirst).mockResolvedValue(null);
       await expect(svc.assignTask(TENANT, "t1", "w1")).rejects.toThrow(
         NotFoundException,
@@ -126,7 +126,7 @@ describe("WarehouseOpsService", () => {
     });
 
     it("throws if task is not QUEUED or ASSIGNED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.findFirst).mockResolvedValue({
         id: "t1",
         status: "COMPLETE",
@@ -139,7 +139,7 @@ describe("WarehouseOpsService", () => {
 
   describe("startTask", () => {
     it("starts an ASSIGNED task", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.findFirst).mockResolvedValue({
         id: "t1",
         status: "ASSIGNED",
@@ -153,7 +153,7 @@ describe("WarehouseOpsService", () => {
     });
 
     it("throws if task is not ASSIGNED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.findFirst).mockResolvedValue({
         id: "t1",
         status: "QUEUED",
@@ -166,7 +166,7 @@ describe("WarehouseOpsService", () => {
 
   describe("completeTask", () => {
     it("completes an IN_PROGRESS task", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.findFirst).mockResolvedValue({
         id: "t1",
         status: "IN_PROGRESS",
@@ -182,7 +182,7 @@ describe("WarehouseOpsService", () => {
 
   describe("getTaskDashboard", () => {
     it("returns task counts by status and type", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouseTask.count)
         .mockResolvedValueOnce(3) // queued
         .mockResolvedValueOnce(1) // assigned
@@ -200,7 +200,7 @@ describe("WarehouseOpsService", () => {
   // ── Bin Transfers ─────────────────────────────────────────────────────────
   describe("createBinTransfer", () => {
     it("creates a bin transfer request", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.binTransferRequest.count).mockResolvedValue(0);
       vi.mocked(prisma.binTransferRequest.create).mockResolvedValue({
         id: "bt1",
@@ -231,7 +231,7 @@ describe("WarehouseOpsService", () => {
 
   describe("approveBinTransfer", () => {
     it("approves a PENDING transfer", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.binTransferRequest.findFirst).mockResolvedValue({
         id: "bt1",
         status: "PENDING",
@@ -245,7 +245,7 @@ describe("WarehouseOpsService", () => {
     });
 
     it("throws if transfer is not PENDING", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.binTransferRequest.findFirst).mockResolvedValue({
         id: "bt1",
         status: "COMPLETE",
@@ -258,7 +258,7 @@ describe("WarehouseOpsService", () => {
 
   describe("rejectBinTransfer", () => {
     it("rejects a PENDING transfer", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.binTransferRequest.findFirst).mockResolvedValue({
         id: "bt1",
         status: "PENDING",
@@ -275,7 +275,7 @@ describe("WarehouseOpsService", () => {
   // ── GRN ──────────────────────────────────────────────────────────────────
   describe("createGrn", () => {
     it("creates a GRN with auto-generated number and line items", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.goodsReceiptNote.count).mockResolvedValue(2);
       vi.mocked(prisma.goodsReceiptNote.create).mockResolvedValue({
         id: "grn1",
@@ -295,7 +295,7 @@ describe("WarehouseOpsService", () => {
 
   describe("verifyGrn", () => {
     it("verifies a DRAFT GRN and updates line items", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.goodsReceiptNote.findFirst).mockResolvedValue({
         id: "grn1",
         status: "DRAFT",
@@ -312,7 +312,7 @@ describe("WarehouseOpsService", () => {
     });
 
     it("throws if GRN is not in DRAFT status", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.goodsReceiptNote.findFirst).mockResolvedValue({
         id: "grn1",
         status: "COMPLETE",
@@ -325,7 +325,7 @@ describe("WarehouseOpsService", () => {
 
   describe("getGrnDashboard", () => {
     it("returns GRN counts by status", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.goodsReceiptNote.count)
         .mockResolvedValueOnce(4) // draft
         .mockResolvedValueOnce(2) // verified
@@ -341,7 +341,7 @@ describe("WarehouseOpsService", () => {
   // ── Packing ───────────────────────────────────────────────────────────────
   describe("createPackingSession", () => {
     it("creates a packing session", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.packingSession.count).mockResolvedValue(0);
       vi.mocked(prisma.packingSession.create).mockResolvedValue({
         id: "ps1",
@@ -355,7 +355,7 @@ describe("WarehouseOpsService", () => {
 
   describe("addCarton", () => {
     it("adds a carton to an OPEN packing session", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.packingSession.findFirst).mockResolvedValue({
         id: "ps1",
         status: "OPEN",
@@ -369,7 +369,7 @@ describe("WarehouseOpsService", () => {
     });
 
     it("throws if session is not OPEN", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.packingSession.findFirst).mockResolvedValue({
         id: "ps1",
         status: "COMPLETE",
@@ -382,7 +382,7 @@ describe("WarehouseOpsService", () => {
 
   describe("completePackingSession", () => {
     it("completes a packing session and sums weight", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.packingSession.findFirst).mockResolvedValue({
         id: "ps1",
         status: "OPEN",
@@ -400,7 +400,7 @@ describe("WarehouseOpsService", () => {
 
   describe("sealCarton", () => {
     it("seals an unsealed carton", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.packingSession.findFirst).mockResolvedValue({
         id: "ps1",
         status: "OPEN",
@@ -420,7 +420,7 @@ describe("WarehouseOpsService", () => {
 
   describe("getWarehouseOpsDashboard", () => {
     it("returns combined dashboard metrics", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.binTransferRequest.count).mockResolvedValue(3);
       vi.mocked(prisma.packingSession.count).mockResolvedValue(2);
       vi.mocked(prisma.warehouseTask.count).mockResolvedValue(10);

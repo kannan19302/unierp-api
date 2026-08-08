@@ -25,7 +25,7 @@ import {
   updateSalesOrderStatusSchema,
   createDeliveryNoteSchema,
   createSalesReturnSchema,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import {
   recordOrderPaymentSchema,
   RecordOrderPaymentDto,

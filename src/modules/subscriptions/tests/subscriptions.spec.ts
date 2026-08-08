@@ -3,7 +3,7 @@ import { SubscriptionsService } from "../subscriptions.service";
 import { NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     subscription: {
       findMany: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("SubscriptionsService", () => {

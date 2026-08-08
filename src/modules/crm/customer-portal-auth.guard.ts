@@ -4,7 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from "@nestjs/common";
-import { verifyToken } from "@unerp/auth";
+import { verifyToken } from "@kannan19302/auth";
 
 /**
  * Guards the customer self-service portal's own endpoints (`/portal/*`).

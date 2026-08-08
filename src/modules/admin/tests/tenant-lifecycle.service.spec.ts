@@ -1,4 +1,4 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TenantLifecycleService } from "../../../platform/v1/tenant-lifecycle.service";
@@ -8,7 +8,7 @@ import {
   ConflictException,
 } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const mockTx = {
     tenant: {
       update: vi.fn(),
@@ -105,7 +105,7 @@ describe("TenantLifecycleService", () => {
 
   describe("getLifecycleStatus", () => {
     it("should return lifecycle status and history", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
       prisma.tenantLifecycleEvent.findMany.mockResolvedValue([
         {
@@ -127,7 +127,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw NotFoundException for nonexistent tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(null);
 
       await expect(service.getLifecycleStatus("nonexistent")).rejects.toThrow(
@@ -138,7 +138,7 @@ describe("TenantLifecycleService", () => {
 
   describe("exportTenant", () => {
     it("should generate correct export manifest with data counts", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
       idpPrisma.user.findMany.mockResolvedValue([
         {
@@ -163,7 +163,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw NotFoundException for nonexistent tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(null);
 
       await expect(service.exportTenant("nonexistent")).rejects.toThrow(
@@ -174,7 +174,7 @@ describe("TenantLifecycleService", () => {
 
   describe("suspendTenant", () => {
     it("should set tenant status to SUSPENDED and revoke sessions", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
 
       const result = await service.suspendTenant("tenant-1");
@@ -184,7 +184,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw ConflictException if already suspended", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue({
         ...mockTenant,
         status: "SUSPENDED",
@@ -196,7 +196,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw BadRequestException if purged", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue({
         ...mockTenant,
         status: "PURGED",
@@ -210,7 +210,7 @@ describe("TenantLifecycleService", () => {
 
   describe("unsuspendTenant", () => {
     it("should set tenant status back to ACTIVE", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue({
         ...mockTenant,
         status: "SUSPENDED",
@@ -222,7 +222,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw ConflictException if not suspended", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
 
       await expect(service.unsuspendTenant("tenant-1")).rejects.toThrow(
@@ -233,7 +233,7 @@ describe("TenantLifecycleService", () => {
 
   describe("offboardTenant", () => {
     it("should mark tenant as OFFBOARDING with retention window", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
 
       const result = await service.offboardTenant("tenant-1", 90);
@@ -244,7 +244,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should default to 90 day retention", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
 
       const result = await service.offboardTenant("tenant-1");
@@ -253,7 +253,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw if tenant is already offboarding", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue({
         ...mockTenant,
         status: "OFFBOARDING",
@@ -265,7 +265,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw if tenant was purged", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue({
         ...mockTenant,
         status: "PURGED",
@@ -279,7 +279,7 @@ describe("TenantLifecycleService", () => {
 
   describe("cancelOffboarding", () => {
     it("should restore tenant to ACTIVE", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue({
         ...mockTenant,
         status: "OFFBOARDING",
@@ -291,7 +291,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw if tenant is not offboarding", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
 
       await expect(service.cancelOffboarding("tenant-1")).rejects.toThrow(
@@ -302,7 +302,7 @@ describe("TenantLifecycleService", () => {
 
   describe("purgeTenant", () => {
     it("should delete all tenant data and the tenant record", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
 
       const result = await service.purgeTenant("tenant-1");
@@ -312,7 +312,7 @@ describe("TenantLifecycleService", () => {
     });
 
     it("should throw if tenant was already purged", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue({
         ...mockTenant,
         status: "PURGED",
@@ -326,7 +326,7 @@ describe("TenantLifecycleService", () => {
 
   describe("getExportHistory", () => {
     it("should return export events", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       prisma.tenantLifecycleEvent.findMany.mockResolvedValue([
         { id: "evt-1", eventType: "EXPORT", status: "COMPLETED" },
       ]);

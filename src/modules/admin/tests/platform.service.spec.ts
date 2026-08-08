@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PlatformService } from "../platform.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       tenant: {
@@ -41,7 +41,7 @@ describe("PlatformService", () => {
   });
 
   it("should list ERP modules and their active status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.tenant.findUnique).mockResolvedValue({
       id: "tenant-123",
       settings: { modules: ["finance", "hr"] },
@@ -54,7 +54,7 @@ describe("PlatformService", () => {
   });
 
   it("should toggle module settings on tenant", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.tenant.findUnique).mockResolvedValue({
       id: "tenant-123",
       settings: { modules: ["finance"] },
@@ -67,7 +67,7 @@ describe("PlatformService", () => {
   });
 
   it("should load custom domains lists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.setting.findUnique).mockResolvedValue(null as any);
 
     const result = await platformService.getCustomDomains("tenant-123");
@@ -75,7 +75,7 @@ describe("PlatformService", () => {
   });
 
   it("should get SMTP parameters", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.setting.findUnique).mockResolvedValue(null as any);
 
     const result = await platformService.getSmtpConfig("tenant-123");
@@ -83,7 +83,7 @@ describe("PlatformService", () => {
   });
 
   it("should save SMTP parameters", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.setting.upsert).mockResolvedValue({} as any);
 
     const result = await platformService.saveSmtpConfig("tenant-123", {
@@ -93,7 +93,7 @@ describe("PlatformService", () => {
   });
 
   it("should handle email template database CRUD operations", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.emailTemplate.findMany).mockResolvedValue([] as any);
     vi.mocked(prisma.emailTemplate.create).mockResolvedValue({
       id: "temp-1",

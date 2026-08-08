@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EconomicNexusService } from "../services/economic-nexus.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
@@ -23,7 +23,7 @@ vi.mock("@prisma/client", () => {
   };
 });
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const createMockPrismaCollection = () => ({
     findMany: vi.fn(),
     findFirst: vi.fn(),

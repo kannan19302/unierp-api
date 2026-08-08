@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { DemandForecastingService } from "../demand-forecasting.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     demandForecast: {
       findMany: vi.fn(),
@@ -63,7 +63,7 @@ describe("DemandForecastingService", () => {
 
   describe("listForecasts", () => {
     it("returns forecasts scoped to tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.findMany).mockResolvedValue([
         { id: "f1" },
       ] as never);
@@ -79,7 +79,7 @@ describe("DemandForecastingService", () => {
 
   describe("createForecast", () => {
     it("creates a forecast record", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.create).mockResolvedValue({
         id: "f1",
         status: "ACTIVE",
@@ -99,7 +99,7 @@ describe("DemandForecastingService", () => {
 
   describe("getForecast", () => {
     it("throws NotFoundException when forecast not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.findFirst).mockResolvedValue(null);
       await expect(service.getForecast(TENANT, "bad-id")).rejects.toThrow(
         NotFoundException,
@@ -109,7 +109,7 @@ describe("DemandForecastingService", () => {
 
   describe("updateActual", () => {
     it("updates actual qty and calculates MAPE", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.findFirst).mockResolvedValue({
         id: "f1",
         forecastedQty: "100",
@@ -130,7 +130,7 @@ describe("DemandForecastingService", () => {
     });
 
     it("throws NotFoundException when forecast not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.findFirst).mockResolvedValue(null);
       await expect(
         service.updateActual(TENANT, "bad", { actualQty: 10 }),
@@ -140,7 +140,7 @@ describe("DemandForecastingService", () => {
 
   describe("archiveForecast", () => {
     it("sets status to ARCHIVED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.findFirst).mockResolvedValue({
         id: "f1",
       } as never);
@@ -160,7 +160,7 @@ describe("DemandForecastingService", () => {
 
   describe("calculateReorderPoint", () => {
     it("upserts reorder point with computed values", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.reorderPoint.upsert).mockResolvedValue({
         id: "rp1",
         reorderPoint: "57",
@@ -178,7 +178,7 @@ describe("DemandForecastingService", () => {
 
   describe("deactivateReorderPoint", () => {
     it("throws NotFoundException when not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.reorderPoint.findFirst).mockResolvedValue(null);
       await expect(
         service.deactivateReorderPoint(TENANT, "bad"),
@@ -186,7 +186,7 @@ describe("DemandForecastingService", () => {
     });
 
     it("sets isActive to false", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.reorderPoint.findFirst).mockResolvedValue({
         id: "rp1",
       } as never);
@@ -203,7 +203,7 @@ describe("DemandForecastingService", () => {
 
   describe("upsertSafetyStockConfig", () => {
     it("upserts a FIXED safety stock config", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.safetyStockConfig.upsert).mockResolvedValue({
         id: "ssc1",
         method: "FIXED",
@@ -220,7 +220,7 @@ describe("DemandForecastingService", () => {
 
   describe("deleteSafetyStockConfig", () => {
     it("throws NotFoundException when not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.safetyStockConfig.findFirst).mockResolvedValue(null);
       await expect(
         service.deleteSafetyStockConfig(TENANT, "bad"),
@@ -232,7 +232,7 @@ describe("DemandForecastingService", () => {
 
   describe("createReplenishmentOrder", () => {
     it("creates order with auto-generated number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.replenishmentOrder.count).mockResolvedValue(0);
       vi.mocked(prisma.replenishmentOrder.create).mockResolvedValue({
         id: "ro1",
@@ -253,7 +253,7 @@ describe("DemandForecastingService", () => {
 
   describe("approveReplenishmentOrder", () => {
     it("throws BadRequestException when not PENDING", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.replenishmentOrder.findFirst).mockResolvedValue({
         id: "ro1",
         status: "APPROVED",
@@ -266,7 +266,7 @@ describe("DemandForecastingService", () => {
     });
 
     it("approves a pending order", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.replenishmentOrder.findFirst).mockResolvedValue({
         id: "ro1",
         status: "PENDING",
@@ -287,7 +287,7 @@ describe("DemandForecastingService", () => {
 
   describe("updateReplenishmentStatus", () => {
     it("throws BadRequestException for invalid transition", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.replenishmentOrder.findFirst).mockResolvedValue({
         id: "ro1",
         status: "PENDING",
@@ -302,7 +302,7 @@ describe("DemandForecastingService", () => {
 
   describe("acknowledgeStockoutPrediction", () => {
     it("throws NotFoundException when not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockoutPrediction.findFirst).mockResolvedValue(null);
       await expect(
         service.acknowledgeStockoutPrediction(TENANT, "bad", {
@@ -312,7 +312,7 @@ describe("DemandForecastingService", () => {
     });
 
     it("sets acknowledged true", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.stockoutPrediction.findFirst).mockResolvedValue({
         id: "sp1",
       } as never);
@@ -333,7 +333,7 @@ describe("DemandForecastingService", () => {
 
   describe("getDashboard", () => {
     it("returns all metric keys", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.count).mockResolvedValue(10);
       vi.mocked(prisma.reorderPoint.count).mockResolvedValue(5);
       vi.mocked(prisma.replenishmentOrder.count).mockResolvedValue(3);
@@ -353,7 +353,7 @@ describe("DemandForecastingService", () => {
 
   describe("getForecastAccuracy", () => {
     it("returns null accuracy when no actuals", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.findMany).mockResolvedValue([]);
       const result = await service.getForecastAccuracy(TENANT);
       expect(result.accuracy).toBeNull();
@@ -361,7 +361,7 @@ describe("DemandForecastingService", () => {
     });
 
     it("computes accuracy from MAPE", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.demandForecast.findMany).mockResolvedValue([
         { id: "f1", mape: "0.1", method: "MOVING_AVG", actualQty: "90" },
         { id: "f2", mape: "0.2", method: "MOVING_AVG", actualQty: "80" },

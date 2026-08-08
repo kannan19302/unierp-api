@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BudgetControlService } from "../services/budget-control.service";
 import { BudgetReallocationService } from "../services/budget-reallocation.service";
 import { BudgetingService } from "../services/budgeting.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
@@ -29,7 +29,7 @@ vi.mock("@prisma/client", () => {
   };
 });
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const createMockCollection = () => ({
     findMany: vi.fn(),
     findFirst: vi.fn(),

@@ -1,7 +1,7 @@
 import { BuilderEtlService } from "../services/builder-etl.service";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     etlDataSource: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -44,14 +44,14 @@ describe("BuilderEtlService", () => {
   });
 
   it("createDataSource succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.etlDataSource.findFirst as any).mockResolvedValue(null);
     const result = await service.createDataSource("t1", { name: "DS" });
     expect(result).toBeDefined();
   });
 
   it("createDataSource rejects duplicate name", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.etlDataSource.findFirst as any).mockResolvedValue({ id: "ds-1" });
     await expect(
       service.createDataSource("t1", { name: "dup" }),
@@ -59,14 +59,14 @@ describe("BuilderEtlService", () => {
   });
 
   it("updateDataSource updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.etlDataSource.findFirst as any).mockResolvedValue({ id: "ds-1" });
     const result = await service.updateDataSource("t1", "ds-1", { name: "U" });
     expect(result).toBeDefined();
   });
 
   it("deleteDataSource deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.etlDataSource.findFirst as any).mockResolvedValue({ id: "ds-1" });
     const result = await service.deleteDataSource("t1", "ds-1");
     expect(result).toBeDefined();
@@ -83,7 +83,7 @@ describe("BuilderEtlService", () => {
   });
 
   it("buildTransformationPipeline creates pipeline", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.etlDataSource.findFirst as any).mockResolvedValue({ id: "ds-1" });
     const result = await service.buildTransformationPipeline("t1", {
       name: "Pipe",
@@ -93,7 +93,7 @@ describe("BuilderEtlService", () => {
   });
 
   it("executeETLJob runs job", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.etlPipeline.findFirst as any).mockResolvedValue({ id: "pipe-1" });
     const result = await service.executeETLJob("t1", "pipe-1", {
       triggeredBy: "user1",
@@ -102,7 +102,7 @@ describe("BuilderEtlService", () => {
   });
 
   it("previewTransformation returns sample output", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.etlPipeline.findFirst as any).mockResolvedValue({
       id: "pipe-1",
       mappings: [

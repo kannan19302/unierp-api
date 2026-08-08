@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TenantPlanService } from "../tenant-plan.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: { tenant: { findUnique: vi.fn() } },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 
 describe("TenantPlanService", () => {
   beforeEach(() => {

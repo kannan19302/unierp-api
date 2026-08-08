@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { Observable, from } from "rxjs";
 import { switchMap } from "rxjs/operators";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 const WRITE_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);

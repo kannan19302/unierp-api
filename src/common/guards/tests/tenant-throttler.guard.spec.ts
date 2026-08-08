@@ -20,7 +20,7 @@ const authMock = vi.hoisted(() => ({
   }),
 }));
 
-vi.mock("@unerp/auth", () => ({
+vi.mock("@kannan19302/auth", () => ({
   verifyTypedToken: authMock.verifyTypedToken,
   TOKEN_TYPE: { SESSION: "session" },
 }));

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { OutboxDispatcherService } from "../outbox-dispatcher.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     $queryRaw: vi.fn(),
   },
@@ -25,7 +25,7 @@ describe("OutboxDispatcherService", () => {
   });
 
   it("should claim and enqueue deliveries", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.$queryRaw).mockResolvedValue([
       {
         id: "del-1",
@@ -62,7 +62,7 @@ describe("OutboxDispatcherService", () => {
   });
 
   it("should not enqueue when no deliveries claimed", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.$queryRaw).mockResolvedValue([]);
 
     await service.poll();
@@ -71,7 +71,7 @@ describe("OutboxDispatcherService", () => {
   });
 
   it("should handle errors gracefully", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.$queryRaw).mockRejectedValue(new Error("DB error"));
 
     await expect(service.poll()).resolves.not.toThrow();

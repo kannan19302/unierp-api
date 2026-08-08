@@ -91,7 +91,7 @@ const mockLog = vi.hoisted(() => ({
   createdAt: new Date(),
 }));
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -169,7 +169,7 @@ describe("ExtGatewayDeepService", () => {
   });
 
   it("should throw on missing connection", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.extConnection.findFirst as any).mockResolvedValueOnce(null);
     await expect(service.getConnection("t1", "bad")).rejects.toThrow(
       NotFoundException,

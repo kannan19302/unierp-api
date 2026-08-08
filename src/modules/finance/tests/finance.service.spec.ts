@@ -14,7 +14,7 @@ vi.mock("@prisma/client", () => {
   };
 });
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       invoice: {
@@ -85,7 +85,7 @@ describe("FinanceService", () => {
 
   beforeEach(async () => {
     financeService = new FinanceService();
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.invoice.findMany).mockImplementation(
       async () =>
         [
@@ -137,7 +137,7 @@ describe("FinanceService", () => {
 
   describe("getInvoices", () => {
     it("should return all invoices for the tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       const now = new Date();
       const mockDbInvoices = [
         {
@@ -180,7 +180,7 @@ describe("FinanceService", () => {
 
   describe("getInvoiceById", () => {
     it("should return invoice details if found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       const mockInvoice = { id: "inv-123", invoiceNumber: "INV-001" };
       vi.mocked(prisma.invoice.findFirst).mockImplementation(
         async () => mockInvoice as never,
@@ -194,7 +194,7 @@ describe("FinanceService", () => {
     });
 
     it("should throw NotFoundException if invoice not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.invoice.findFirst).mockImplementation(
         async () => null as never,
       );
@@ -222,7 +222,7 @@ describe("FinanceService", () => {
     };
 
     it("should create an invoice successfully and emit event", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.customer.findFirst).mockImplementation(
         async () => ({ id: "cust-123" }) as never,
       );
@@ -249,7 +249,7 @@ describe("FinanceService", () => {
     });
 
     it("should throw NotFoundException if customer is not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.customer.findFirst).mockImplementation(
         async () => null as never,
       );
@@ -274,7 +274,7 @@ describe("FinanceService", () => {
     };
 
     it("should create payment successfully and update invoice to PARTIALLY_PAID", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.invoice.findFirst).mockImplementation(
         async () =>
           ({
@@ -295,7 +295,7 @@ describe("FinanceService", () => {
     });
 
     it("should set status to PAID if fully paid", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.invoice.findFirst).mockImplementation(
         async () =>
           ({
@@ -315,7 +315,7 @@ describe("FinanceService", () => {
     });
 
     it("should throw NotFoundException if invoice not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.invoice.findFirst).mockImplementation(
         async () => null as never,
       );

@@ -117,7 +117,7 @@ export class AdvancedEvmController {
     @Req() req: AuthenticatedRequest,
     @Param("projectId") projectId: string,
   ) {
-    const { prisma } = require("@unerp/database");
+    const { prisma } = require("@kannan19302/database");
     return prisma.evmKpiTarget.findMany({
       where: { tenantId: req.user.tenantId, projectId },
     });

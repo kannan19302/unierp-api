@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 
 /**
  * Marketplace earnings ledger and publisher payouts — § 8, Phase 5.

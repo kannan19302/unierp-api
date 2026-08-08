@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { InventoryWarehousesService } from "../inventory-warehouses.service";
 import { Warehouse } from "@prisma/client";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       warehouse: {
@@ -29,7 +29,7 @@ describe("InventoryWarehousesService", () => {
 
   describe("getWarehouses", () => {
     it("should return paginated warehouses", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       const mockWarehouses = [
         {
           id: "w-1",
@@ -55,7 +55,7 @@ describe("InventoryWarehousesService", () => {
 
   describe("getWarehouseById", () => {
     it("should return a warehouse by id", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       const mockWarehouse = {
         id: "w-1",
         name: "Main Warehouse",
@@ -73,7 +73,7 @@ describe("InventoryWarehousesService", () => {
     });
 
     it("should throw NotFoundException if warehouse does not exist", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.warehouse.findFirst).mockResolvedValue(null);
 
       await expect(
@@ -84,7 +84,7 @@ describe("InventoryWarehousesService", () => {
 
   describe("createWarehouse", () => {
     it("should create a new warehouse", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       const dto = {
         name: "New Warehouse",
         code: "NW1",

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import type {
   CreateConnectionDto,
@@ -10,7 +10,7 @@ import type {
   UpdateRateLimitConfigDto,
   CreateIntegrationTemplateDto,
   UpdateIntegrationTemplateDto,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 
 @Injectable()
 export class ExtGatewayDeepService {
@@ -52,7 +52,7 @@ export class ExtGatewayDeepService {
 
   async createConnection(tenantId: string, dto: CreateConnectionDto) {
     // dto's `metadata`/config fields are typed as plain Record<string, unknown>
-    // in @unerp/shared, which doesn't structurally match Prisma's JSON input
+    // in @kannan19302/shared, which doesn't structurally match Prisma's JSON input
     // type — the shapes agree at runtime, only the JSON typing disagrees.
     return prisma.extConnection.create({ data: { ...dto, tenantId } as any });
   }

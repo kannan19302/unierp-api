@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { signTenantToken, TenantContextClaims } from "@unerp/service-kit";
+import { signTenantToken, TenantContextClaims } from "@kannan19302/service-kit";
 import { secretForApp } from "./ext-secret.util";
 
 /**

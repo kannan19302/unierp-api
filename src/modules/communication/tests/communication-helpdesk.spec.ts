@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationHelpdeskService } from "../services/communication-helpdesk.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     ticketSla: {
       aggregate: vi.fn().mockResolvedValue({
@@ -65,7 +65,7 @@ describe("CommunicationHelpdeskService", () => {
   });
 
   it("returns paginated tickets", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.helpdeskTicket.findMany).mockResolvedValue([
       { id: "t1", sla: null, satisfaction: null, comments: [] },
     ] as never);
@@ -76,7 +76,7 @@ describe("CommunicationHelpdeskService", () => {
   });
 
   it("throws on missing ticket", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.helpdeskTicket.findFirst).mockResolvedValue(null as never);
     await expect(svc.getTicket("t1", "bad")).rejects.toThrow(
       "Ticket not found",
@@ -84,7 +84,7 @@ describe("CommunicationHelpdeskService", () => {
   });
 
   it("creates a ticket with SLA", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.helpdeskTicket.create).mockResolvedValue({
       id: "t1",
       subject: "Bug",
@@ -100,7 +100,7 @@ describe("CommunicationHelpdeskService", () => {
   });
 
   it("adds a ticket comment", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.helpdeskTicket.findFirst).mockResolvedValue({
       id: "t1",
       tenantId: "t1",
@@ -117,7 +117,7 @@ describe("CommunicationHelpdeskService", () => {
   });
 
   it("escalates a ticket", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.helpdeskTicket.findFirst).mockResolvedValue({
       id: "t1",
       tenantId: "t1",
@@ -132,7 +132,7 @@ describe("CommunicationHelpdeskService", () => {
   });
 
   it("creates a canned response", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.cannedResponse.create).mockResolvedValue({
       id: "cr1",
       title: "Greeting",
@@ -145,7 +145,7 @@ describe("CommunicationHelpdeskService", () => {
   });
 
   it("returns dashboard metrics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.helpdeskTicket.count).mockResolvedValue(5);
     vi.mocked(prisma.helpdeskTicket.findMany).mockResolvedValue([] as never);
     const res = await svc.getHelpdeskDashboard("t1");

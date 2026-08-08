@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { LotExpiryService } from "../lot-expiry.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     lotExpiryRecord: {
       findMany: vi.fn(),
@@ -39,7 +39,7 @@ describe("LotExpiryService", () => {
   // ── Lot Records ───────────────────────────────────────────────────────────
 
   it("registerLot creates lot record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.create).mockResolvedValue({
       id: "lot1",
       lotNumber: "LOT-001",
@@ -81,13 +81,13 @@ describe("LotExpiryService", () => {
   });
 
   it("getLot throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.findFirst).mockResolvedValue(null);
     await expect(svc.getLot(T, "lot-none")).rejects.toThrow(NotFoundException);
   });
 
   it("quarantineLot transitions ACTIVE → QUARANTINE", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.findFirst).mockResolvedValue({
       id: "lot1",
       status: "ACTIVE",
@@ -101,7 +101,7 @@ describe("LotExpiryService", () => {
   });
 
   it("quarantineLot throws for non-ACTIVE", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.findFirst).mockResolvedValue({
       id: "lot1",
       status: "QUARANTINE",
@@ -112,7 +112,7 @@ describe("LotExpiryService", () => {
   });
 
   it("releaseLot transitions QUARANTINE → ACTIVE", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.findFirst).mockResolvedValue({
       id: "lot1",
       status: "QUARANTINE",
@@ -128,7 +128,7 @@ describe("LotExpiryService", () => {
   // ── FEFO ──────────────────────────────────────────────────────────────────
 
   it("getFEFOPick returns lots sorted by earliest expiry", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.findMany).mockResolvedValue([
       {
         id: "l1",
@@ -152,7 +152,7 @@ describe("LotExpiryService", () => {
   });
 
   it("getFEFOPick throws when insufficient stock", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.findMany).mockResolvedValue([
       {
         id: "l1",
@@ -169,7 +169,7 @@ describe("LotExpiryService", () => {
   // ── Alerts & Disposal ─────────────────────────────────────────────────────
 
   it("dismissAlert marks alert as dismissed", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryAlert.findFirst).mockResolvedValue({
       id: "al1",
       dismissed: false,
@@ -183,7 +183,7 @@ describe("LotExpiryService", () => {
   });
 
   it("disposeLot auto-numbers LDR-XXXXXX", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.findFirst).mockResolvedValue({
       id: "lot1",
       status: "ACTIVE",
@@ -210,7 +210,7 @@ describe("LotExpiryService", () => {
   });
 
   it("getDashboard returns expiry stats", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.lotExpiryRecord.count)
       .mockResolvedValueOnce(50)
       .mockResolvedValueOnce(40)

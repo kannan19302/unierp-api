@@ -1,4 +1,4 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationService } from "../communication.service";
@@ -9,7 +9,7 @@ vi.mock("@prisma/client", () => ({
   },
 }));
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -54,7 +54,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   /* ── Tenant isolation ── */
 
   it("never finds a channel belonging to another tenant when updating", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     // getMembership queries findFirst with {id, tenantId} — simulate cross-tenant miss.
     vi.mocked(prisma.channel.findFirst).mockResolvedValue(null as never);
 
@@ -69,7 +69,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("search only returns messages from channels the tenant-scoped, member-scoped user belongs to", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelMember.findMany).mockResolvedValue([
       { channelId: "c1" },
     ] as never);
@@ -97,7 +97,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("returns no search results when the user has no channel memberships (cannot search outside their scope)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelMember.findMany).mockResolvedValue([] as never);
 
     const res = await svc.searchMessages("tenant-A", "outsider", "anything");
@@ -109,7 +109,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
      created a ChannelMember row for the creator, unlike getOrCreateDM/createGroup) ── */
 
   it("createChannel seeds the creator as a ChannelMember with role OWNER", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     // orgId 'org1' is not the 'org-system-default' sentinel, so resolveOrgId short-circuits
     // and never touches prisma.organization — only the duplicate-name check hits channel.findFirst.
     vi.mocked(prisma.channel.findFirst).mockResolvedValue(null as never);
@@ -149,7 +149,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("creator of a freshly created channel can immediately list members, rename, and archive it (no 403)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const channelRow = {
       id: "c-new",
       tenantId: "t1",
@@ -204,7 +204,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   /* ── RBAC: member vs owner/admin ── */
 
   it("blocks a plain MEMBER from renaming a channel (403)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -221,7 +221,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("blocks an ADMIN (not OWNER) from archiving a channel", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -238,7 +238,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("allows an ADMIN to rename a channel", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst)
       .mockResolvedValueOnce({
         id: "c1",
@@ -260,7 +260,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("allows the OWNER to archive a channel", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -280,7 +280,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("blocks a plain MEMBER from adding a channel member", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -295,7 +295,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("allows OWNER/ADMIN to add a member and posts a SYSTEM join announcement", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -327,7 +327,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("removes a member, retains history (no message deletion), and posts a departure announcement", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -358,7 +358,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("blocks removing the channel OWNER", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -375,7 +375,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   /* ── Browse / join ── */
 
   it("browse only lists PUBLIC channels in the same tenant that the user has not joined", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channelMember.findMany).mockResolvedValue([
       { channelId: "joined1" },
     ] as never);
@@ -410,7 +410,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("rejects joining a PRIVATE channel directly", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",
@@ -424,7 +424,7 @@ describe("CommunicationService — channel management & roles (US-B1/B2/B3)", ()
   });
 
   it("allows joining a PUBLIC channel and posts a join announcement", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.channel.findFirst).mockResolvedValue({
       id: "c1",
       tenantId: "t1",

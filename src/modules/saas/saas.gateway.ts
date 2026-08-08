@@ -9,7 +9,7 @@ import {
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { Logger } from "@nestjs/common";
-import { verifyToken } from "@unerp/auth";
+import { verifyToken } from "@kannan19302/auth";
 import { RealtimeClient } from "../../common/integrations/realtime-client";
 
 @WebSocketGateway({ namespace: "/saas", cors: { origin: "*" } })

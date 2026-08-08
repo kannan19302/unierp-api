@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { TransferOrdersService } from "../transfer-orders.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     transferOrder: {
       findMany: vi.fn(),
@@ -64,7 +64,7 @@ describe("TransferOrdersService", () => {
 
   describe("listTransferOrders", () => {
     it("returns orders for tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findMany).mockResolvedValue([
         mockOrder(),
       ] as never);
@@ -73,7 +73,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("filters by status", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findMany).mockResolvedValue([] as never);
       await svc.listTransferOrders(TENANT, "IN_TRANSIT");
       expect(prisma.transferOrder.findMany).toHaveBeenCalledWith(
@@ -86,7 +86,7 @@ describe("TransferOrdersService", () => {
 
   describe("getTransferOrder", () => {
     it("returns order when found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder() as never,
       );
@@ -95,7 +95,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws NotFoundException when not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         null as never,
       );
@@ -107,7 +107,7 @@ describe("TransferOrdersService", () => {
 
   describe("createTransferOrder", () => {
     it("creates order with auto-number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.transferOrder.create).mockResolvedValue(
         mockOrder() as never,
@@ -137,7 +137,7 @@ describe("TransferOrdersService", () => {
 
   describe("submitForApproval", () => {
     it("moves DRAFT to PENDING_APPROVAL", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ lines: [mockLine()] }) as never,
       );
@@ -149,7 +149,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws if no lines", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ lines: [] }) as never,
       );
@@ -159,7 +159,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws if not DRAFT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "APPROVED" }) as never,
       );
@@ -171,7 +171,7 @@ describe("TransferOrdersService", () => {
 
   describe("approve", () => {
     it("approves PENDING_APPROVAL order", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "PENDING_APPROVAL" }) as never,
       );
@@ -183,7 +183,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws if not PENDING_APPROVAL", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "DRAFT" }) as never,
       );
@@ -195,7 +195,7 @@ describe("TransferOrdersService", () => {
 
   describe("ship", () => {
     it("ships APPROVED order", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "APPROVED", lines: [mockLine()] }) as never,
       );
@@ -212,7 +212,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws if shipped qty exceeds requested", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({
           status: "APPROVED",
@@ -227,7 +227,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws if not APPROVED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "DRAFT" }) as never,
       );
@@ -239,7 +239,7 @@ describe("TransferOrdersService", () => {
 
   describe("cancel", () => {
     it("cancels non-terminal order", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "APPROVED" }) as never,
       );
@@ -251,7 +251,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws if already completed", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "COMPLETED" }) as never,
       );
@@ -263,7 +263,7 @@ describe("TransferOrdersService", () => {
 
   describe("closeOut", () => {
     it("closes out PARTIALLY_RECEIVED order", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "PARTIALLY_RECEIVED" }) as never,
       );
@@ -275,7 +275,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws if not PARTIALLY_RECEIVED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "IN_TRANSIT" }) as never,
       );
@@ -287,7 +287,7 @@ describe("TransferOrdersService", () => {
 
   describe("addLine", () => {
     it("adds line to DRAFT order", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ lines: [] }) as never,
       );
@@ -302,7 +302,7 @@ describe("TransferOrdersService", () => {
     });
 
     it("throws if order is IN_TRANSIT", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findFirst).mockResolvedValue(
         mockOrder({ status: "IN_TRANSIT" }) as never,
       );
@@ -314,7 +314,7 @@ describe("TransferOrdersService", () => {
 
   describe("getDashboard", () => {
     it("returns all status counts", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.count).mockResolvedValue(5 as never);
       const result = await svc.getDashboard(TENANT);
       expect(result.total).toBe(5);
@@ -324,7 +324,7 @@ describe("TransferOrdersService", () => {
 
   describe("getInTransitSummary", () => {
     it("returns in-transit summary", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.transferOrder.findMany).mockResolvedValue([
         mockOrder({
           status: "IN_TRANSIT",

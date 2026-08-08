@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CustomerReturnsService } from "../customer-returns.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     customerRma: {
       findMany: vi.fn(),
@@ -57,7 +57,7 @@ describe("CustomerReturnsService", () => {
   // ── RMA Lifecycle ─────────────────────────────────────────────────────────
 
   it("createRma generates RMA-000001 for first RMA", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.count).mockResolvedValue(0);
     vi.mocked(prisma.customerRma.create).mockImplementation(
       async ({ data }: any) => ({
@@ -76,13 +76,13 @@ describe("CustomerReturnsService", () => {
   });
 
   it("getRma throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue(null);
     await expect(svc.getRma(T, "rma-none")).rejects.toThrow(NotFoundException);
   });
 
   it("approveRma transitions REQUESTED → APPROVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       status: "REQUESTED",
@@ -96,7 +96,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("approveRma throws BadRequestException for non-REQUESTED RMA", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       status: "APPROVED",
@@ -107,7 +107,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("rejectRma transitions REQUESTED → REJECTED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       status: "REQUESTED",
@@ -121,7 +121,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("receiveRma throws BadRequestException for non-APPROVED RMA", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       status: "REQUESTED",
@@ -132,7 +132,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("receiveRma updates lines and transitions to RECEIVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       status: "APPROVED",
@@ -155,7 +155,7 @@ describe("CustomerReturnsService", () => {
   // ── Line Inspection ───────────────────────────────────────────────────────
 
   it("inspectLine sets disposition and auto-advances RMA when all lines inspected", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       status: "RECEIVED",
@@ -184,7 +184,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("closeRma throws BadRequestException when not INSPECTED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       status: "RECEIVED",
@@ -195,7 +195,7 @@ describe("CustomerReturnsService", () => {
   // ── Credits ───────────────────────────────────────────────────────────────
 
   it("issueCredit creates credit memo with auto-number", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       customerId: "c1",
@@ -218,7 +218,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("issueCredit throws BadRequestException for zero/negative amount", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       customerId: "c1",
@@ -229,7 +229,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("issueCredit throws BadRequestException when credit already exists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.findFirst).mockResolvedValue({
       id: "rma1",
       customerId: "c1",
@@ -243,7 +243,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("voidCredit transitions ISSUED → VOIDED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.returnCredit.findFirst).mockResolvedValue({
       id: "cr1",
       status: "ISSUED",
@@ -262,7 +262,7 @@ describe("CustomerReturnsService", () => {
   // ── Restock ───────────────────────────────────────────────────────────────
 
   it("restockLine throws BadRequestException when disposition is not RESTOCK", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRmaLine.findFirst).mockResolvedValue({
       id: "l1",
       disposition: "SCRAP",
@@ -279,7 +279,7 @@ describe("CustomerReturnsService", () => {
   });
 
   it("restockLine creates restock record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRmaLine.findFirst).mockResolvedValue({
       id: "l1",
       disposition: "RESTOCK",
@@ -301,7 +301,7 @@ describe("CustomerReturnsService", () => {
   // ── Dashboard ─────────────────────────────────────────────────────────────
 
   it("getDashboard returns aggregate counts", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.customerRma.count)
       .mockResolvedValueOnce(50) // total
       .mockResolvedValueOnce(5) // requested

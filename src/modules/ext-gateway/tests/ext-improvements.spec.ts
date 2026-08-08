@@ -12,7 +12,7 @@ import {
   compareSemver,
   satisfiesMinCoreVersion,
   isSupportedExtApiVersion,
-} from "@unerp/service-kit";
+} from "@kannan19302/service-kit";
 import { CircuitBreakerService } from "../circuit-breaker.service";
 
 const SECRET = "sk";

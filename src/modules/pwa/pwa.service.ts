@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import type {
   UpdateManifestDto,
@@ -9,7 +9,7 @@ import type {
   UpdateInstallPromptDto,
   CreateSyncQueueDto,
   CreatePushSubscriptionDto,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 
 @Injectable()
 export class PwaService {
@@ -191,7 +191,7 @@ self.addEventListener('fetch', e => { e.respondWith(fetch(e.request)); });`;
 
   async createSyncQueue(tenantId: string, dto: CreateSyncQueueDto) {
     // dto's `payload` is typed as plain Record<string, unknown> in
-    // @unerp/shared, which doesn't structurally match Prisma's JSON input
+    // @kannan19302/shared, which doesn't structurally match Prisma's JSON input
     // type — the shapes agree at runtime, only the JSON typing disagrees.
     return prisma.pwaSyncQueue.create({ data: { ...dto, tenantId } as any });
   }

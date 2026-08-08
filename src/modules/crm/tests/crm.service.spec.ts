@@ -128,7 +128,7 @@ const mockPrisma = vi.hoisted(() => ({
   $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(mockPrisma)),
 }));
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: mockPrisma,
 }));
 

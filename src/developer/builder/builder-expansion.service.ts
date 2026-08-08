@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import type {
   CreateFormTemplateInput,
@@ -11,7 +11,7 @@ import type {
   CreateWorkflowDefinitionInput,
   UpdateWorkflowDefinitionInput,
   CreateWorkflowStepInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 
 @Injectable()
 export class BuilderExpansionService {

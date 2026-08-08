@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OperationsService } from "../../../platform/v1/operations.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       $executeRaw: vi.fn(),
@@ -71,7 +71,7 @@ describe("OperationsService", () => {
   });
 
   it("should return system health metrics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.$executeRaw).mockResolvedValue(1);
 
     const result = await operationsService.getSystemHealth();
@@ -93,7 +93,7 @@ describe("OperationsService", () => {
   });
 
   it("should re-enqueue a failed job into the real BullMQ queue by queueName, not just flip a DB flag", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.backgroundJob.findMany).mockResolvedValue([
       {
         id: "job-1",
@@ -127,7 +127,7 @@ describe("OperationsService", () => {
   });
 
   it("skips (does not fake-retry) a failed job whose queueName has no live Queue instance", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.backgroundJob.findMany).mockResolvedValue([
       {
         id: "job-2",
@@ -163,7 +163,7 @@ describe("OperationsService", () => {
   });
 
   it("should return database schema table arrays", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.$queryRaw).mockResolvedValue([
       { table_name: "users" },
     ] as any);
@@ -173,7 +173,7 @@ describe("OperationsService", () => {
   });
 
   it("should create a backup setting entry", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.setting.findUnique).mockResolvedValue(null as any);
     vi.mocked(prisma.setting.upsert).mockResolvedValue({} as any);
 
@@ -183,7 +183,7 @@ describe("OperationsService", () => {
   });
 
   it("flags created backups as source: SIMULATED (no real pg_dump backs this pass â€” P1-1)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.setting.findUnique).mockResolvedValue(null as any);
     vi.mocked(prisma.setting.upsert).mockResolvedValue({} as any);
 
@@ -192,7 +192,7 @@ describe("OperationsService", () => {
   });
 
   it("flags backups returned from getBackups as source: SIMULATED, including the seeded fallback rows", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.setting.findUnique).mockResolvedValue(null as any);
 
     const result = (await operationsService.getBackups("tenant-123")) as any[];
@@ -203,7 +203,7 @@ describe("OperationsService", () => {
   });
 
   it("backfills source: SIMULATED onto pre-existing persisted backup records that predate the field", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.setting.findUnique).mockResolvedValue({
       value: [
         {

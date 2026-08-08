@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { InventoryService } from "../inventory.service";
 import { Product } from "@prisma/client";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const mockTx = {
     inventoryItem: {
       findFirst: vi.fn(),
@@ -68,7 +68,7 @@ describe("InventoryService", () => {
 
   describe("getProducts", () => {
     it("should return all products in the tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       const mockProducts = [
         {
           id: "prod-1",

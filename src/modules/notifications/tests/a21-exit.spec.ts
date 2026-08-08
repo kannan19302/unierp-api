@@ -48,11 +48,11 @@ const DEEP_CONTROLLER_FILE = join(MODULES_ROOT, "notifications", "notifications-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared prisma mock (inlined so vitest's hoisted vi.mock factory is
-// self-contained). `idpPrisma` routes lazily to `@unerp/database` delegates, so
+// self-contained). `idpPrisma` routes lazily to `@kannan19302/database` delegates, so
 // exporting the same stub under both names keeps every `vi.mocked(...)` setup
 // pointing at exactly the function the service calls.
 // ─────────────────────────────────────────────────────────────────────────────
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const prisma = {
     user: { findFirst: vi.fn() },
     userPresence: { findFirst: vi.fn() },
@@ -133,7 +133,7 @@ describe("A21 exit criterion — unified notification & delivery engine", () => 
     beforeEach(async () => {
       service = new NotificationDeliveryService();
       vi.clearAllMocks();
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.notificationPreference.findMany).mockResolvedValue([] as never);
       vi.mocked(prisma.notificationDigest.findFirst).mockResolvedValue(null as never);
       vi.mocked(prisma.userPresence.findFirst).mockResolvedValue({
@@ -150,7 +150,7 @@ describe("A21 exit criterion — unified notification & delivery engine", () => 
     });
 
     it("disabling EMAIL for one user suppresses only that user's email, other users still receive it", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.user.findFirst).mockImplementation((({ where }) => ({
         email: where?.id === "u-a" ? "a@x.io" : "b@x.io",
       })) as never);
@@ -195,7 +195,7 @@ describe("A21 exit criterion — unified notification & delivery engine", () => 
     });
 
     it("a single global preference suppresses in-app delivery for event types emitted by different modules", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.notificationPreference.findMany).mockResolvedValue([
         { channelName: "IN_APP", eventType: "*", isEnabled: false },
       ] as never);
@@ -225,7 +225,7 @@ describe("A21 exit criterion — unified notification & delivery engine", () => 
     });
 
     it("writes queryable delivery logs with status for every delivered channel (ALL)", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.user.findFirst).mockResolvedValue({ email: "c@x.io" } as never);
       vi.mocked(prisma.pushDeviceToken.findMany).mockResolvedValue([
         { deviceId: "d1", platform: "ANDROID" },
@@ -253,7 +253,7 @@ describe("A21 exit criterion — unified notification & delivery engine", () => 
     });
 
     it("quiet hours suppress non-urgent EMAIL/PUSH but urgent notifications bypass them", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.user.findFirst).mockResolvedValue({ email: "q@x.io" } as never);
       vi.mocked(prisma.notificationDigest.findFirst).mockResolvedValue({
         preferences: {

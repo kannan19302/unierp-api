@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { generateKeyPairSync } from "node:crypto";
 import { ExtensionSignatureService } from "../extension-signature.service";
-import type { BundleFile, SignedBundle } from "@unerp/extension-api";
+import type { BundleFile, SignedBundle } from "@kannan19302/extension-api";
 
 /**
  * § 8.2 / § 10 — a bundle's signature must cover everything an attacker would

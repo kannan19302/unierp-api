@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     pickWave: {
       count: vi.fn(),
@@ -48,7 +48,7 @@ describe("PickWavesService", () => {
   });
 
   it("createWave — auto-numbers WV-000001", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.count).mockResolvedValue(0);
     vi.mocked(prisma.pickWave.create).mockResolvedValue({
       id: "w1",
@@ -68,7 +68,7 @@ describe("PickWavesService", () => {
   });
 
   it("addOrderToWave — throws on non-OPEN wave", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "PICKING",
@@ -79,7 +79,7 @@ describe("PickWavesService", () => {
   });
 
   it("addOrderToWave — happy path", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "OPEN",
@@ -94,7 +94,7 @@ describe("PickWavesService", () => {
   });
 
   it("addItemToWave — zero qty throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "OPEN",
@@ -105,7 +105,7 @@ describe("PickWavesService", () => {
   });
 
   it("startWave — throws if no items", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "OPEN",
@@ -117,7 +117,7 @@ describe("PickWavesService", () => {
   });
 
   it("startWave — OPEN→PICKING", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "OPEN",
@@ -135,7 +135,7 @@ describe("PickWavesService", () => {
   });
 
   it("confirmPick — full pick sets item PICKED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "PICKING",
@@ -162,7 +162,7 @@ describe("PickWavesService", () => {
   });
 
   it("confirmPick — partial pick sets IN_PROGRESS", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "PICKING",
@@ -188,7 +188,7 @@ describe("PickWavesService", () => {
   });
 
   it("packWave — throws if PENDING items remain", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "PICKING",
@@ -200,7 +200,7 @@ describe("PickWavesService", () => {
   });
 
   it("cancelWave — cascades to tasks and items", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "PICKING",
@@ -222,7 +222,7 @@ describe("PickWavesService", () => {
   });
 
   it("assignTask — happy path", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findFirst).mockResolvedValue({
       id: waveId,
       status: "PICKING",
@@ -241,7 +241,7 @@ describe("PickWavesService", () => {
   });
 
   it("startTask — ASSIGNED→IN_PROGRESS", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickTask.findFirst).mockResolvedValue({
       id: "task-1",
       status: "ASSIGNED",
@@ -260,7 +260,7 @@ describe("PickWavesService", () => {
   });
 
   it("getDashboard — returns all aggregates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.groupBy).mockResolvedValue([
       { status: "OPEN", _count: { id: 3 } },
     ] as never);

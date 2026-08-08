@@ -25,7 +25,7 @@ const { db } = vi.hoisted(() => {
   return { db };
 });
 
-vi.mock("@unerp/database", () => ({ prisma: db }));
+vi.mock("@kannan19302/database", () => ({ prisma: db }));
 
 describe("InventoryService — expiring batches, FEFO suggestion, recall notice", () => {
   let service: InventoryService;

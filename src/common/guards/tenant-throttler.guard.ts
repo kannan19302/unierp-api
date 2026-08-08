@@ -7,7 +7,7 @@ import {
   InjectThrottlerStorage,
 } from "@nestjs/throttler";
 import { Reflector } from "@nestjs/core";
-import { verifyTypedToken, TOKEN_TYPE } from "@unerp/auth";
+import { verifyTypedToken, TOKEN_TYPE } from "@kannan19302/auth";
 import { TENANT_PLAN_LIMITS, FREE_PLAN_LIMITS } from "./tenant-plan-limits";
 import { TenantPlanService } from "./tenant-plan.service";
 

@@ -107,7 +107,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { FinanceOperationsService } from "./finance-operations.service";
 import { resolveOrgId } from "../../common/utils/pagination.util";
 
-// ─── Inline Zod schemas for endpoints not covered by @unerp/shared schemas ─────
+// ─── Inline Zod schemas for endpoints not covered by @kannan19302/shared schemas ─────
 // Fix for security issue #40: every POST/PATCH body must pass through Zod validation
 
 const createTaxJurisdictionSchema = z.object({

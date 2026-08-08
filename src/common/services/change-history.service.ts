@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import type { FieldChange, ChangeAction } from "@unerp/shared";
+import type { FieldChange, ChangeAction } from "@kannan19302/shared";
 
 const SKIP_FIELDS = new Set([
   "updatedAt",

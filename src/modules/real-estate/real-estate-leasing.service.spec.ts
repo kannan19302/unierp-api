@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { RealEstateLeasingService } from "./real-estate-leasing.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("RealEstateLeasingService", () => {

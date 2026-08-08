@@ -2,7 +2,7 @@ import {
   EXT_API_VERSION,
   isSupportedExtApiVersion,
   MIN_SUPPORTED_EXT_API_VERSION,
-} from "@unerp/service-kit";
+} from "@kannan19302/service-kit";
 
 /**
  * App bundle manifest — the declarative contract a marketplace app ships.
@@ -68,7 +68,7 @@ export interface ManifestAutomation {
 /**
  * Out-of-process service section (runtime: 'declarative+service'). The service
  * lives in its own repo/deployment; core proxies /api/v1/ext/<routePrefix>/* to
- * it while the app is installed. See @unerp/service-kit for the shared contract.
+ * it while the app is installed. See @kannan19302/service-kit for the shared contract.
  */
 export interface ManifestService {
   routePrefix?: string; // defaults to the app slug

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DocumentsService } from "../documents.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       folder: {
@@ -32,7 +32,7 @@ vi.mock("@unerp/database", () => {
       organization: {
         findFirst: vi.fn(),
       },
-      $transaction: vi.fn((cb) => cb(require("@unerp/database").prisma)),
+      $transaction: vi.fn((cb) => cb(require("@kannan19302/database").prisma)),
     },
   };
 });
@@ -46,7 +46,7 @@ describe("DocumentsService", () => {
   });
 
   it("should fetch folders", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockFolders = [{ id: "f-1", name: "Billing" }];
     vi.mocked(prisma.folder.findMany).mockResolvedValue(mockFolders as never);
 
@@ -56,7 +56,7 @@ describe("DocumentsService", () => {
   });
 
   it("should fetch documents", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockDocs = [{ id: "d-1", name: "Contract.pdf" }];
     vi.mocked(prisma.document.findMany).mockResolvedValue(mockDocs as never);
 

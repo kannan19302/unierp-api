@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import type {
   BuilderAnalyticsEventInput,
@@ -16,7 +16,7 @@ import type {
   CustomRecordDataInput,
   UpdatePageRegistryInput,
   UpdateSchemaRegistryInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import * as vm from "vm";
 
 type ImportRecord = Record<string, string | number | boolean | Date | null>;

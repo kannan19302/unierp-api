@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SupplyChainService } from "../supply-chain.service";
 
-// Mock @unerp/database
-vi.mock("@unerp/database", () => {
+// Mock @kannan19302/database
+vi.mock("@kannan19302/database", () => {
   const prismaMock = {
     shipment: {
       findMany: vi.fn(),
@@ -67,7 +67,7 @@ vi.mock("@unerp/database", () => {
   return { prisma: prismaMock };
 });
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("SupplyChainService", () => {

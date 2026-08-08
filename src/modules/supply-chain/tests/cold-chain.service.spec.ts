@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ColdChainService } from "../services/cold-chain.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const mockDb = {
     coldChainShipment: {
       findMany: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock("@unerp/database", () => {
   return { prisma: mockDb };
 });
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 const mockPrisma = prisma as any;

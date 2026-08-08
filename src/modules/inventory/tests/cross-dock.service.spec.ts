@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     crossDockStation: {
       findUnique: vi.fn(),
@@ -39,7 +39,7 @@ describe("CrossDockService", () => {
   });
 
   it("createStation — happy path", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockStation.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.crossDockStation.create).mockResolvedValue({
       id: "s1",
@@ -56,7 +56,7 @@ describe("CrossDockService", () => {
   });
 
   it("createStation — duplicate code throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockStation.findUnique).mockResolvedValue({
       id: "s1",
     } as never);
@@ -71,7 +71,7 @@ describe("CrossDockService", () => {
   });
 
   it("createOrder — happy path", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.count).mockResolvedValue(0);
     vi.mocked(prisma.crossDockOrder.create).mockResolvedValue({
       id: "o1",
@@ -98,7 +98,7 @@ describe("CrossDockService", () => {
   });
 
   it("receiveGoods — transitions PENDING→RECEIVING", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue({
       id: "o1",
       status: "PENDING",
@@ -120,7 +120,7 @@ describe("CrossDockService", () => {
   });
 
   it("receiveGoods — cancelled order throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue({
       id: "o1",
       status: "CANCELLED",
@@ -131,7 +131,7 @@ describe("CrossDockService", () => {
   });
 
   it("stageOrder — RECEIVING→STAGING", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue({
       id: "o1",
       status: "RECEIVING",
@@ -151,7 +151,7 @@ describe("CrossDockService", () => {
   });
 
   it("stageOrder — non-RECEIVING status throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue({
       id: "o1",
       status: "PENDING",
@@ -162,7 +162,7 @@ describe("CrossDockService", () => {
   });
 
   it("dispatchOrder — full dispatch sets COMPLETED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue({
       id: "o1",
       status: "STAGING",
@@ -184,7 +184,7 @@ describe("CrossDockService", () => {
   });
 
   it("dispatchOrder — partial dispatch stays DISPATCHED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue({
       id: "o1",
       status: "STAGING",
@@ -206,7 +206,7 @@ describe("CrossDockService", () => {
   });
 
   it("cancelOrder — happy path", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue({
       id: "o1",
       status: "PENDING",
@@ -227,7 +227,7 @@ describe("CrossDockService", () => {
   });
 
   it("cancelOrder — completed order throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue({
       id: "o1",
       status: "COMPLETED",
@@ -238,7 +238,7 @@ describe("CrossDockService", () => {
   });
 
   it("getDashboard — returns aggregates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.groupBy).mockResolvedValue([
       { status: "PENDING", _count: { id: 5 } },
     ] as never);
@@ -254,7 +254,7 @@ describe("CrossDockService", () => {
   });
 
   it("getOrder — not found returns null from prisma", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.crossDockOrder.findFirst).mockResolvedValue(null);
     const result = await svc.getOrder(tenantId, "nonexistent");
     expect(result).toBeNull();

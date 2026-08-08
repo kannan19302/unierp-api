@@ -4,10 +4,10 @@ import {
   BadRequestException,
   Inject,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
-import { CreateLeadInput, UpdateLeadInput } from "@unerp/shared";
+import { CreateLeadInput, UpdateLeadInput } from "@kannan19302/shared";
 import { CrmLeadScoringService } from "./crm-lead-scoring.service";
 
 // Lead status lifecycle (schema.prisma `Lead.status` comment): NEW, CONTACTED,

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationVideoService } from "../services/communication-video.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     meetingAnalytics: { findUnique: vi.fn().mockResolvedValue(null) },
     connectMeeting: {
@@ -46,7 +46,7 @@ describe("CommunicationVideoService", () => {
   });
 
   it("returns paginated meetings", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectMeeting.findMany).mockResolvedValue([
       { id: "m1", _count: { participants: 3, recordings: 1 } },
     ] as never);
@@ -57,7 +57,7 @@ describe("CommunicationVideoService", () => {
   });
 
   it("throws on missing meeting", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectMeeting.findFirst).mockResolvedValue(null as never);
     await expect(svc.getMeeting("t1", "bad")).rejects.toThrow(
       "Meeting not found",
@@ -65,7 +65,7 @@ describe("CommunicationVideoService", () => {
   });
 
   it("creates a meeting with settings", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectMeeting.create).mockResolvedValue({
       id: "m1",
       title: "Standup",
@@ -80,7 +80,7 @@ describe("CommunicationVideoService", () => {
   });
 
   it("ends a meeting and updates participants", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectMeeting.findFirst).mockResolvedValue({
       id: "m1",
       tenantId: "t1",
@@ -97,7 +97,7 @@ describe("CommunicationVideoService", () => {
   });
 
   it("returns meeting recordings", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectMeeting.findFirst).mockResolvedValue({
       id: "m1",
       tenantId: "t1",
@@ -110,7 +110,7 @@ describe("CommunicationVideoService", () => {
   });
 
   it("creates a breakout room", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectMeeting.findFirst).mockResolvedValue({
       id: "m1",
       tenantId: "t1",
@@ -126,7 +126,7 @@ describe("CommunicationVideoService", () => {
   });
 
   it("returns meeting analytics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     // getMeetingAnalytics reads the precomputed meetingAnalytics row; it does
     // not derive figures from connectMeeting/meetingParticipant, so mocking
     // those left findUnique returning null and the service threw.
@@ -140,7 +140,7 @@ describe("CommunicationVideoService", () => {
   });
 
   it("returns video dashboard metrics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.connectMeeting.count).mockResolvedValue(5);
     vi.mocked(prisma.connectMeeting.findMany).mockResolvedValue([] as never);
     const res = await svc.getVideoDashboard("t1");

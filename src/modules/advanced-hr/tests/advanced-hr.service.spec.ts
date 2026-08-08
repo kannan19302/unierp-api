@@ -1,9 +1,9 @@
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AdvancedHrService } from "../advanced-hr.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -54,7 +54,7 @@ vi.mock("@unerp/database", () => {
       user: {
         findMany: vi.fn(),
       },
-      $transaction: vi.fn((cb) => cb(require("@unerp/database").prisma)),
+      $transaction: vi.fn((cb) => cb(require("@kannan19302/database").prisma)),
     },
   };
   return { ...mocked, idpPrisma: mocked.prisma };
@@ -69,7 +69,7 @@ describe("AdvancedHrService", () => {
   });
 
   it("should get leave policies", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockPolicies = [
       { id: "p-1", name: "Annual Leave", annualAllocation: 20 },
     ];
@@ -83,7 +83,7 @@ describe("AdvancedHrService", () => {
   });
 
   it("should get shifts", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockShifts = [{ id: "s-1", note: "Morning Shift" }];
     vi.mocked(prisma.shiftSchedule.findMany).mockResolvedValue(
       mockShifts as never,
@@ -95,7 +95,7 @@ describe("AdvancedHrService", () => {
   });
 
   it("should get appraisals and map employee/reviewer names", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockAppraisals = [
       {
         id: "a-1",
@@ -126,7 +126,7 @@ describe("AdvancedHrService", () => {
   });
 
   it("should create an appraisal", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockAppraisal = { id: "a-1", score: 4.5 };
     vi.mocked(prisma.appraisal.create).mockResolvedValue(
       mockAppraisal as never,
@@ -143,7 +143,7 @@ describe("AdvancedHrService", () => {
   });
 
   it("should get trainings", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockTrainings = [{ id: "t-1", name: "Cybersecurity" }];
     vi.mocked(prisma.training.findMany).mockResolvedValue(
       mockTrainings as never,
@@ -155,7 +155,7 @@ describe("AdvancedHrService", () => {
   });
 
   it("should create a training", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockTraining = { id: "t-1", name: "Cybersecurity" };
     vi.mocked(prisma.training.create).mockResolvedValue(mockTraining as never);
 

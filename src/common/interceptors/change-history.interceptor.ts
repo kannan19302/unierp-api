@@ -6,14 +6,14 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Observable, from, switchMap } from "rxjs";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { ChangeHistoryService } from "../services/change-history.service";
 import {
   TRACK_CHANGES_KEY,
   TrackChangesMetadata,
 } from "../decorators/track-changes.decorator";
-import type { ChangeAction } from "@unerp/shared";
+import type { ChangeAction } from "@kannan19302/shared";
 
 @Injectable()
 export class ChangeHistoryInterceptor implements NestInterceptor {

@@ -1,5 +1,5 @@
 {
-  "name": "@unerp/api",
+  "name": "@kannan19302/api",
   "version": "0.0.1",
   "private": true,
   "description": "UniERP Backend API — NestJS",
@@ -36,11 +36,11 @@
     "@sentry/nestjs": "^10.61.0",
     "@sentry/node": "^10.61.0",
     "@types/multer": "^1.4.11",
-    "@unerp/auth": "^1.0.4",
-    "@unerp/blockchain": "^1.0.3",
-    "@unerp/database": "^1.0.14",
-    "@unerp/service-kit": "^0.2.3",
-    "@unerp/shared": "^1.0.5",
+    "@kannan19302/auth": "^1.0.4",
+    "@kannan19302/blockchain": "^1.0.3",
+    "@kannan19302/database": "^1.0.14",
+    "@kannan19302/service-kit": "^0.2.3",
+    "@kannan19302/shared": "^1.0.5",
     "bullmq": "^5.79.1",
     "cookie-parser": "^1.4.7",
     "exceljs": "^4.4.0",
@@ -61,8 +61,8 @@
     "web-push": "^3.6.7",
     "xlsx": "^0.18.5",
     "zod": "^3.24.0",
-    "@unerp/sandbox": "^1.0.4",
-    "@unerp/extension-api": "^1.0.6"
+    "@kannan19302/sandbox": "^1.0.4",
+    "@kannan19302/extension-api": "^1.0.6"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
@@ -79,6 +79,6 @@
     "rimraf": "^6.0.0",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0",
-    "@unerp/config": "^1.0.2"
+    "@kannan19302/config": "^1.0.2"
   }
 }

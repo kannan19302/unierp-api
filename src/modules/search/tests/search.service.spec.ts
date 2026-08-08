@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi as jest } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { SearchService } from "../search.service";
 

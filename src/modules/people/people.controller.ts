@@ -20,7 +20,7 @@ import {
   uploadPronunciationSchema,
   type UpdatePeopleProfileInput,
   type UploadPronunciationInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import { PeopleService } from "./people.service";
 import { PeopleCompetenciesService } from "./people-competencies.service";
 import {

@@ -1,7 +1,7 @@
 import { BuilderMobileService } from "../services/builder-mobile.service";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     mobileApp: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -48,7 +48,7 @@ describe("BuilderMobileService", () => {
   });
 
   it("createMobileApp succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileApp.findFirst as any).mockResolvedValue(null);
     const result = await service.createMobileApp("t1", {
       name: "App",
@@ -58,7 +58,7 @@ describe("BuilderMobileService", () => {
   });
 
   it("createMobileApp rejects duplicate slug", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileApp.findFirst as any).mockResolvedValue({ id: "app-1" });
     await expect(
       service.createMobileApp("t1", { slug: "dup" }),
@@ -66,21 +66,21 @@ describe("BuilderMobileService", () => {
   });
 
   it("updateMobileApp updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileApp.findFirst as any).mockResolvedValue({ id: "app-1" });
     const result = await service.updateMobileApp("t1", "app-1", { name: "U" });
     expect(result).toBeDefined();
   });
 
   it("deleteMobileApp deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileApp.findFirst as any).mockResolvedValue({ id: "app-1" });
     const result = await service.deleteMobileApp("t1", "app-1");
     expect(result).toBeDefined();
   });
 
   it("addMobileScreen creates screen", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileApp.findFirst as any).mockResolvedValue({ id: "app-1" });
     const result = await service.addMobileScreen("t1", "app-1", {
       name: "Screen",
@@ -94,7 +94,7 @@ describe("BuilderMobileService", () => {
   });
 
   it("updateMobileScreen updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileScreen.findFirst as any).mockResolvedValue({
       id: "screen-1",
     });
@@ -105,7 +105,7 @@ describe("BuilderMobileService", () => {
   });
 
   it("deleteMobileScreen deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileScreen.findFirst as any).mockResolvedValue({
       id: "screen-1",
     });
@@ -114,7 +114,7 @@ describe("BuilderMobileService", () => {
   });
 
   it("configurePushNotifications creates config", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileApp.findFirst as any).mockResolvedValue({ id: "app-1" });
     const result = await service.configurePushNotifications("t1", "app-1", {
       provider: "FCM",
@@ -128,7 +128,7 @@ describe("BuilderMobileService", () => {
   });
 
   it("previewMobileApp returns preview", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileApp.findFirst as any).mockResolvedValue({
       id: "app-1",
       name: "App",
@@ -141,7 +141,7 @@ describe("BuilderMobileService", () => {
   });
 
   it("deployMobileBuild creates build", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.mobileApp.findFirst as any).mockResolvedValue({
       id: "app-1",
       buildNumber: 0,

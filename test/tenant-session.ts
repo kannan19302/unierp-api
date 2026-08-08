@@ -1,4 +1,4 @@
-import { prisma, runWithTenantSession } from "@unerp/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 
 /**
  * Wrap a service so every call runs inside a tenant session, exactly as

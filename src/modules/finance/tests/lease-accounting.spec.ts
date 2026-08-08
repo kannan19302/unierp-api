@@ -5,7 +5,7 @@ import {
 } from "../lease-accounting.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     financeLease: {
       findMany: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 const mockEvents = { emit: vi.fn() };

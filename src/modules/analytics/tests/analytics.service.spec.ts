@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AnalyticsService } from "../analytics.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       dashboard: {
@@ -46,7 +46,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should fetch dashboards", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockDash = [{ id: "d-1", name: "Sales Dash" }];
     vi.mocked(prisma.dashboard.findMany).mockResolvedValue(mockDash as never);
 
@@ -56,7 +56,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should fetch reports", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockReports = [{ id: "r-1", name: "Inventory Report" }];
     vi.mocked(prisma.report.findMany).mockResolvedValue(mockReports as never);
 
@@ -66,7 +66,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should fetch KPIs", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockKPIs = [
       { id: "k-1", code: "TOTAL_REVENUE", value: "$10,000", trend: "[]" },
     ];
@@ -78,7 +78,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should enrich KPIs with goal/target and change %", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.kPI.findMany).mockResolvedValue([
       {
         id: "k-1",
@@ -97,7 +97,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should drill down into TOTAL_REVENUE invoices", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.invoice.findMany).mockResolvedValue([
       {
         invoiceNumber: "INV-1",
@@ -116,7 +116,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should detect overdue receivables in insights", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.invoice.findMany).mockResolvedValue([
       {
         invoiceNumber: "INV-OVERDUE",
@@ -134,7 +134,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should export invoices as CSV", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.invoice.findMany).mockResolvedValue([
       {
         invoiceNumber: "INV-1",

@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TaxJurisdictionLookupService } from "../services/tax-jurisdiction-lookup.service";
 import { TaxFilingCalendarService } from "../services/tax-filing-calendar.service";
 import { RecurringJournalSchedulerService } from "../services/recurring-journal-scheduler.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const createMockPrismaCollection = () => ({
     findMany: vi.fn(),
     findFirst: vi.fn(),

@@ -5,7 +5,7 @@ import { StripePaymentGatewayService } from "../payments/stripe-payment-gateway.
 import { MockPaymentGatewayService } from "../payments/mock-payment-gateway.service";
 import { EcommerceCheckoutService } from "../ecommerce-checkout.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   const mockPrisma = {
     $transaction: vi.fn(async (cb) => cb(mockPrisma)),
     cart: { findFirst: vi.fn(), update: vi.fn() },
@@ -74,7 +74,7 @@ describe("Stripe Payment Gateway Integration & Webhooks", () => {
       new StripePaymentGatewayService(),
     );
 
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.organization).findFirst.mockResolvedValue({
       id: "org-stripe-1",
       tenantId: "t1",
@@ -161,7 +161,7 @@ describe("Stripe Payment Gateway Integration & Webhooks", () => {
 
   describe("Webhook Cryptographic Signature Verification", () => {
     it("verifies valid HMAC webhook signatures correctly", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.cart).findFirst.mockResolvedValue(baseCart as never);
 
       const timestamp = Math.floor(Date.now() / 1000);
@@ -208,7 +208,7 @@ describe("Stripe Payment Gateway Integration & Webhooks", () => {
 
   describe("Webhook Idempotency Protection", () => {
     it("skips duplicate webhook runs if payment is already recorded", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       // Simulate that this payment was already processed (exists in DB)
       vi.mocked(prisma.storefrontCheckoutState.findFirst).mockResolvedValue({
         id: "existing-pay-record",

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PackagingGs1Service } from "../packaging-gs1.service";
 import { NotFoundException, ConflictException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     packagingSpec: {
       findMany: vi.fn(),
@@ -69,7 +69,7 @@ describe("PackagingGs1Service", () => {
   // ── Packaging Specs ───────────────────────────────────────────
 
   it("listSpecsByProduct returns specs with barcodes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packagingSpec.findMany).mockResolvedValue([
       { id: "s1", level: "EACH" },
     ] as any);
@@ -78,13 +78,13 @@ describe("PackagingGs1Service", () => {
   });
 
   it("getSpec throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packagingSpec.findFirst).mockResolvedValue(null);
     await expect(svc.getSpec(T, "bad")).rejects.toThrow(NotFoundException);
   });
 
   it("upsertSpec creates or updates packaging spec", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packagingSpec.upsert).mockResolvedValue({
       id: "s1",
       level: "EACH",
@@ -99,7 +99,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("getPackagingHierarchy calculates cumulative units correctly", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packagingSpec.findMany).mockResolvedValue([
       { level: "EACH", unitsPerLevel: 1, barcodes: [] },
       { level: "INNER", unitsPerLevel: 6, barcodes: [] },
@@ -110,7 +110,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("deactivateSpec marks spec inactive", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packagingSpec.findFirst).mockResolvedValue({
       id: "s1",
       barcodes: [],
@@ -127,7 +127,7 @@ describe("PackagingGs1Service", () => {
   // ── Barcodes ──────────────────────────────────────────────────
 
   it("addBarcode throws ConflictException for duplicate value", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.itemBarcode.findFirst).mockResolvedValue({
       id: "b1",
     } as any);
@@ -141,7 +141,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("addBarcode clears previous primary when isPrimary=true", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.itemBarcode.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.itemBarcode.updateMany).mockResolvedValue({
       count: 1,
@@ -161,7 +161,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("lookupBarcode returns barcode with spec", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.itemBarcode.findFirst).mockResolvedValue({
       id: "b1",
       barcodeValue: "12345",
@@ -172,7 +172,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("lookupBarcode throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.itemBarcode.findFirst).mockResolvedValue(null);
     await expect(svc.lookupBarcode(T, "unknown")).rejects.toThrow(
       NotFoundException,
@@ -182,7 +182,7 @@ describe("PackagingGs1Service", () => {
   // ── GS1 Application Identifiers ──────────────────────────────
 
   it("seedStandardGs1Ais inserts 8 standard AIs", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.gs1ApplicationIdentifier.upsert).mockResolvedValue(
       {} as any,
     );
@@ -192,7 +192,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("upsertGs1Ai creates new AI", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.gs1ApplicationIdentifier.upsert).mockResolvedValue({
       id: "ai1",
       ai: "01",
@@ -208,7 +208,7 @@ describe("PackagingGs1Service", () => {
   // ── Label Templates ───────────────────────────────────────────
 
   it("createLabelTemplate persists template", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.labelTemplate.create).mockResolvedValue({
       id: "tpl1",
       name: "Carton Label",
@@ -224,7 +224,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("assignLabelToSpec clears previous default before creating new one", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.labelAssignment.updateMany).mockResolvedValue({
       count: 1,
     } as any);
@@ -242,7 +242,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("getLabelForSpec throws NotFoundException when no assignment", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.labelAssignment.findFirst).mockResolvedValue(null);
     await expect(svc.getLabelForSpec(T, "s1")).rejects.toThrow(
       NotFoundException,
@@ -252,7 +252,7 @@ describe("PackagingGs1Service", () => {
   // ── SSCC ──────────────────────────────────────────────────────
 
   it("allocateSscc generates unique SSCC with check digit", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.ssccRecord.count).mockResolvedValue(0);
     vi.mocked(prisma.ssccRecord.create).mockImplementation(
       async ({ data }: any) => ({ id: "sscc1", sscc: data.sscc }),
@@ -263,7 +263,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("markSsccUsed throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.ssccRecord.findFirst).mockResolvedValue(null);
     await expect(svc.markSsccUsed(T, "unknown", "SHIP-001")).rejects.toThrow(
       NotFoundException,
@@ -271,7 +271,7 @@ describe("PackagingGs1Service", () => {
   });
 
   it("getDashboard returns packaging and GS1 aggregates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packagingSpec.count).mockResolvedValue(20);
     vi.mocked(prisma.itemBarcode.count).mockResolvedValue(45);
     vi.mocked(prisma.labelTemplate.count).mockResolvedValue(8);

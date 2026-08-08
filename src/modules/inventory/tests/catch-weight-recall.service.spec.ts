@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CatchWeightRecallService } from "../catch-weight-recall.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     catchWeightConfig: {
       findMany: vi.fn(),
@@ -64,7 +64,7 @@ describe("CatchWeightRecallService", () => {
   // ── Catch-Weight Config ───────────────────────────────────────
 
   it("listConfigs returns all active configs", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightConfig.findMany).mockResolvedValue([
       { id: "cfg1" },
     ] as any);
@@ -73,13 +73,13 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("getConfig throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightConfig.findFirst).mockResolvedValue(null);
     await expect(svc.getConfig(T, "bad")).rejects.toThrow(NotFoundException);
   });
 
   it("upsertConfig creates or updates config", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightConfig.upsert).mockResolvedValue({
       id: "cfg1",
     } as any);
@@ -91,7 +91,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("deactivateConfig marks config inactive", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightConfig.findFirst).mockResolvedValue({
       id: "cfg1",
     } as any);
@@ -106,7 +106,7 @@ describe("CatchWeightRecallService", () => {
   // ── Catch-Weight Readings ─────────────────────────────────────
 
   it("captureReading throws NotFoundException when no active config", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightConfig.findFirst).mockResolvedValue(null);
     await expect(
       svc.captureReading(T, "user1", {
@@ -120,7 +120,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("captureReading calculates WITHIN_TOLERANCE correctly", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightConfig.findFirst).mockResolvedValue({
       id: "cfg1",
       nominalWeightKg: 1.5,
@@ -143,7 +143,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("captureReading flags OVER_TOLERANCE when weight exceeds upper bound", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightConfig.findFirst).mockResolvedValue({
       id: "cfg1",
       nominalWeightKg: 1.0,
@@ -168,7 +168,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("getVarianceSummary aggregates by status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightReading.groupBy).mockResolvedValue([
       {
         varianceStatus: "WITHIN_TOLERANCE",
@@ -189,7 +189,7 @@ describe("CatchWeightRecallService", () => {
   // ── Tare Library ──────────────────────────────────────────────
 
   it("listTares returns all tares", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightTare.findMany).mockResolvedValue([
       { id: "t1" },
     ] as any);
@@ -197,7 +197,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("upsertTare creates or updates tare", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.catchWeightTare.upsert).mockResolvedValue({
       id: "t1",
     } as any);
@@ -209,7 +209,7 @@ describe("CatchWeightRecallService", () => {
   // ── Product Recalls ───────────────────────────────────────────
 
   it("createRecall creates recall in DRAFT status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.create).mockResolvedValue({
       id: "rc1",
       status: "DRAFT",
@@ -226,7 +226,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("issueRecall transitions DRAFT→ISSUED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.findFirst).mockResolvedValue({
       id: "rc1",
       status: "DRAFT",
@@ -240,7 +240,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("issueRecall throws BadRequestException if not in DRAFT", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.findFirst).mockResolvedValue({
       id: "rc1",
       status: "CANCELLED",
@@ -251,7 +251,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("addAffectedStock increments totalUnitsAffected", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.findFirst).mockResolvedValue({
       id: "rc1",
       status: "ISSUED",
@@ -270,7 +270,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("quarantineStock throws NotFoundException when stock not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.findFirst).mockResolvedValue({
       id: "rc1",
       status: "IN_PROGRESS",
@@ -282,7 +282,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("sendNotices marks all unsent notices as sent", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.findFirst).mockResolvedValue({
       id: "rc1",
       status: "ISSUED",
@@ -296,7 +296,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("completeRecall transitions IN_PROGRESS→COMPLETED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.findFirst).mockResolvedValue({
       id: "rc1",
       status: "IN_PROGRESS",
@@ -310,7 +310,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("cancelRecall prevents cancelling a COMPLETED recall", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.findFirst).mockResolvedValue({
       id: "rc1",
       status: "COMPLETED",
@@ -321,7 +321,7 @@ describe("CatchWeightRecallService", () => {
   });
 
   it("getDashboard returns recall and catch-weight aggregates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productRecall.groupBy).mockResolvedValue([
       { status: "DRAFT", _count: 2 } as any,
       { status: "IN_PROGRESS", _count: 1 } as any,

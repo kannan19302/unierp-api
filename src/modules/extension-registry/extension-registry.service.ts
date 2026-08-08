@@ -6,20 +6,20 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { Prisma } from "@prisma/client";
 import {
   SandboxRunner,
   type HostCapabilities,
   type SandboxInstallation,
-} from "@unerp/sandbox";
+} from "@kannan19302/sandbox";
 import {
   ExtensionManifestV1Schema,
   effectiveScopes,
   extensionTableName,
   type ExtensionManifestV1,
   type Scope,
-} from "@unerp/extension-api";
+} from "@kannan19302/extension-api";
 import { ExtensionSchemaService } from "./extension-schema.service";
 import { ExtensionSignatureService } from "./extension-signature.service";
 

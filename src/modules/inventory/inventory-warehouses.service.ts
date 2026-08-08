@@ -3,9 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { CreateWarehouseInput, UpdateWarehouseInput } from "@unerp/shared";
+import { CreateWarehouseInput, UpdateWarehouseInput } from "@kannan19302/shared";
 import {
   buildPaginationValues,
   buildOrderBy,

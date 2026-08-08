@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ReportingService } from "../reporting.service";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       reportWidget: {
@@ -25,7 +25,7 @@ describe("ReportingService", () => {
   });
 
   it("should get report widgets", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const mockWidgets = [
       { id: "w-1", title: "Sales Report", chartType: "BAR" },
     ];

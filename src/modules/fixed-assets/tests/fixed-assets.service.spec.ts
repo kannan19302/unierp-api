@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FixedAssetsService } from "../fixed-assets.service";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 
@@ -38,7 +38,7 @@ vi.mock("@prisma/client", () => {
   return { Prisma: { Decimal, JsonNull: "JsonNull" } };
 });
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     fixedAssetCategory: {
       findMany: vi.fn(),

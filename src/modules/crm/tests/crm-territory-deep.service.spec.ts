@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     salesTerritory: {
       findMany: vi.fn().mockResolvedValue([]),

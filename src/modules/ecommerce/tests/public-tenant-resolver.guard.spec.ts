@@ -5,7 +5,7 @@ import {
   STOREFRONT_GUEST_USER_ID,
 } from "../guards/public-tenant-resolver.guard";
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   return {
     prisma: {
       storefrontConfig: { findUnique: vi.fn() },
@@ -32,7 +32,7 @@ describe("PublicTenantResolverGuard", () => {
   });
 
   it("404s when no StorefrontConfig matches the slug (does not leak whether the tenant exists)", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.storefrontConfig.findUnique).mockResolvedValue(null);
 
     const request = { params: { tenantSlug: "unknown-store" } };
@@ -42,7 +42,7 @@ describe("PublicTenantResolverGuard", () => {
   });
 
   it("404s when the storefront exists but is disabled", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.storefrontConfig.findUnique).mockResolvedValue({
       id: "cfg-1",
       tenantId: "t1",
@@ -63,7 +63,7 @@ describe("PublicTenantResolverGuard", () => {
   });
 
   it("resolves tenant context and stamps a synthetic request.user for a valid, enabled storefront", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.storefrontConfig.findUnique).mockResolvedValue({
       id: "cfg-1",
       tenantId: "tenant-acme",

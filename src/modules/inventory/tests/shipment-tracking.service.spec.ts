@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     inboundShipment: {
       count: vi.fn(),
@@ -47,7 +47,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("createInboundShipment — auto-numbers IS-000001", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inboundShipment.count).mockResolvedValue(0);
     vi.mocked(prisma.inboundShipment.create).mockResolvedValue({
       id: "s1",
@@ -66,7 +66,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("updateInboundStatus — valid transition EXPECTED→IN_TRANSIT", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inboundShipment.findFirst).mockResolvedValue({
       id: "s1",
       status: "EXPECTED",
@@ -85,7 +85,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("updateInboundStatus — invalid transition throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inboundShipment.findFirst).mockResolvedValue({
       id: "s1",
       status: "COMPLETE",
@@ -96,7 +96,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("updateInboundStatus — sets arrivedAt when ARRIVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inboundShipment.findFirst).mockResolvedValue({
       id: "s1",
       status: "IN_TRANSIT",
@@ -115,7 +115,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("createOutboundShipment — auto-numbers OS-000001", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.outboundShipment.count).mockResolvedValue(0);
     vi.mocked(prisma.outboundShipment.create).mockResolvedValue({
       id: "s2",
@@ -129,7 +129,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("updateOutboundStatus — PACKED→SHIPPED sets shipDate", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.outboundShipment.findFirst).mockResolvedValue({
       id: "s2",
       status: "PACKED",
@@ -148,7 +148,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("addTrackingEvent — happy path for inbound", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inboundShipment.findFirst).mockResolvedValue({
       id: "s1",
     } as never);
@@ -166,7 +166,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("addTrackingEvent — not found throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inboundShipment.findFirst).mockResolvedValue(null);
     await expect(
       svc.addTrackingEvent(tenantId, {
@@ -179,7 +179,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("reportException — creates exception", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.shipmentException.create).mockResolvedValue({
       id: "exc1",
       status: "OPEN",
@@ -195,7 +195,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("updateExceptionStatus — RESOLVED sets resolvedAt", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.shipmentException.findFirst).mockResolvedValue({
       id: "exc1",
       status: "OPEN",
@@ -220,7 +220,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("updateExceptionStatus — not found throws", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.shipmentException.findFirst).mockResolvedValue(null);
     await expect(
       svc.updateExceptionStatus(
@@ -233,7 +233,7 @@ describe("ShipmentTrackingService", () => {
   });
 
   it("getDashboard — returns all aggregates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inboundShipment.groupBy).mockResolvedValue([]);
     vi.mocked(prisma.outboundShipment.groupBy).mockResolvedValue([]);
     vi.mocked(prisma.shipmentException.count).mockResolvedValue(2);

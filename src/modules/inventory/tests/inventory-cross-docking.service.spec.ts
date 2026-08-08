@@ -33,7 +33,7 @@ const { db } = vi.hoisted(() => {
   return { db };
 });
 
-vi.mock("@unerp/database", () => ({ prisma: db }));
+vi.mock("@kannan19302/database", () => ({ prisma: db }));
 
 describe("InventoryService — cross-docking", () => {
   let service: InventoryService;

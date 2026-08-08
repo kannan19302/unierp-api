@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CustomerPortalService } from "../customer-portal.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     customer: { findFirst: vi.fn() },
     contact: { findFirst: vi.fn() },
@@ -29,7 +29,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-vi.mock("@unerp/auth", () => ({
+vi.mock("@kannan19302/auth", () => ({
   hashPassword: vi.fn(async (pw: string) => `hashed:${pw}`),
   comparePassword: vi.fn(
     async (pw: string, hash: string) => hash === `hashed:${pw}`,
@@ -37,7 +37,7 @@ vi.mock("@unerp/auth", () => ({
   signToken: vi.fn(() => "signed-jwt-token"),
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 const TENANT = "tenant-1";

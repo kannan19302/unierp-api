@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import { YardManagementService } from "../yard-management.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     dockDoor: {
       findMany: vi.fn(),
@@ -101,7 +101,7 @@ describe("YardManagementService", () => {
 
   describe("listDockDoors", () => {
     it("returns doors for tenant", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.dockDoor.findMany).mockResolvedValue([
         mockDoor(),
       ] as never);
@@ -110,7 +110,7 @@ describe("YardManagementService", () => {
     });
 
     it("filters by warehouseId", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.dockDoor.findMany).mockResolvedValue([] as never);
       await svc.listDockDoors(TENANT, "wh2");
       expect(prisma.dockDoor.findMany).toHaveBeenCalledWith(
@@ -123,7 +123,7 @@ describe("YardManagementService", () => {
 
   describe("createDockDoor", () => {
     it("creates a door", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.dockDoor.create).mockResolvedValue(mockDoor() as never);
       const result = await svc.createDockDoor(TENANT, {
         warehouseId: "wh1",
@@ -136,7 +136,7 @@ describe("YardManagementService", () => {
 
   describe("updateDockDoor", () => {
     it("updates door status", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.dockDoor.findFirst).mockResolvedValue(
         mockDoor() as never,
       );
@@ -150,7 +150,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if door not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.dockDoor.findFirst).mockResolvedValue(null as never);
       await expect(svc.updateDockDoor(TENANT, "bad", {})).rejects.toThrow(
         NotFoundException,
@@ -160,7 +160,7 @@ describe("YardManagementService", () => {
 
   describe("deleteDockDoor", () => {
     it("deletes door with no active appointments", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.dockDoor.findFirst).mockResolvedValue(
         mockDoor() as never,
       );
@@ -171,7 +171,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if active appointments exist", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.dockDoor.findFirst).mockResolvedValue(
         mockDoor() as never,
       );
@@ -184,7 +184,7 @@ describe("YardManagementService", () => {
 
   describe("createAppointment", () => {
     it("creates appointment with auto-number", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.yardAppointment.create).mockResolvedValue(
         mockAppt() as never,
@@ -202,7 +202,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if dock door is in MAINTENANCE", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.count).mockResolvedValue(0 as never);
       vi.mocked(prisma.dockDoor.findFirst).mockResolvedValue(
         mockDoor({ status: "MAINTENANCE" }) as never,
@@ -217,7 +217,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if dock door has time conflict", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.count)
         .mockResolvedValueOnce(2 as never) // seq count
         .mockResolvedValueOnce(1 as never); // conflict count
@@ -236,7 +236,7 @@ describe("YardManagementService", () => {
 
   describe("checkIn", () => {
     it("checks in a SCHEDULED appointment", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt() as never,
       );
@@ -253,7 +253,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if not SCHEDULED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt({ status: "LOADING" }) as never,
       );
@@ -265,7 +265,7 @@ describe("YardManagementService", () => {
 
   describe("startLoading", () => {
     it("moves CHECKED_IN to LOADING", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt({ status: "CHECKED_IN" }) as never,
       );
@@ -277,7 +277,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if not CHECKED_IN", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt({ status: "SCHEDULED" }) as never,
       );
@@ -289,7 +289,7 @@ describe("YardManagementService", () => {
 
   describe("complete", () => {
     it("completes a LOADING appointment", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt({
           status: "LOADING",
@@ -309,7 +309,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if not in CHECKED_IN or LOADING", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt({ status: "SCHEDULED" }) as never,
       );
@@ -321,7 +321,7 @@ describe("YardManagementService", () => {
 
   describe("markNoShow", () => {
     it("marks SCHEDULED appointment as NO_SHOW", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt() as never,
       );
@@ -333,7 +333,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if not SCHEDULED", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt({ status: "CHECKED_IN" }) as never,
       );
@@ -345,7 +345,7 @@ describe("YardManagementService", () => {
 
   describe("cancelAppointment", () => {
     it("cancels a SCHEDULED appointment", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt() as never,
       );
@@ -357,7 +357,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if already terminal", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardAppointment.findFirst).mockResolvedValue(
         mockAppt({ status: "COMPLETE" }) as never,
       );
@@ -369,7 +369,7 @@ describe("YardManagementService", () => {
 
   describe("createYardMove", () => {
     it("creates a yard move", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardMove.create).mockResolvedValue(mockMove() as never);
       const result = await svc.createYardMove(TENANT, {
         warehouseId: "wh1",
@@ -383,7 +383,7 @@ describe("YardManagementService", () => {
 
   describe("startYardMove", () => {
     it("starts a PENDING move", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardMove.findFirst).mockResolvedValue(
         mockMove() as never,
       );
@@ -395,7 +395,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if not PENDING", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardMove.findFirst).mockResolvedValue(
         mockMove({ status: "IN_PROGRESS" }) as never,
       );
@@ -405,7 +405,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if not found", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardMove.findFirst).mockResolvedValue(null as never);
       await expect(svc.startYardMove(TENANT, "bad")).rejects.toThrow(
         NotFoundException,
@@ -415,7 +415,7 @@ describe("YardManagementService", () => {
 
   describe("completeYardMove", () => {
     it("completes an IN_PROGRESS move and updates yard inventory location", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardMove.findFirst)
         .mockResolvedValueOnce(mockMove({ status: "IN_PROGRESS" }) as never)
         .mockResolvedValueOnce(mockMove({ status: "COMPLETE" }) as never);
@@ -432,7 +432,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if not IN_PROGRESS", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardMove.findFirst).mockResolvedValue(
         mockMove({ status: "PENDING" }) as never,
       );
@@ -444,7 +444,7 @@ describe("YardManagementService", () => {
 
   describe("getDashboard", () => {
     it("returns aggregated dashboard metrics", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.dockDoor.count).mockResolvedValue(10 as never);
       vi.mocked(prisma.yardAppointment.count).mockResolvedValue(5 as never);
       vi.mocked(prisma.yardMove.count).mockResolvedValue(3 as never);
@@ -458,7 +458,7 @@ describe("YardManagementService", () => {
 
   describe("listYardInventory", () => {
     it("returns active yard inventory (no departedAt)", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardInventory.findMany).mockResolvedValue([
         {
           id: "yi1",
@@ -479,7 +479,7 @@ describe("YardManagementService", () => {
 
   describe("departYardInventory", () => {
     it("marks inventory as departed", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardInventory.findFirst).mockResolvedValue({
         id: "yi1",
         departedAt: null,
@@ -493,7 +493,7 @@ describe("YardManagementService", () => {
     });
 
     it("throws if already departed", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       vi.mocked(prisma.yardInventory.findFirst).mockResolvedValue({
         id: "yi1",
         departedAt: new Date(),

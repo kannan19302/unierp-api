@@ -83,7 +83,7 @@ import {
   type CreateWebCollectionItemInput,
   type UpdateWebCollectionItemInput,
   type SeedWebCollectionInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";

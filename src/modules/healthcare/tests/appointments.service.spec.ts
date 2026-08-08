@@ -11,7 +11,7 @@ const mockPrisma = vi.hoisted(() => ({
   healthcareAppointmentSchedule: { create: vi.fn(), findMany: vi.fn() },
 }));
 
-vi.mock("@unerp/database", () => ({ prisma: mockPrisma }));
+vi.mock("@kannan19302/database", () => ({ prisma: mockPrisma }));
 
 describe("HealthcareAppointmentsService", () => {
   let svc: HealthcareAppointmentsService;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     shippingCarrier: {
       findMany: vi.fn(),
@@ -56,7 +56,7 @@ describe("InventoryLogisticsService", () => {
   // ─── Carrier management ───────────────────────────────────────────────────
 
   it("listCarriers — returns active carriers for tenant", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -72,7 +72,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("createCarrier — creates and returns new carrier", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -89,7 +89,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("updateCarrier — throws NotFoundException for unknown carrier", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -100,7 +100,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("updateCarrier — updates carrier name", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -122,7 +122,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("deactivateCarrier — sets isActive false", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -141,7 +141,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("addServiceLevel — creates service level for carrier", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -164,7 +164,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("listServiceLevels — filters by carrierId", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -185,7 +185,7 @@ describe("InventoryLogisticsService", () => {
   // ─── ASN ─────────────────────────────────────────────────────────────────
 
   it("listAsns — queries with optional filters", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -205,7 +205,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("getAsn — throws NotFoundException if not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -216,7 +216,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("createAsn — generates ASN number and creates with line items", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -239,7 +239,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("markAsnInTransit — rejects non-PENDING ASN", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -253,7 +253,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("cancelAsn — transitions PENDING to CANCELLED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -272,7 +272,7 @@ describe("InventoryLogisticsService", () => {
   // ─── Inbound shipments ────────────────────────────────────────────────────
 
   it("createInboundShipment — generates shipment number", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -291,7 +291,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("updateInboundShipmentStatus — rejects invalid transition", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -305,7 +305,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("addInboundTrackingEvent — creates tracking event", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -328,7 +328,7 @@ describe("InventoryLogisticsService", () => {
   // ─── Outbound shipments ───────────────────────────────────────────────────
 
   it("listOutboundShipments — filters by status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -342,7 +342,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("shipOutbound — transitions PACKED to SHIPPED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -367,7 +367,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("shipOutbound — rejects when status is not PACKED or PENDING", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -381,7 +381,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("recordDelivery — transitions SHIPPED to DELIVERED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -403,7 +403,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("flagOutboundException — sets status to EXCEPTION", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -424,7 +424,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("getShipmentExceptions — queries for EXCEPTION status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();
@@ -442,7 +442,7 @@ describe("InventoryLogisticsService", () => {
   });
 
   it("getLogisticsDashboard — returns aggregate counts", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
       await import("../inventory-logistics.service");
     const svc = new InventoryLogisticsService();

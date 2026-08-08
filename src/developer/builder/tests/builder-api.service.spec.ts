@@ -1,7 +1,7 @@
 import { BuilderApiService } from "../services/builder-api.service";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     apiEndpoint: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -44,7 +44,7 @@ describe("BuilderApiService", () => {
   });
 
   it("getApiEndpointById returns found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.apiEndpoint.findFirst as any).mockResolvedValue({
       id: "ep-1",
       path: "/test",
@@ -55,7 +55,7 @@ describe("BuilderApiService", () => {
   });
 
   it("createApiEndpoint succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.apiEndpoint.findFirst as any).mockResolvedValue(null);
     const result = await service.createApiEndpoint("t1", {
       name: "Test",
@@ -66,7 +66,7 @@ describe("BuilderApiService", () => {
   });
 
   it("createApiEndpoint rejects duplicate path+method", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.apiEndpoint.findFirst as any).mockResolvedValue({ id: "ep-1" });
     await expect(
       service.createApiEndpoint("t1", { path: "/dup", method: "GET" }),
@@ -74,21 +74,21 @@ describe("BuilderApiService", () => {
   });
 
   it("updateApiEndpoint updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.apiEndpoint.findFirst as any).mockResolvedValue({ id: "ep-1" });
     const result = await service.updateApiEndpoint("t1", "ep-1", { name: "U" });
     expect(result).toBeDefined();
   });
 
   it("deleteApiEndpoint deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.apiEndpoint.findFirst as any).mockResolvedValue({ id: "ep-1" });
     const result = await service.deleteApiEndpoint("t1", "ep-1");
     expect(result).toBeDefined();
   });
 
   it("addEndpointMapping adds mapping", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.apiEndpoint.findFirst as any).mockResolvedValue({
       id: "ep-1",
       mappings: [],
@@ -101,7 +101,7 @@ describe("BuilderApiService", () => {
   });
 
   it("testApiEndpoint creates test run", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.apiEndpoint.findFirst as any).mockResolvedValue({
       id: "ep-1",
       method: "GET",
@@ -113,7 +113,7 @@ describe("BuilderApiService", () => {
   });
 
   it("generateApiDocs returns OpenAPI spec", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.apiEndpoint.findFirst as any).mockResolvedValue({
       id: "ep-1",
       name: "Test",

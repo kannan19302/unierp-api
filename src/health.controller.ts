@@ -8,7 +8,7 @@ import {
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Public } from "./common/decorators/public.decorator";
 

@@ -11,7 +11,7 @@ import { ExtensionRegistryService } from "./extension-registry.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
-import type { Scope } from "@unerp/extension-api";
+import type { Scope } from "@kannan19302/extension-api";
 
 @Controller("extensions")
 @UseGuards(JwtAuthGuard, RbacGuard)

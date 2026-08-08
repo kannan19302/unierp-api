@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { ProcurementAnalyticsService } from "../procurement-analytics.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     purchaseOrder: { findMany: vi.fn(), groupBy: vi.fn() },
     purchaseOrderItem: { findMany: vi.fn() },
@@ -11,7 +11,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("ProcurementAnalyticsService", () => {

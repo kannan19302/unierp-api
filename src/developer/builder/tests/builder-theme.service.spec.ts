@@ -1,7 +1,7 @@
 import { BuilderThemeService } from "../services/builder-theme.service";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     themeConfig: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -43,7 +43,7 @@ describe("BuilderThemeService", () => {
   });
 
   it("createTheme succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue(null);
     const result = await service.createTheme("t1", {
       name: "Theme",
@@ -53,13 +53,13 @@ describe("BuilderThemeService", () => {
   });
 
   it("createTheme rejects duplicate slug", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue({ id: "theme-1" });
     await expect(service.createTheme("t1", { slug: "dup" })).rejects.toThrow();
   });
 
   it("updateTheme updates and handles default", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue({
       id: "theme-1",
       tokens: {},
@@ -69,14 +69,14 @@ describe("BuilderThemeService", () => {
   });
 
   it("deleteTheme deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue({ id: "theme-1" });
     const result = await service.deleteTheme("t1", "theme-1");
     expect(result).toBeDefined();
   });
 
   it("updateDesignTokens upserts tokens", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue({
       id: "theme-1",
       tokens: { primary: "#000" },
@@ -94,7 +94,7 @@ describe("BuilderThemeService", () => {
   });
 
   it("previewTheme returns CSS", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue({
       id: "theme-1",
       tokens: { a: "1" },
@@ -106,7 +106,7 @@ describe("BuilderThemeService", () => {
   });
 
   it("exportTheme returns export data", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue({
       id: "theme-1",
       name: "T",
@@ -126,7 +126,7 @@ describe("BuilderThemeService", () => {
   });
 
   it("takeThemeSnapshot creates snapshot", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue({
       id: "theme-1",
       version: 1,
@@ -143,7 +143,7 @@ describe("BuilderThemeService", () => {
   });
 
   it("getThemeDashboard returns metrics", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.themeConfig.findFirst as any).mockResolvedValue({
       name: "Default",
     });

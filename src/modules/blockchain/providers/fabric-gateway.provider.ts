@@ -10,8 +10,8 @@ import * as path from "path";
 import {
   FabricConnectionService,
   CHAINCODE_CHANNEL_MAP,
-} from "@unerp/blockchain";
-import type { FabricConnectionConfig } from "@unerp/blockchain";
+} from "@kannan19302/blockchain";
+import type { FabricConnectionConfig } from "@kannan19302/blockchain";
 import { Contract, Network } from "@hyperledger/fabric-gateway";
 
 @Injectable()

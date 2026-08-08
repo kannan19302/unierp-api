@@ -23,7 +23,7 @@ import {
   createBackgroundCheckRequestSchema,
   createVisaRecordSchema,
   createEmployeeWellnessProgramSchema,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 
 interface AuthenticatedRequest extends Request {
   user: {

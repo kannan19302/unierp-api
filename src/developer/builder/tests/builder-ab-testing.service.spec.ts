@@ -1,7 +1,7 @@
 import { BuilderAbTestingService } from "../services/builder-ab-testing.service";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     abTest: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -57,28 +57,28 @@ describe("BuilderAbTestingService", () => {
   });
 
   it("updateABTest updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.abTest.findFirst as any).mockResolvedValue({ id: "test-1" });
     const result = await service.updateABTest("t1", "test-1", { name: "U" });
     expect(result).toBeDefined();
   });
 
   it("deleteABTest deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.abTest.findFirst as any).mockResolvedValue({ id: "test-1" });
     const result = await service.deleteABTest("t1", "test-1");
     expect(result).toBeDefined();
   });
 
   it("startABTest requires 2+ variants", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.abTest.findFirst as any).mockResolvedValue({ id: "test-1" });
     (prisma.abTestVariant.findMany as any).mockResolvedValue([{ id: "v1" }]);
     await expect(service.startABTest("t1", "test-1")).rejects.toThrow();
   });
 
   it("startABTest starts with >=2 variants", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.abTest.findFirst as any).mockResolvedValue({ id: "test-1" });
     (prisma.abTestVariant.findMany as any).mockResolvedValue([
       { id: "v1" },
@@ -94,7 +94,7 @@ describe("BuilderAbTestingService", () => {
   });
 
   it("addVariant adds variant", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.abTest.findFirst as any).mockResolvedValue({ id: "test-1" });
     (prisma.abTestVariant.findFirst as any).mockResolvedValue(null);
     const result = await service.addVariant("t1", "test-1", { name: "V1" });
@@ -102,21 +102,21 @@ describe("BuilderAbTestingService", () => {
   });
 
   it("updateVariant updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.abTestVariant.findFirst as any).mockResolvedValue({ id: "var-1" });
     const result = await service.updateVariant("t1", "var-1", { weight: 60 });
     expect(result).toBeDefined();
   });
 
   it("deleteVariant deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.abTestVariant.findFirst as any).mockResolvedValue({ id: "var-1" });
     const result = await service.deleteVariant("t1", "var-1");
     expect(result).toBeDefined();
   });
 
   it("analyzeResults returns analysis", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.abTest.findFirst as any).mockResolvedValue({ id: "test-1" });
     (prisma.abTestVariant.findMany as any).mockResolvedValue([
       {
@@ -141,7 +141,7 @@ describe("BuilderAbTestingService", () => {
   });
 
   it("defineSegment creates segment", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.audienceSegment.findFirst as any).mockResolvedValue(null);
     const result = await service.defineSegment("t1", { name: "Seg" });
     expect(result).toBeDefined();
@@ -157,7 +157,7 @@ describe("BuilderAbTestingService", () => {
   });
 
   it("updateSegment updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.audienceSegment.findFirst as any).mockResolvedValue({
       id: "seg-1",
     });
@@ -166,7 +166,7 @@ describe("BuilderAbTestingService", () => {
   });
 
   it("deleteSegment deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.audienceSegment.findFirst as any).mockResolvedValue({
       id: "seg-1",
     });

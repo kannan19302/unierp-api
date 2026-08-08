@@ -14,8 +14,8 @@ vi.mock("@prisma/client", () => ({
   },
 }));
 
-// Mock @unerp/database
-vi.mock("@unerp/database", () => ({
+// Mock @kannan19302/database
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     invoice: {
       findMany: vi.fn(),
@@ -110,7 +110,7 @@ vi.mock("@unerp/database", () => ({
   },
 }));
 
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
 describe("SalesService", () => {

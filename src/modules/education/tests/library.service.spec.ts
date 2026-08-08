@@ -17,7 +17,7 @@ const mockPrisma = vi.hoisted(() => ({
   educationLibraryFine: { create: vi.fn(), findMany: vi.fn() },
 }));
 
-vi.mock("@unerp/database", () => ({ prisma: mockPrisma }));
+vi.mock("@kannan19302/database", () => ({ prisma: mockPrisma }));
 
 describe("EducationLibraryService", () => {
   let svc: EducationLibraryService;

@@ -6,9 +6,9 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { randomInt } from "node:crypto";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import type { UpdatePeopleProfileInput } from "@unerp/shared";
+import type { UpdatePeopleProfileInput } from "@kannan19302/shared";
 
 /** Max in-DB size for the pronunciation clip (base64 data URL), matching the avatar convention. */
 const MAX_AUDIO_BYTES = 400 * 1024;

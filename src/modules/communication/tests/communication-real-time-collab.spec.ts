@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationRealTimeCollabService } from "../services/communication-real-time-collab.service";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     collabDocument: {
       findMany: vi.fn(),
@@ -39,7 +39,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("returns paginated documents", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.collabDocument.findMany).mockResolvedValue([
       { id: "d1", title: "Doc" },
     ] as never);
@@ -50,7 +50,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("throws on missing document", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.collabDocument.findFirst).mockResolvedValue(null as never);
     await expect(svc.getDocument("t1", "bad")).rejects.toThrow(
       "Document not found",
@@ -58,7 +58,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("creates a document", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.collabDocument.create).mockResolvedValue({
       id: "d1",
       title: "Notes",
@@ -73,7 +73,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("edits a document and creates a version", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.collabDocument.findFirst).mockResolvedValue({
       id: "d1",
       tenantId: "t1",
@@ -92,7 +92,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("toggles document lock", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.collabDocument.findFirst).mockResolvedValue({
       id: "d1",
       locked: false,
@@ -108,7 +108,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("deletes a document", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.collabDocument.findFirst).mockResolvedValue({
       id: "d1",
       tenantId: "t1",
@@ -123,7 +123,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("lists whiteboards", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.whiteboard.findMany).mockResolvedValue([
       { id: "w1", title: "Board" },
     ] as never);
@@ -132,7 +132,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("creates a whiteboard", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.whiteboard.create).mockResolvedValue({
       id: "w1",
       title: "Brainstorm",
@@ -142,7 +142,7 @@ describe("CommunicationRealTimeCollabService", () => {
   });
 
   it("adds a whiteboard element", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.whiteboard.findFirst).mockResolvedValue({
       id: "w1",
       tenantId: "t1",
@@ -172,7 +172,7 @@ describe("CommunicationRealTimeCollabService", () => {
   // disguised. Replace them with behavioural tests when the feature is built.
   describe("co-browse (not implemented)", () => {
     it("echoes the session descriptor without persisting anything", async () => {
-      const { prisma } = await import("@unerp/database");
+      const { prisma } = await import("@kannan19302/database");
       const res = await svc.collaborateCoBrowse("t1", "u1", "sess1");
 
       expect(res).toEqual({

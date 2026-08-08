@@ -5,9 +5,9 @@ import {
   Logger,
 } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { encryptField, decryptField } from "@unerp/database";
+import { encryptField, decryptField } from "@kannan19302/database";
 import { z } from "zod";
 
 export const connectMailboxSchema = z.object({
@@ -48,7 +48,7 @@ const GRAPH_EVENTS_ENDPOINT =
  * Real inbound email/calendar integration for CRM.
  *
  * Flow: connect() builds a provider consent URL -> user authorizes -> handleCallback()
- * exchanges the code for tokens (stored encrypted via @unerp/database encryptField) ->
+ * exchanges the code for tokens (stored encrypted via @kannan19302/database encryptField) ->
  * syncNow() polls the provider's REST API for recent messages/events, matches sender/
  * attendee addresses against known Contacts/Leads/Customers, and writes CRM Activity
  * records so synced items show up on the existing contact/lead/customer timeline.

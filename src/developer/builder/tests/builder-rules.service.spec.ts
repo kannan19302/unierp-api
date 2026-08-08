@@ -1,7 +1,7 @@
 import { BuilderRulesService } from "../services/builder-rules.service";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     decisionTable: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -49,7 +49,7 @@ describe("BuilderRulesService", () => {
   });
 
   it("createDecisionTable succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.decisionTable.findFirst as any).mockResolvedValue(null);
     const result = await service.createDecisionTable("t1", {
       name: "Test Table",
@@ -58,7 +58,7 @@ describe("BuilderRulesService", () => {
   });
 
   it("createDecisionTable rejects duplicate", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.decisionTable.findFirst as any).mockResolvedValue({ id: "dt-1" });
     await expect(
       service.createDecisionTable("t1", { name: "dup" }),
@@ -66,7 +66,7 @@ describe("BuilderRulesService", () => {
   });
 
   it("updateDecisionTable updates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.decisionTable.findFirst as any).mockResolvedValue({ id: "dt-1" });
     const result = await service.updateDecisionTable("t1", "dt-1", {
       name: "U",
@@ -75,14 +75,14 @@ describe("BuilderRulesService", () => {
   });
 
   it("deleteDecisionTable deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.decisionTable.findFirst as any).mockResolvedValue({ id: "dt-1" });
     const result = await service.deleteDecisionTable("t1", "dt-1");
     expect(result).toBeDefined();
   });
 
   it("createRuleSet creates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.ruleSet.findFirst as any).mockResolvedValue(null);
     const result = await service.createRuleSet("t1", { name: "RS" });
     expect(result).toBeDefined();
@@ -94,7 +94,7 @@ describe("BuilderRulesService", () => {
   });
 
   it("evaluateRules evaluates simple condition", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.ruleSet.findFirst as any).mockResolvedValue({
       id: "rs-1",
       name: "RS",
@@ -121,7 +121,7 @@ describe("BuilderRulesService", () => {
   });
 
   it("versionRule increments version", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.ruleSet.findFirst as any).mockResolvedValue({
       id: "rs-1",
       version: 1,
@@ -131,7 +131,7 @@ describe("BuilderRulesService", () => {
   });
 
   it("addRuleToSet adds rule", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.ruleSet.findFirst as any).mockResolvedValue({ id: "rs-1" });
     const result = await service.addRuleToSet("t1", "rs-1", {
       name: "R1",

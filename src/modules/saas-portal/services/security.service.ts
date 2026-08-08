@@ -4,10 +4,10 @@ import {
   BadRequestException,
   ForbiddenException,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { signSessionToken } from "@unerp/auth";
-import { hasPermission } from "@unerp/shared";
+import { signSessionToken } from "@kannan19302/auth";
+import { hasPermission } from "@kannan19302/shared";
 import * as crypto from "node:crypto";
 
 /**

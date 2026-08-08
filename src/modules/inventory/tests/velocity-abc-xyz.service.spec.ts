@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { VelocityAbcXyzService } from "../velocity-abc-xyz.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     velocityClassificationRun: {
       findMany: vi.fn(),
@@ -63,7 +63,7 @@ describe("VelocityAbcXyzService", () => {
   // ── Runs ─────────────────────────────────────────────────────────────────
 
   it("createRun generates VCR-000001 for first run", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.count).mockResolvedValue(0);
     vi.mocked(prisma.velocityClassificationRun.create).mockImplementation(
       async ({ data }: any) => ({
@@ -80,7 +80,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("getRun throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue(
       null,
     );
@@ -88,7 +88,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("deleteRun throws BadRequestException when run is ACTIVE", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue({
       id: "r1",
       status: "ACTIVE",
@@ -97,7 +97,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("activateRun throws BadRequestException when not DRAFT", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue({
       id: "r1",
       status: "ACTIVE",
@@ -106,7 +106,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("activateRun throws BadRequestException when no products classified", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue({
       id: "r1",
       status: "DRAFT",
@@ -116,7 +116,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("activateRun supersedes previous active run and activates draft", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue({
       id: "r2",
       status: "DRAFT",
@@ -140,7 +140,7 @@ describe("VelocityAbcXyzService", () => {
   // ── ABC-XYZ Computation ───────────────────────────────────────────────────
 
   it("computeClassification classifies top revenue product as A", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue({
       id: "r1",
       status: "DRAFT",
@@ -186,7 +186,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("computeClassification assigns XYZ based on CV", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue({
       id: "r1",
       status: "DRAFT",
@@ -232,7 +232,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("computeClassification throws BadRequestException for non-DRAFT run", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue({
       id: "r1",
       status: "ACTIVE",
@@ -245,7 +245,7 @@ describe("VelocityAbcXyzService", () => {
   // ── Slotting Policies ─────────────────────────────────────────────────────
 
   it("upsertPolicy creates when none exists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocitySlottingPolicy.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.velocitySlottingPolicy.create).mockResolvedValue({
       id: "sp1",
@@ -261,7 +261,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("upsertPolicy updates existing policy", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocitySlottingPolicy.findUnique).mockResolvedValue({
       id: "sp1",
     } as any);
@@ -279,7 +279,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("deletePolicy throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocitySlottingPolicy.findFirst).mockResolvedValue(null);
     await expect(svc.deletePolicy(T, "sp-none")).rejects.toThrow(
       NotFoundException,
@@ -289,7 +289,7 @@ describe("VelocityAbcXyzService", () => {
   // ── Velocity Snapshots ────────────────────────────────────────────────────
 
   it("recordSnapshot creates new snapshot", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productVelocitySnapshot.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.productVelocitySnapshot.create).mockResolvedValue({
       id: "sn1",
@@ -307,7 +307,7 @@ describe("VelocityAbcXyzService", () => {
   });
 
   it("recordSnapshot updates when month already exists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.productVelocitySnapshot.findFirst).mockResolvedValue({
       id: "sn1",
     } as any);
@@ -328,7 +328,7 @@ describe("VelocityAbcXyzService", () => {
   // ── Dashboard ─────────────────────────────────────────────────────────────
 
   it("getDashboard returns aggregate stats", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.velocityClassificationRun.count).mockResolvedValue(5);
     vi.mocked(prisma.velocityClassificationRun.findFirst).mockResolvedValue({
       id: "r1",

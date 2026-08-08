@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ContainerPalletService } from "../container-pallet.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     palletType: {
       findMany: vi.fn(),
@@ -69,7 +69,7 @@ describe("ContainerPalletService", () => {
   // ── Pallet Types ──────────────────────────────────────────────
 
   it("listPalletTypes returns all types for tenant", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.palletType.findMany).mockResolvedValue([
       { id: "pt1" },
     ] as any);
@@ -81,7 +81,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("createPalletType persists and returns record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     const created = {
       id: "pt1",
       tenantId: T,
@@ -98,7 +98,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("updatePalletType throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.palletType.findFirst).mockResolvedValue(null);
     await expect(svc.updatePalletType(T, "bad", {})).rejects.toThrow(
       NotFoundException,
@@ -106,7 +106,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("deletePalletType removes record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.palletType.findFirst).mockResolvedValue({
       id: "pt1",
     } as any);
@@ -118,7 +118,7 @@ describe("ContainerPalletService", () => {
   // ── Container Types ───────────────────────────────────────────
 
   it("listContainerTypes returns all types for tenant", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.containerType.findMany).mockResolvedValue([
       { id: "ct1" },
     ] as any);
@@ -127,7 +127,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("createContainerType persists and returns record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.containerType.create).mockResolvedValue({
       id: "ct1",
     } as any);
@@ -140,7 +140,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("deleteContainerType throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.containerType.findFirst).mockResolvedValue(null);
     await expect(svc.deleteContainerType(T, "bad")).rejects.toThrow(
       NotFoundException,
@@ -150,7 +150,7 @@ describe("ContainerPalletService", () => {
   // ── Load Plans ────────────────────────────────────────────────
 
   it("listLoadPlans returns plans for tenant with optional status filter", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadPlan.findMany).mockResolvedValue([
       { id: "lp1", status: "DRAFT" },
     ] as any);
@@ -162,13 +162,13 @@ describe("ContainerPalletService", () => {
   });
 
   it("getLoadPlan throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadPlan.findFirst).mockResolvedValue(null);
     await expect(svc.getLoadPlan(T, "bad")).rejects.toThrow(NotFoundException);
   });
 
   it("createLoadPlan creates plan in DRAFT status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadPlan.create).mockResolvedValue({
       id: "lp1",
       status: "DRAFT",
@@ -182,7 +182,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("transitionLoadPlan DRAFT→OPTIMIZING succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadPlan.findFirst).mockResolvedValue({
       id: "lp1",
       status: "DRAFT",
@@ -196,7 +196,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("transitionLoadPlan throws BadRequestException for invalid transition", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadPlan.findFirst).mockResolvedValue({
       id: "lp1",
       status: "SHIPPED",
@@ -207,7 +207,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("transitionLoadPlan throws BadRequestException for unknown action", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadPlan.findFirst).mockResolvedValue({
       id: "lp1",
       status: "DRAFT",
@@ -218,7 +218,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("addPalletToLoadPlan creates pallet and recalculates stats", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadPlan.findFirst).mockResolvedValue({
       id: "lp1",
       status: "DRAFT",
@@ -238,7 +238,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("removePalletFromLoadPlan deletes pallet", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadPlan.findFirst).mockResolvedValue({
       id: "lp1",
     } as any);
@@ -254,7 +254,7 @@ describe("ContainerPalletService", () => {
   // ── Packing Plans ─────────────────────────────────────────────
 
   it("createPackingPlan creates plan in DRAFT status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packingPlan.create).mockResolvedValue({
       id: "pp1",
       status: "DRAFT",
@@ -267,7 +267,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("transitionPackingPlan DRAFT→CONFIRMED succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packingPlan.findFirst).mockResolvedValue({
       id: "pp1",
       status: "DRAFT",
@@ -281,7 +281,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("transitionPackingPlan throws BadRequestException for invalid status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packingPlan.findFirst).mockResolvedValue({
       id: "pp1",
       status: "COMPLETED",
@@ -292,7 +292,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("addCartonToPackingPlan creates carton", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.packingPlan.findFirst).mockResolvedValue({
       id: "pp1",
       status: "PACKING",
@@ -312,7 +312,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("sealCarton marks carton as sealed", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadCarton.findFirst).mockResolvedValue({
       id: "c1",
       sealed: false,
@@ -326,7 +326,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("addItemToCarton throws BadRequestException if carton is sealed", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadCarton.findFirst).mockResolvedValue({
       id: "c1",
       sealed: true,
@@ -341,7 +341,7 @@ describe("ContainerPalletService", () => {
   });
 
   it("addItemToCarton throws NotFoundException if carton not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.loadCarton.findFirst).mockResolvedValue(null);
     await expect(
       svc.addItemToCarton(T, "pp1", "bad", {
@@ -355,7 +355,7 @@ describe("ContainerPalletService", () => {
   // ── Dashboard ─────────────────────────────────────────────────
 
   it("getDashboard returns aggregated counts", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.palletType.count).mockResolvedValue(5);
     vi.mocked(prisma.containerType.count).mockResolvedValue(3);
     vi.mocked(prisma.loadPlan.groupBy).mockResolvedValue([

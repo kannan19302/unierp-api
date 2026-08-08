@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import {
@@ -12,7 +12,7 @@ import {
   CreateCategoryInput,
   UpdateCategoryInput,
   CreateVariantInput,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import {
   buildPaginationValues,
   buildOrderBy,

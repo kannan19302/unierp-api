@@ -28,7 +28,7 @@ import {
   updateInvoiceSchema,
   createPaymentSchema,
   bulkActionSchema,
-} from "@unerp/shared";
+} from "@kannan19302/shared";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 import { FinanceDemoDataService } from "./finance-demo-data.service";

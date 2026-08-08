@@ -2,7 +2,7 @@ import { BuilderBpmnService } from "../services/builder-bpmn.service";
 import { BuilderBpmnModuleTest } from "./fixtures/builder-bpmn-module-test";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     bpmnProcessDefinition: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -47,7 +47,7 @@ describe("BuilderBpmnService", () => {
   });
 
   it("getBpmnProcessById returns found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.bpmnProcessDefinition.findFirst as any).mockResolvedValue({
       id: "bpmn-1",
     });
@@ -56,7 +56,7 @@ describe("BuilderBpmnService", () => {
   });
 
   it("createBpmnProcess succeeds", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.bpmnProcessDefinition.findFirst as any).mockResolvedValue(null);
     const result = await service.createBpmnProcess("t1", {
       name: "Test",
@@ -66,7 +66,7 @@ describe("BuilderBpmnService", () => {
   });
 
   it("createBpmnProcess rejects duplicate key", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.bpmnProcessDefinition.findFirst as any).mockResolvedValue({
       id: "bpmn-1",
     });
@@ -76,7 +76,7 @@ describe("BuilderBpmnService", () => {
   });
 
   it("updateBpmnProcess updates fields", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.bpmnProcessDefinition.findFirst as any).mockResolvedValue({
       id: "bpmn-1",
     });
@@ -87,7 +87,7 @@ describe("BuilderBpmnService", () => {
   });
 
   it("deleteBpmnProcess deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.bpmnProcessDefinition.findFirst as any).mockResolvedValue({
       id: "bpmn-1",
     });
@@ -96,7 +96,7 @@ describe("BuilderBpmnService", () => {
   });
 
   it("addGateway adds element", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.bpmnProcessDefinition.findFirst as any).mockResolvedValue({
       id: "bpmn-1",
       elements: [],
@@ -106,7 +106,7 @@ describe("BuilderBpmnService", () => {
   });
 
   it("executeWorkflowInstance creates instance", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.bpmnProcessDefinition.findFirst as any).mockResolvedValue({
       id: "bpmn-1",
       elements: [{ id: "start1", type: "startEvent", label: "Start" }],

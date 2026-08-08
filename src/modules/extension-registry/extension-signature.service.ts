@@ -13,7 +13,7 @@ import {
   type BundleFile,
   type PublisherKey,
   type SignedBundle,
-} from "@unerp/extension-api";
+} from "@kannan19302/extension-api";
 
 /**
  * Verifies signed extension bundles — § 8.2, § 10.

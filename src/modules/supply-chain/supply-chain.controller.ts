@@ -17,7 +17,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { SupplyChainService } from "./supply-chain.service";
-import { CreateShipmentInput, UpdateShipmentStatusInput } from "@unerp/shared";
+import { CreateShipmentInput, UpdateShipmentStatusInput } from "@kannan19302/shared";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import {
   createCarrierSchema,

@@ -6,7 +6,7 @@ import {
   Optional,
 } from "@nestjs/common";
 import * as crypto from "node:crypto";
-import { prisma } from "@unerp/database";
+import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { StorageMeteringService } from "./storage-metering.service";
 import { PlatformCredentialsService } from "../../common/platform-credentials/platform-credentials.service";

@@ -6,7 +6,7 @@ import { InventoryAnalyticsService } from "../inventory-analytics.service";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     laborStandard: {
       findMany: vi.fn(),
@@ -89,7 +89,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("listLaborStandards: returns active standards", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.laborStandard.findMany).mockResolvedValue([
       { id: "s1", taskType: "PICK" },
     ] as never);
@@ -103,7 +103,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("createLaborStandard: throws on duplicate taskType", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.laborStandard.findFirst).mockResolvedValue({
       id: "existing",
     } as never);
@@ -113,7 +113,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("createLaborStandard: creates when no duplicate", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.laborStandard.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.laborStandard.create).mockResolvedValue({
       id: "new",
@@ -127,7 +127,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("deleteLaborStandard: throws when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.laborStandard.findFirst).mockResolvedValue(null);
     await expect(svc.deleteLaborStandard(TENANT, "x")).rejects.toBeInstanceOf(
       NotFoundException,
@@ -135,7 +135,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("deleteLaborStandard: soft-deletes when found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.laborStandard.findFirst).mockResolvedValue({
       id: "s1",
     } as never);
@@ -150,7 +150,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("logTask: creates task log record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.laborStandard.findFirst).mockResolvedValue({
       standardMins: new Prisma.Decimal(10),
     } as never);
@@ -168,7 +168,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("listShiftTemplates: queries warehouseShiftTemplate", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.warehouseShiftTemplate.findMany).mockResolvedValue(
       [] as never,
     );
@@ -177,7 +177,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("createShiftTemplate: creates correctly", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.warehouseShiftTemplate.create).mockResolvedValue({
       id: "st1",
     } as never);
@@ -193,7 +193,7 @@ describe("InventoryLaborService", () => {
   });
 
   it("getLaborDashboard: returns period and stats", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.workerTaskLog.count).mockResolvedValue(20 as never);
     vi.mocked(prisma.workerTaskLog.groupBy)
       .mockResolvedValueOnce([] as never)
@@ -215,7 +215,7 @@ describe("SupplierQualityService", () => {
   });
 
   it("createNcr: generates ncrNumber and creates record", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.supplierNcr.create).mockResolvedValue({
       id: "ncr1",
       ncrNumber: "NCR-001",
@@ -233,7 +233,7 @@ describe("SupplierQualityService", () => {
   });
 
   it("closeNcr: throws when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.supplierNcr.findFirst).mockResolvedValue(null);
     await expect(svc.closeNcr(TENANT, "x", "resolved")).rejects.toBeInstanceOf(
       NotFoundException,
@@ -241,7 +241,7 @@ describe("SupplierQualityService", () => {
   });
 
   it("closeNcr: throws when already CLOSED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.supplierNcr.findFirst).mockResolvedValue({
       id: "n1",
       status: "CLOSED",
@@ -252,7 +252,7 @@ describe("SupplierQualityService", () => {
   });
 
   it("closeNcr: marks CLOSED when open", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.supplierNcr.findFirst).mockResolvedValue({
       id: "n1",
       status: "OPEN",
@@ -270,7 +270,7 @@ describe("SupplierQualityService", () => {
   });
 
   it("createCar: throws if NCR not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.supplierNcr.findFirst).mockResolvedValue(null);
     await expect(svc.createCar(TENANT, { ncrId: "x" })).rejects.toBeInstanceOf(
       NotFoundException,
@@ -278,7 +278,7 @@ describe("SupplierQualityService", () => {
   });
 
   it("createCar: uses $transaction and returns car", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.supplierNcr.findFirst).mockResolvedValue({
       id: "n1",
       status: "OPEN",
@@ -296,7 +296,7 @@ describe("SupplierQualityService", () => {
   });
 
   it("createScorecard: calls create with overallScore", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.supplierScorecard.create).mockResolvedValue({
       id: "sc1",
     } as never);
@@ -311,7 +311,7 @@ describe("SupplierQualityService", () => {
   });
 
   it("getQualityDashboard: returns totalNcrs and recentScorecards", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.supplierNcr.count).mockResolvedValue(5 as never);
     vi.mocked(prisma.supplierCarRequest.count).mockResolvedValue(2 as never);
     vi.mocked(prisma.supplierScorecard.findMany).mockResolvedValue([] as never);
@@ -332,7 +332,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("createReplenishmentRule: throws on duplicate", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.binReplenishmentRule.findFirst).mockResolvedValue({
       id: "existing",
     } as never);
@@ -349,7 +349,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("createReplenishmentRule: creates when no duplicate", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.binReplenishmentRule.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.binReplenishmentRule.create).mockResolvedValue({
       id: "r1",
@@ -366,7 +366,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("deleteReplenishmentRule: throws when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.binReplenishmentRule.findFirst).mockResolvedValue(null);
     await expect(
       svc.deleteReplenishmentRule(TENANT, "x"),
@@ -374,7 +374,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("deleteReplenishmentRule: soft-deletes", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.binReplenishmentRule.findFirst).mockResolvedValue({
       id: "r1",
     } as never);
@@ -389,7 +389,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("evaluateReplenishmentRules: triggers when qty below threshold", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.binReplenishmentRule.findMany).mockResolvedValue([
       {
         id: "r1",
@@ -411,7 +411,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("evaluateReplenishmentRules: no trigger when qty above threshold", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.binReplenishmentRule.findMany).mockResolvedValue([
       {
         id: "r1",
@@ -429,7 +429,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("createHold: generates holdNumber and creates", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryHold.create).mockResolvedValue({
       id: "h1",
       holdNumber: "HOLD-xxx",
@@ -444,7 +444,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("releaseHold: throws when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryHold.findFirst).mockResolvedValue(null);
     await expect(
       svc.releaseHold(TENANT, "x", { releasedBy: "user1" }),
@@ -452,7 +452,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("releaseHold: throws when not ACTIVE", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryHold.findFirst).mockResolvedValue({
       id: "h1",
       status: "RELEASED",
@@ -463,7 +463,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("releaseHold: updates to RELEASED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryHold.findFirst).mockResolvedValue({
       id: "h1",
       status: "ACTIVE",
@@ -481,7 +481,7 @@ describe("InventoryAutomationService", () => {
   });
 
   it("getAutomationDashboard: returns all dashboard fields", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.binReplenishmentRule.count).mockResolvedValue(5 as never);
     vi.mocked(prisma.inventoryHold.count).mockResolvedValue(3 as never);
     vi.mocked(prisma.inventoryHold.groupBy).mockResolvedValue([
@@ -505,7 +505,7 @@ describe("InventoryAnalyticsService", () => {
   });
 
   it("getInventoryHealthScore: returns healthScore between 0 and 100", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.product.count).mockResolvedValue(100 as never);
     vi.mocked(prisma.stockLedgerEntry.groupBy).mockResolvedValue([
       { productId: "p1", _count: { _all: 5 } },
@@ -519,7 +519,7 @@ describe("InventoryAnalyticsService", () => {
   });
 
   it("getSlowMovingInventory: identifies products with no outbound movement", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockLedgerEntry.groupBy).mockResolvedValue([
       { productId: "p1", _sum: { qtyOut: new Prisma.Decimal(5) } },
     ] as never);
@@ -541,7 +541,7 @@ describe("InventoryAnalyticsService", () => {
   });
 
   it("getDaysInventoryOutstanding: computes averageDio correctly", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockLedgerEntry.groupBy).mockResolvedValue([
       { productId: "p1", _sum: { qtyOut: new Prisma.Decimal(90) } },
     ] as never);
@@ -553,14 +553,14 @@ describe("InventoryAnalyticsService", () => {
   });
 
   it("getFillRateReport: returns 100% with no waves", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.pickWave.findMany).mockResolvedValue([] as never);
     const res = await svc.getFillRateReport(TENANT);
     expect(res.fillRate).toBe(100);
   });
 
   it("getVolumeTrends: groups ledger entries by date", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockLedgerEntry.findMany).mockResolvedValue([
       {
         qtyIn: new Prisma.Decimal(10),
@@ -580,7 +580,7 @@ describe("InventoryAnalyticsService", () => {
   });
 
   it("getShrinkageReport: counts only negative adjustments", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockLedgerEntry.findMany).mockResolvedValue([
       {
         productId: "p1",
@@ -602,7 +602,7 @@ describe("InventoryAnalyticsService", () => {
   });
 
   it("getCapacityUtilization: maps warehouse info", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.inventoryItemBin.groupBy).mockResolvedValue([
       {
         warehouseId: "wh1",
@@ -619,7 +619,7 @@ describe("InventoryAnalyticsService", () => {
   });
 
   it("getAnalyticsDashboard: returns aggregate summary", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.product.count).mockResolvedValue(50 as never);
     vi.mocked(prisma.stockLedgerEntry.groupBy).mockResolvedValue([] as never);
     vi.mocked(prisma.inventoryItemBin.findMany).mockResolvedValue([] as never);

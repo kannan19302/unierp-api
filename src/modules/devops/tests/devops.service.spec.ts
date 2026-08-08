@@ -48,7 +48,7 @@ const mockConfig = vi.hoisted(() => ({
   updatedAt: new Date(),
 }));
 
-vi.mock("@unerp/database", () => {
+vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
   // `idpPrisma`, not `prisma` — this spec predates that split and stubs
   // them under `prisma`. Exporting the same stub object under both names
@@ -131,7 +131,7 @@ describe("DevopsService", () => {
   });
 
   it("should throw on missing deployment", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     (prisma.deployment.findFirst as any).mockResolvedValueOnce(null);
     await expect(service.getDeployment("t1", "bad")).rejects.toThrow(
       NotFoundException,

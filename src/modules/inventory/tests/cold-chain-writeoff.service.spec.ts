@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ColdChainWriteoffService } from "../cold-chain-writeoff.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@unerp/database", () => ({
+vi.mock("@kannan19302/database", () => ({
   prisma: {
     coldChainRequirement: {
       findMany: vi.fn(),
@@ -59,7 +59,7 @@ describe("ColdChainWriteoffService", () => {
   // ── Cold Chain Requirements ──────────────────────────────────
 
   it("upsertRequirement creates new when none exists", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.coldChainRequirement.create).mockResolvedValue({
       id: "r1",
@@ -75,7 +75,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("upsertRequirement updates when existing", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.findUnique).mockResolvedValue({
       id: "r1",
       productId: "p1",
@@ -94,7 +94,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("deactivateRequirement throws NotFoundException when not found", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.findUnique).mockResolvedValue(null);
     await expect(svc.deactivateRequirement(T, "p-none")).rejects.toThrow(
       NotFoundException,
@@ -102,14 +102,14 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("checkProductCompliance returns hasColdChain=false when no requirement", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.findUnique).mockResolvedValue(null);
     const result = await svc.checkProductCompliance(T, "p1");
     expect(result.hasColdChain).toBe(false);
   });
 
   it("checkProductCompliance returns compliant=false when open excursions exist", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.findUnique).mockResolvedValue({
       id: "r1",
       minTempCelsius: 2,
@@ -124,7 +124,7 @@ describe("ColdChainWriteoffService", () => {
   // ── Temperature Excursions ────────────────────────────────────
 
   it("logExcursion classifies CRITICAL severity for large temp deviation", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.findUnique).mockResolvedValue({
       id: "r1",
       minTempCelsius: 2,
@@ -144,7 +144,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("logExcursion classifies MINOR severity for small deviation", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.findUnique).mockResolvedValue({
       id: "r1",
       minTempCelsius: 2,
@@ -164,7 +164,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("logExcursion throws NotFoundException when no cold-chain requirement", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.findUnique).mockResolvedValue(null);
     await expect(
       svc.logExcursion(T, {
@@ -178,7 +178,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("reviewExcursion updates status", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.temperatureExcursion.findFirst).mockResolvedValue({
       id: "e1",
       status: "OPEN",
@@ -211,7 +211,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("createWriteDown creates write-down with auto-number", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockWriteDownRequest.count).mockResolvedValue(5);
     vi.mocked(prisma.stockWriteDownRequest.create).mockImplementation(
       async ({ data }: any) => ({
@@ -232,7 +232,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("approveWriteDown transitions to APPROVED", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockWriteDownRequest.findFirst).mockResolvedValue({
       id: "wd1",
       status: "PENDING_APPROVAL",
@@ -246,7 +246,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("approveWriteDown throws BadRequestException for non-pending", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockWriteDownRequest.findFirst).mockResolvedValue({
       id: "wd1",
       status: "APPROVED",
@@ -259,7 +259,7 @@ describe("ColdChainWriteoffService", () => {
   // ── Write-Off Records ─────────────────────────────────────────
 
   it("createWriteOff calculates totalWriteOff correctly", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockWriteOffRecord.count).mockResolvedValue(0);
     vi.mocked(prisma.stockWriteOffRecord.create).mockImplementation(
       async ({ data }: any) => ({
@@ -284,7 +284,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("completeWriteOff throws BadRequestException for non-approved", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.stockWriteOffRecord.findFirst).mockResolvedValue({
       id: "wo1",
       status: "DRAFT",
@@ -295,7 +295,7 @@ describe("ColdChainWriteoffService", () => {
   });
 
   it("getDashboard returns aggregate counts", async () => {
-    const { prisma } = await import("@unerp/database");
+    const { prisma } = await import("@kannan19302/database");
     vi.mocked(prisma.coldChainRequirement.count).mockResolvedValue(12);
     vi.mocked(prisma.temperatureExcursion.count)
       .mockResolvedValueOnce(3) // open
