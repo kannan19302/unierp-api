@@ -44,6 +44,14 @@ export class OperationsController {
     return this.operationsService.getSystemHealth();
   }
 
+  @ApiOperation({ summary: "Get operations dashboard summary (platform-wide)" })
+  @Get("dashboard")
+  @Permissions("system.operations.read")
+  @SkipTenantScope()
+  async getDashboard() {
+    return this.operationsService.getDashboardSummary();
+  }
+
   @ApiOperation({ summary: "Get background jobs" })
   @Get("jobs")
   @Permissions("admin.operations.read")

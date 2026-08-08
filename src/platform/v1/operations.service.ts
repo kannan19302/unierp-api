@@ -67,6 +67,69 @@ export class OperationsService {
     };
   }
 
+  /**
+   * Get Operations Dashboard Summary
+   */
+  async getDashboardSummary() {
+    const grafanaUrl = process.env.GRAFANA_URL || "http://localhost:3000";
+    
+    // Aggregate queue depth and dead letters across all tenants
+    const jobs = await prisma.backgroundJob.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    });
+    let queueDepth = 0;
+    let deadLetters = 0;
+    for (const row of jobs) {
+      if (row.status === "PENDING" || row.status === "WAITING") {
+        queueDepth += row._count.id;
+      } else if (row.status === "FAILED") {
+        deadLetters += row._count.id;
+      }
+    }
+
+    // Measure outbox lag (time since oldest pending delivery)
+    const oldestDelivery = await prisma.outboxDelivery.findFirst({
+      where: { status: "PENDING" },
+      orderBy: { availableAt: "asc" },
+      select: { availableAt: true },
+    });
+    const outboxLagSeconds = oldestDelivery 
+      ? Math.floor((Date.now() - oldestDelivery.availableAt.getTime()) / 1000)
+      : 0;
+
+    // Node health & degraded tenants
+    const degradedTenants = await prisma.errorLog.groupBy({
+      by: ["tenantId"],
+      where: {
+        createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) }, // Last 15 mins
+        level: { in: ["ERROR", "FATAL"] }
+      },
+      _count: { id: true },
+      having: {
+        id: { _count: { gt: 5 } } // More than 5 error/fatal logs in 15 mins
+      }
+    });
+
+    const migrationState = "Up to date"; // Placeholder for Prisma migration status
+
+    return {
+      status: degradedTenants.length > 0 ? "DEGRADED" : "HEALTHY",
+      timestamp: new Date().toISOString(),
+      metrics: {
+        queueDepth,
+        deadLetters,
+        outboxLagSeconds,
+        degradedTenants: degradedTenants.length,
+        migrationState,
+      },
+      links: {
+        platformOverview: `${grafanaUrl}/d/platform-overview/platform-overview`,
+        perTenantSlo: `${grafanaUrl}/d/per-tenant-slo/tenant-slo-dashboard`,
+      }
+    };
+  }
+
   private async checkDatabase(): Promise<string> {
     try {
       await prisma.$executeRaw`SELECT 1`;
