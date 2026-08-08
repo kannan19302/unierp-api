@@ -8,11 +8,12 @@ import {
   Param,
   UseGuards,
   Req,
+  Query,
+  Res,
 } from "@nestjs/common";
 import { z } from "zod";
-import { Request } from "express";
+import { Request, Response } from "express";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
-import { Query } from "@nestjs/common";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
@@ -133,5 +134,31 @@ export class SuperAdminController {
       justification,
       this.auditCtx(req)
     );
+  }
+
+  @ApiOperation({ summary: "Get tenant internal audit trail" })
+  @Get("tenants/:id/audit-trail")
+  @Permissions("system.tenant.read")
+  async getTenantAuditTrail(
+    @Param("id") id: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 50;
+    return this.superAdminService.getTenantAuditTrail(id, pageNum, limitNum);
+  }
+
+  @ApiOperation({ summary: "Export tenant internal audit trail" })
+  @Get("tenants/:id/audit-trail/export")
+  @Permissions("system.tenant.read")
+  async exportTenantAuditTrail(
+    @Param("id") id: string,
+    @Res() res: Response
+  ) {
+    const csvData = await this.superAdminService.exportTenantAuditTrail(id);
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename=tenant-${id}-audit-trail.csv`);
+    return res.status(200).send(csvData);
   }
 }

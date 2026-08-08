@@ -350,4 +350,36 @@ export class SuperAdminService {
 
     return results;
   }
+
+  async getTenantAuditTrail(tenantId: string, page: number = 1, limit: number = 50) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.auditLog.count({ where: { tenantId } })
+    ]);
+
+    return { data, total, page, limit };
+  }
+
+  async exportTenantAuditTrail(tenantId: string): Promise<string> {
+    const logs = await prisma.auditLog.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "desc" },
+      take: 10000 // Limit to last 10k for safety in CSV
+    });
+
+    if (!logs.length) return "id,userId,action,entityType,entityId,createdAt\n";
+
+    const header = "id,userId,action,entityType,entityId,createdAt\n";
+    const rows = logs.map(l => 
+      `${l.id},${l.userId},${l.action},${l.entityType},${l.entityId},${l.createdAt.toISOString()}`
+    ).join("\n");
+
+    return header + rows;
+  }
 }
