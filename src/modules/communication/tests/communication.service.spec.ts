@@ -1,5 +1,6 @@
 import { prisma } from "@unerp/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CommunicationService } from "../communication.service";
 
@@ -66,14 +67,17 @@ vi.mock("@unerp/database", () => {
 
 describe("CommunicationService (Connect)", () => {
   let svc: CommunicationService;
+  let emitter: EventEmitter2;
 
   beforeEach(() => {
+    emitter = new EventEmitter2();
     svc = new CommunicationService(
       { uploadFile: vi.fn() } as never,
       {
         broadcastChatMessage: vi.fn(),
         broadcastPresenceUpdate: vi.fn(),
       } as never,
+      emitter,
     );
     vi.clearAllMocks();
   });
@@ -245,9 +249,20 @@ describe("CommunicationService (Connect)", () => {
       { id: "author", firstName: "Grace" },
     ] as never);
     vi.mocked(prisma.notification.create).mockResolvedValue({} as never);
+    const mentionSpy = vi.fn();
+    emitter.on("notification.send", mentionSpy);
 
     await svc.createMessage("t1", "c1", "author", { content: "hi @Ada" });
-    expect(prisma.notification.create).toHaveBeenCalledTimes(1);
+    // Mentions route through the unified engine via the event bus, not a direct write.
+    expect(prisma.notification.create).not.toHaveBeenCalled();
+    expect(mentionSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: "t1",
+        userId: "ada",
+        type: "CHAT",
+        channel: "IN_APP",
+      }),
+    );
   });
 
   it("fetches notifications", async () => {

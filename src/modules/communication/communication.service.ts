@@ -5,10 +5,12 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Optional,
 } from "@nestjs/common";
 import { prisma } from "@unerp/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { DocumentStorageClient } from "../../common/integrations/document-storage-client";
 import { RealtimeClient } from "../../common/integrations/realtime-client";
 import { isSafeUrl } from "./communication-ssrf.util";
@@ -42,6 +44,7 @@ export class CommunicationService {
   constructor(
     private readonly documentsService: DocumentStorageClient,
     private readonly notificationsGateway: RealtimeClient,
+    @Optional() private readonly eventEmitter?: EventEmitter2,
   ) {}
 
   /* ─────────────────────────────────────────────────────────
@@ -1116,21 +1119,18 @@ export class CommunicationService {
     );
     const snippet =
       content.length > 120 ? `${content.slice(0, 117)}…` : content;
-    await Promise.all(
-      targets.map((u) =>
-        prisma.notification.create({
-          data: {
-            tenantId,
-            userId: u.id,
-            title: `${authorName} mentioned you in ${where}`,
-            content: snippet,
-            type: "CHAT",
-            link: "/connect",
-            status: "UNREAD",
-          },
-        }),
-      ),
-    );
+    // Mentions route through the unified notification engine (`notification.send`),
+    // which applies the target user's per-channel preferences before any delivery.
+    for (const u of targets) {
+      this.eventEmitter?.emit("notification.send", {
+        tenantId,
+        userId: u.id,
+        type: "CHAT",
+        title: `${authorName} mentioned you in ${where}`,
+        body: snippet,
+        channel: "IN_APP",
+      });
+    }
   }
 
   async editMessage(
@@ -1521,17 +1521,20 @@ export class CommunicationService {
     userId: string,
     dto: { title: string; content: string; type?: string; link?: string },
   ) {
-    return prisma.notification.create({
-      data: {
+    // Routed through the unified engine so the recipient's preferences are
+    // honoured; the engine returns the created in-app row (or null when the
+    // user suppressed this channel/event).
+    const [created] =
+      (await this.eventEmitter?.emitAsync("notification.create", {
         tenantId,
         userId,
-        title: dto.title,
-        content: dto.content,
         type: dto.type || "SYSTEM",
-        link: dto.link || null,
-        status: "UNREAD",
-      },
-    });
+        title: dto.title,
+        body: dto.content,
+        link: dto.link || undefined,
+        channel: "IN_APP",
+      })) ?? [null];
+    return created ?? null;
   }
 
   async updateNotificationStatus(

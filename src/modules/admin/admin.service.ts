@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  Optional,
 } from "@nestjs/common";
 import { prisma } from "@unerp/database";
 import { RoleAccessPackage } from "@prisma/client";
@@ -16,45 +17,48 @@ import {
   CreateAccessPackageInput,
   UpdateAccessPackageInput,
 } from "./admin.schemas";
-import * as nodemailer from "nodemailer";
-import { Transporter } from "nodemailer";
-import { Optional } from "@nestjs/common";
-import { PlatformCredentialsService } from "../../common/platform-credentials/platform-credentials.service";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
   constructor(
-    @Optional()
-    private readonly platformCredentialsService?: PlatformCredentialsService,
+    @Optional() private readonly eventEmitter?: EventEmitter2,
   ) {}
 
   /**
-   * Rebuilt on every call (not cached on the instance) — same DB-first,
-   * env-fallback pattern as email.processor.ts's getTransporter(), which
-   * this previously duplicated with a divergent env var (SMTP_PASS vs
-   * SMTP_PASSWORD — the two SMTP code paths were silently reading different
-   * names for the same secret). Both now read the same "smtp" provider via
-   * PlatformCredentialsService, so a credential saved from the SaaS Portal
-   * Settings UI takes effect here too within its ~15s cache TTL.
+   * Sends the invite email through the unified notification engine
+   * (`notification.send` → email queue → SMTP). This module no longer builds an
+   * SMTP transport itself (G-5): the engine is the single place mail originates.
    */
-  private async getTransporter(): Promise<Transporter | null> {
-    const creds = this.platformCredentialsService
-      ? await this.platformCredentialsService.get("smtp")
-      : {};
-    const host = creds.host || process.env.SMTP_HOST;
-    const user = creds.user || process.env.SMTP_USER;
-    const pass = creds.password || process.env.SMTP_PASSWORD;
-    if (!host || !user || !pass) return null;
+  private async sendInviteEmail(
+    email: string,
+    tenantId: string,
+    userId: string,
+  ) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // Generate a secure invite token in a real app, here we use a mock token just for the link
+    const inviteLink = `${appUrl}/register?invite=${userId}`;
 
-    const port = Number(creds.port || process.env.SMTP_PORT) || 587;
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
+    this.eventEmitter?.emit("notification.send", {
+      tenantId,
+      userId,
+      to: email,
+      type: "INVITE",
+      title: "You have been invited to join a UniERP workspace",
+      body: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>You're invited!</h2>
+          <p>You have been invited to collaborate in a workspace on UniERP.</p>
+          <p>Click the link below to set up your account and get started:</p>
+          <a href="${inviteLink}" style="display: inline-block; padding: 10px 20px; background: #4f46e5; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">Accept Invitation</a>
+          <p style="color: #666; font-size: 12px;">If you did not expect this invitation, you can safely ignore this email.</p>
+        </div>
+      `,
+      channel: "EMAIL",
     });
+    this.logger.log(`Invite email queued to ${email}`);
   }
   /**
    * Returns all users in the tenant.
@@ -146,52 +150,6 @@ export class AdminService {
     // Send the real email invite via SMTP
     await this.sendInviteEmail(invitedUser.email, tenantId, invitedUser.id);
     return invitedUser;
-  }
-
-  /**
-   * Helper: Sends an invite email using SMTP
-   */
-  private async sendInviteEmail(
-    email: string,
-    tenantId: string,
-    userId: string,
-  ) {
-    const transporter = await this.getTransporter();
-    if (!transporter) {
-      this.logger.debug(
-        `[Mock Email] Would send invite to ${email} for tenant ${tenantId}`,
-      );
-      return;
-    }
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    // Generate a secure invite token in a real app, here we use a mock token just for the link
-    const inviteLink = `${appUrl}/register?invite=${userId}`;
-
-    const creds = this.platformCredentialsService
-      ? await this.platformCredentialsService.get("smtp")
-      : {};
-
-    try {
-      await transporter.sendMail({
-        from:
-          creds.from || process.env.SMTP_FROM || '"UniERP" <noreply@unerp.dev>',
-        to: email,
-        subject: "You have been invited to join a UniERP workspace",
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>You're invited!</h2>
-            <p>You have been invited to collaborate in a workspace on UniERP.</p>
-            <p>Click the link below to set up your account and get started:</p>
-            <a href="${inviteLink}" style="display: inline-block; padding: 10px 20px; background: #4f46e5; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">Accept Invitation</a>
-            <p style="color: #666; font-size: 12px;">If you did not expect this invitation, you can safely ignore this email.</p>
-          </div>
-        `,
-      });
-      this.logger.log(`Invite email sent to ${email}`);
-    } catch (error) {
-      this.logger.error(`Failed to send invite email to ${email}`, error);
-    }
   }
 
   /**
