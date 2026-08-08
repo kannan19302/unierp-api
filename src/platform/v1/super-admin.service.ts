@@ -42,7 +42,34 @@ export class SuperAdminService {
     });
 
     if (!tenant) throw new NotFoundException("Tenant not found");
-    return tenant;
+
+    const [userCount, errorCount, auditLogs] = await Promise.all([
+      idpPrisma.user.count({ where: { tenantId: id } }),
+      prisma.errorLog.count({
+        where: { 
+          tenantId: id,
+          level: { in: ["ERROR", "FATAL"] },
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+        }
+      }),
+      (prisma as any).controlPlaneAuditLog.findMany({
+        where: { targetId: id },
+        orderBy: { createdAt: "desc" },
+        take: 10
+      })
+    ]);
+
+    return {
+      ...tenant,
+      metrics: {
+        userCount,
+        errorsLast24h: errorCount,
+        healthStatus: errorCount > 10 ? "DEGRADED" : "HEALTHY",
+      },
+      auditLogs,
+      // apps could be fetched from a module registry table in the future
+      apps: ["Core CRM", "Inventory", "Finance", "HR"],
+    };
   }
 
   async provisionTenant(
