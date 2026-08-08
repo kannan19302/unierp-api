@@ -1,7 +1,16 @@
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Controller, Get, Post, Patch, Param, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  UseGuards,
+  Req,
+} from "@nestjs/common";
 import { z } from "zod";
+import { Request } from "express";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
@@ -21,6 +30,16 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 @SkipTenantScope()
 export class SuperAdminController {
   constructor(private readonly superAdminService: SuperAdminService) {}
+
+  private auditCtx(req: Request) {
+    const user = (req as any).user;
+    return {
+      actorId: user?.userId ?? user?.sub ?? "unknown",
+      actorRole: user?.realm ?? "provider",
+      correlationId: req.headers["x-correlation-id"] as string | undefined,
+      ipAddress: req.ip,
+    };
+  }
 
   @ApiOperation({ summary: "Get tenants" })
   @Get("tenants")
@@ -47,8 +66,9 @@ export class SuperAdminController {
       plan: string;
       adminEmail: string;
     },
+    @Req() req: Request,
   ) {
-    return this.superAdminService.provisionTenant(body);
+    return this.superAdminService.provisionTenant(body, this.auditCtx(req));
   }
 
   @ApiOperation({ summary: "Update tenant" })
@@ -57,8 +77,9 @@ export class SuperAdminController {
   async updateTenant(
     @Param("id") id: string,
     @ZodBody(z.any()) body: Record<string, unknown>,
+    @Req() req: Request,
   ) {
-    return this.superAdminService.updateTenant(id, body);
+    return this.superAdminService.updateTenant(id, body, this.auditCtx(req));
   }
 
   @ApiOperation({ summary: "Get all admins" })

@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "../../common/idp-client";
+import { ControlPlaneAuditService } from "./control-plane-audit.service";
 
 @Injectable()
 export class SuperAdminService {
+  constructor(private readonly audit: ControlPlaneAuditService) {}
+
   async getTenants() {
     const tenants = await prisma.tenant.findMany({
       include: {
@@ -42,13 +45,34 @@ export class SuperAdminService {
     return tenant;
   }
 
-  async provisionTenant(data: {
-    name: string;
-    slug: string;
-    plan: string;
-    adminEmail: string;
-  }) {
+  async provisionTenant(
+    data: {
+      name: string;
+      slug: string;
+      plan: string;
+      adminEmail: string;
+    },
+    auditCtx: {
+      actorId: string;
+      actorRole: string;
+      correlationId?: string;
+      ipAddress?: string;
+    },
+  ) {
     return prisma.$transaction(async (tx) => {
+      // Audit record is written INSIDE the transaction; a rollback removes it.
+      await this.audit.record(
+        {
+          actorId: auditCtx.actorId,
+          actorRole: auditCtx.actorRole,
+          action: "tenant.provision",
+          details: { name: data.name, slug: data.slug, plan: data.plan, adminEmail: data.adminEmail },
+          correlationId: auditCtx.correlationId,
+          ipAddress: auditCtx.ipAddress,
+        },
+        tx,
+      );
+
       const tenant = await tx.tenant.create({
         data: {
           name: data.name,
@@ -95,7 +119,16 @@ export class SuperAdminService {
     });
   }
 
-  async updateTenant(id: string, data: Record<string, unknown>) {
+  async updateTenant(
+    id: string,
+    data: Record<string, unknown>,
+    auditCtx: {
+      actorId: string;
+      actorRole: string;
+      correlationId?: string;
+      ipAddress?: string;
+    },
+  ) {
     const tenant = await prisma.tenant.findUnique({ where: { id } });
     if (!tenant) throw new NotFoundException("Tenant not found");
 
@@ -104,7 +137,21 @@ export class SuperAdminService {
     if (data.status) updateData.status = data.status;
     if (data.name) updateData.name = data.name;
 
-    return prisma.tenant.update({ where: { id }, data: updateData });
+    return prisma.$transaction(async (tx) => {
+      await this.audit.record(
+        {
+          actorId: auditCtx.actorId,
+          actorRole: auditCtx.actorRole,
+          action: "tenant.update",
+          targetId: id,
+          details: { before: { plan: tenant.plan, status: tenant.status, name: tenant.name }, after: updateData },
+          correlationId: auditCtx.correlationId,
+          ipAddress: auditCtx.ipAddress,
+        },
+        tx,
+      );
+      return (tx as typeof prisma).tenant.update({ where: { id }, data: updateData });
+    });
   }
 
   async getAllAdmins() {

@@ -17,6 +17,7 @@ import { SuperAdminController } from "./v1/super-admin.controller";
 import { SuperAdminService } from "./v1/super-admin.service";
 import { TenantLifecycleController } from "./v1/tenant-lifecycle.controller";
 import { TenantLifecycleService } from "./v1/tenant-lifecycle.service";
+import { ControlPlaneAuditService } from "./v1/control-plane-audit.service";
 
 @Module({
   imports: [],
@@ -41,7 +42,8 @@ import { TenantLifecycleService } from "./v1/tenant-lifecycle.service";
     SaasWhiteLabelDeepService,
     SuperAdminService,
     TenantLifecycleService,
+    ControlPlaneAuditService,
   ],
-  exports: [],
+  exports: [ControlPlaneAuditService],
 })
 export class PlatformModule {}
