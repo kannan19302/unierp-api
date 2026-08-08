@@ -277,4 +277,77 @@ export class SuperAdminService {
 
     return { token, session };
   }
+
+  async crossTenantSearch(
+    query: string,
+    justification: string,
+    auditCtx: { actorId: string; actorRole: string; correlationId?: string; ipAddress?: string }
+  ) {
+    if (!justification || justification.trim().length < 10) {
+      throw new Error("A detailed justification (min 10 chars) is required for cross-tenant search.");
+    }
+    
+    // Log the search action
+    await this.audit.record({
+      actorId: auditCtx.actorId,
+      actorRole: auditCtx.actorRole,
+      action: "support.cross_tenant_search",
+      details: { query, justification },
+      correlationId: auditCtx.correlationId,
+      ipAddress: auditCtx.ipAddress
+    });
+
+    const results: any[] = [];
+    const searchString = `%${query}%`;
+
+    // 1. Search Tenants
+    const tenants = await prisma.tenant.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { slug: { contains: query, mode: 'insensitive' } },
+          { id: query }
+        ]
+      },
+      take: 10
+    });
+    
+    tenants.forEach(t => {
+      results.push({ type: 'tenant', id: t.id, title: t.name, subtitle: t.slug, tenantId: t.id });
+    });
+
+    // 2. Search Users (IDP)
+    const users = await idpPrisma.user.findMany({
+      where: {
+        OR: [
+          { email: { contains: query, mode: 'insensitive' } },
+          { firstName: { contains: query, mode: 'insensitive' } },
+          { lastName: { contains: query, mode: 'insensitive' } },
+          { id: query }
+        ]
+      },
+      take: 20
+    });
+
+    users.forEach(u => {
+      results.push({ type: 'user', id: u.id, title: `${u.firstName} ${u.lastName}`, subtitle: u.email, tenantId: u.tenantId });
+    });
+
+    // 3. Search Invoices
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        OR: [
+          { invoiceNumber: { contains: query, mode: 'insensitive' } },
+          { id: query }
+        ]
+      },
+      take: 20
+    });
+
+    invoices.forEach(i => {
+      results.push({ type: 'invoice', id: i.id, title: i.invoiceNumber, subtitle: i.id, tenantId: i.tenantId });
+    });
+
+    return results;
+  }
 }

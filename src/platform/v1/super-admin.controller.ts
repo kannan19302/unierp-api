@@ -12,6 +12,7 @@ import {
 import { z } from "zod";
 import { Request } from "express";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
+import { Query } from "@nestjs/common";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
@@ -117,5 +118,20 @@ export class SuperAdminController {
   @Permissions("system.health.read")
   async getSystemHealth() {
     return this.superAdminService.getSystemHealth();
+  }
+
+  @ApiOperation({ summary: "Cross-tenant search" })
+  @Get("cross-tenant-search")
+  @Permissions("system.tenant.read")
+  async crossTenantSearch(
+    @Req() req: Request,
+    @Query("q") query: string,
+    @Query("justification") justification: string,
+  ) {
+    return this.superAdminService.crossTenantSearch(
+      query,
+      justification,
+      this.auditCtx(req)
+    );
   }
 }
