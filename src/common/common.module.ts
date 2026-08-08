@@ -22,6 +22,7 @@ import { ExportV2Service } from "./services/export-v2.service";
 import { ExportV2Controller } from "./controllers/export-v2.controller";
 
 import { TenantGuard } from "./guards/tenant.guard";
+import { TenantPlanService } from "./guards/tenant-plan.service";
 
 import { PrismaService } from "@unerp/database";
 import { AppSettingsService } from "./settings/settings.service";
@@ -50,6 +51,7 @@ import { AppSettingsService } from "./settings/settings.service";
     EnterpriseAuditService,
     ExportV2Service,
     TenantGuard,
+    TenantPlanService,
   ],
   exports: [
     PrismaService,
@@ -65,6 +67,7 @@ import { AppSettingsService } from "./settings/settings.service";
     EnterpriseAuditService,
     ExportV2Service,
     TenantGuard,
+    TenantPlanService,
   ],
 })
 export class CommonModule {}

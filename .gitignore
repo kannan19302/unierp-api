@@ -45,3 +45,6 @@ storybook-static/
 
 # Repository-specific
 .env.local
+
+# Runtime state (marketplace bundle store, tenant app extractions)
+var/

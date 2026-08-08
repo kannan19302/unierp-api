@@ -14,6 +14,7 @@ import { ZodBody } from "../../common/decorators/zod-body.decorator";
 import { Request, Response } from "express";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { TenantInterceptor } from "../../common/guards/tenant.interceptor";
+import { TenantQueryBudgetInterceptor } from "../../common/guards/tenant-query-budget.interceptor";
 import { ReportingEngineService } from "./reporting-engine.service";
 import { ExportService } from "../../common/services/export.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
@@ -42,6 +43,7 @@ export class ReportingEngineController {
 
   @ApiOperation({ summary: "Execute query" })
   @Permissions("reporting.create")
+  @UseInterceptors(TenantQueryBudgetInterceptor)
   @Post("query")
   async executeQuery(
     @Req() req: AuthReq,
@@ -65,6 +67,7 @@ export class ReportingEngineController {
 
   @ApiOperation({ summary: "Export query" })
   @Permissions("reporting.create")
+  @UseInterceptors(TenantQueryBudgetInterceptor)
   @Post("export")
   async exportQuery(
     @Req() req: AuthReq,
