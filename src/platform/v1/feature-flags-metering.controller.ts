@@ -114,9 +114,12 @@ export class SaasFeatureFlagsMeteringDeepController {
   async setFeatureFlagOverride(@CurrentUser() user: any, @Body() body: any) {
     return this.service.setFeatureFlagOverride(
       user.tenantId,
+      user.userId,
       body?.flagKey,
       body?.targetTenantId,
       body?.isEnabled,
+      body?.reason,
+      body?.expiresAt ? new Date(body.expiresAt) : undefined
     );
   }
 
@@ -130,9 +133,20 @@ export class SaasFeatureFlagsMeteringDeepController {
   ) {
     return this.service.removeFeatureFlagOverride(
       user.tenantId,
+      user.userId,
       flagKey,
       targetTenantId,
     );
+  }
+
+  @Get("feature-flags/overrides/:targetTenantId")
+  @ApiOperation({ summary: "Get feature flag overrides for a tenant" })
+  @Permissions("saas.flags.read")
+  async getFeatureFlagOverrides(
+    @CurrentUser() user: any,
+    @Param("targetTenantId") targetTenantId: string,
+  ) {
+    return this.service.getFeatureFlagOverrides(targetTenantId);
   }
 
   @Get("feature-flags/export")

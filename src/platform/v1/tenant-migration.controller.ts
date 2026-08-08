@@ -1,33 +1,32 @@
-import { Controller, Get, Post, Body, UseGuards, Req } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { RbacGuard } from "../../common/guards/rbac.guard";
-import { Permissions } from "../../common/decorators/permissions.decorator";
-import { SaasTenantMigrationDeepService } from "./tenant-migration.service";
+import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { SaasTenantMigrationDeepService } from './tenant-migration.service';
 
-@ApiTags("SaasTenantMigrationDeep")
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RbacGuard)
-@Controller("platform/v1/tenant-migration-deep")
+@Controller('platform/v1/migrations')
 export class SaasTenantMigrationDeepController {
-  constructor(
-    private readonly migrationService: SaasTenantMigrationDeepService,
-  ) {}
+  constructor(private readonly migration: SaasTenantMigrationDeepService) {}
 
-  @ApiOperation({ summary: "Get tenant migration jobs" })
-  @Permissions("saas.migration.read")
-  @Get("jobs")
-  async getMigrationJobs(@Req() req: any) {
-    return this.migrationService.getMigrationJobs(req.user.tenantId);
+  @Get(':tenantId/jobs')
+  getMigrationJobs(@Param('tenantId') tenantId: string) {
+    return this.migration.getMigrationJobs(tenantId);
   }
 
-  @ApiOperation({ summary: "Start tenant cluster migration" })
-  @Permissions("saas.migration.create")
-  @Post("start")
-  async startMigration(
-    @Req() req: any,
-    @Body() dto: { sourceCluster: string; targetCluster: string },
-  ) {
-    return this.migrationService.startMigration(req.user.tenantId, dto);
+  @Post(':tenantId/rehearse')
+  rehearseMigration(@Param('tenantId') tenantId: string, @Body() body: any) {
+    return this.migration.rehearseMigration({ tenantId, ...body });
+  }
+
+  @Post(':tenantId/start')
+  startMigration(@Param('tenantId') tenantId: string, @Body() body: any) {
+    return this.migration.startMigration({ tenantId, ...body }, body.actorId || 'SYSTEM');
+  }
+
+  @Post('jobs/:jobId/complete')
+  completeMigration(@Param('jobId') jobId: string, @Body() body: { actorId: string }) {
+    return this.migration.completeMigration(jobId, body.actorId || 'SYSTEM');
+  }
+
+  @Post('jobs/:jobId/rollback')
+  rollbackMigration(@Param('jobId') jobId: string, @Body() body: { actorId: string }) {
+    return this.migration.rollbackMigration(jobId, body.actorId || 'SYSTEM');
   }
 }

@@ -1,12 +1,15 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ControlPlaneAuditService } from "./control-plane-audit.service";
 
 @Injectable()
 export class SaasFeatureFlagsMeteringDeepService {
   private readonly logger = new Logger(
     SaasFeatureFlagsMeteringDeepService.name,
   );
+
+  constructor(private readonly auditService: ControlPlaneAuditService) {}
 
   private get db() {
     return prisma;
@@ -52,10 +55,25 @@ export class SaasFeatureFlagsMeteringDeepService {
     flagKey: string,
     context?: any,
   ) {
+    const override = await prisma.tenantFeatureOverride.findUnique({
+      where: { tenantId_featureKey: { tenantId, featureKey: flagKey } }
+    });
+
+    if (override && (!override.expiresAt || override.expiresAt > new Date())) {
+      return {
+        flagKey,
+        tenantId,
+        isEnabled: override.isEnabled ?? false,
+        limitValue: override.limitValue,
+        variant: "override",
+        evaluationReason: "TENANT_OVERRIDE",
+      };
+    }
+
     return {
       flagKey,
       tenantId,
-      isEnabled: true,
+      isEnabled: true, // Defaulting to true or fetching from SaasFeatureFlag in real implementation
       variant: "control",
       evaluationReason: "MATCHED_PERCENTAGE_ROLLOUT",
     };
@@ -79,20 +97,82 @@ export class SaasFeatureFlagsMeteringDeepService {
   }
 
   async setFeatureFlagOverride(
-    tenantId: string,
+    adminTenantId: string,
+    adminUserId: string,
     flagKey: string,
     targetTenantId: string,
     isEnabled: boolean,
+    reason: string,
+    expiresAt?: Date
   ) {
-    return { flagKey, targetTenantId, isEnabled, overrideSet: true };
+    const result = await prisma.tenantFeatureOverride.upsert({
+      where: { tenantId_featureKey: { tenantId: targetTenantId, featureKey: flagKey } },
+      update: {
+        isEnabled,
+        reason,
+        expiresAt,
+        overriddenBy: adminUserId,
+      },
+      create: {
+        tenantId: targetTenantId,
+        featureKey: flagKey,
+        isEnabled,
+        reason,
+        expiresAt,
+        overriddenBy: adminUserId,
+      }
+    });
+
+    await this.auditService.record({
+      actorId: adminUserId,
+      actorRole: "SUPER_ADMIN",
+      targetId: targetTenantId,
+      action: "SET_FEATURE_OVERRIDE",
+      details: { 
+        resourceType: "FeatureFlag",
+        resourceId: flagKey,
+        isEnabled, 
+        reason, 
+        expiresAt,
+        severity: "WARNING"
+      },
+    });
+
+    return result;
   }
 
   async removeFeatureFlagOverride(
-    tenantId: string,
+    adminTenantId: string,
+    adminUserId: string,
     flagKey: string,
     targetTenantId: string,
   ) {
+    try {
+      await prisma.tenantFeatureOverride.delete({
+        where: { tenantId_featureKey: { tenantId: targetTenantId, featureKey: flagKey } }
+      });
+      await this.auditService.record({
+        actorId: adminUserId,
+        actorRole: "SUPER_ADMIN",
+        targetId: targetTenantId,
+        action: "REMOVE_FEATURE_OVERRIDE",
+        details: {
+          resourceType: "FeatureFlag",
+          resourceId: flagKey,
+          severity: "INFO"
+        },
+      });
+    } catch (err) {
+      // Ignore if not found
+    }
     return { flagKey, targetTenantId, removed: true };
+  }
+
+  async getFeatureFlagOverrides(tenantId: string) {
+    return prisma.tenantFeatureOverride.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "desc" }
+    });
   }
 
   async exportFeatureFlagConfig(tenantId: string) {

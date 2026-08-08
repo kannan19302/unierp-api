@@ -18,6 +18,32 @@ import { SuperAdminService } from "./v1/super-admin.service";
 import { TenantLifecycleController } from "./v1/tenant-lifecycle.controller";
 import { TenantLifecycleService } from "./v1/tenant-lifecycle.service";
 import { ControlPlaneAuditService } from "./v1/control-plane-audit.service";
+import { PlansController } from "./v1/plans.controller";
+import { PlansService } from "./v1/plans.service";
+import { MeteringController } from "./v1/metering.controller";
+import { MeteringService } from "./v1/metering.service";
+import { SubscriptionManagementController } from "./v1/subscription-management.controller";
+import { SubscriptionManagementService } from "./v1/subscription-management.service";
+import { InvoicingController } from "./v1/invoicing.controller";
+import { InvoicingService } from "./v1/invoicing.service";
+import { DunningController } from "./v1/dunning.controller";
+import { DunningService } from "./v1/dunning.service";
+import { QuotaAdminController } from "./v1/quota-admin.controller";
+import { QuotaAdminService } from "./v1/quota-admin.service";
+import { SupportWorkspaceController } from "./v1/support-workspace.controller";
+import { SupportWorkspaceService } from "./v1/support-workspace.service";
+import { BroadcastMaintenanceController } from "./v1/broadcast-maintenance.controller";
+import { BroadcastMaintenanceService } from "./v1/broadcast-maintenance.service";
+import { CustomerImportController } from "./v1/customer-import.controller";
+import { CustomerImportService } from "./v1/customer-import.service";
+import { TenantExportOffboardingController } from "./v1/tenant-export-offboarding.controller";
+import { TenantExportOffboardingService } from "./v1/tenant-export-offboarding.service";
+import { ReleaseControlController } from "./v1/release-control.controller";
+import { ReleaseControlService } from "./v1/release-control.service";
+import { LiveTenantUpgradeController } from "./v1/live-tenant-upgrade.controller";
+import { LiveTenantUpgradeService } from "./v1/live-tenant-upgrade.service";
+import { SecurityOperationsController } from "./v1/security-operations.controller";
+import { SecurityOperationsService } from "./v1/security-operations.service";
 
 @Module({
   imports: [],
@@ -31,6 +57,19 @@ import { ControlPlaneAuditService } from "./v1/control-plane-audit.service";
     SaasWhiteLabelDeepController,
     SuperAdminController,
     TenantLifecycleController,
+    PlansController,
+    MeteringController,
+    SubscriptionManagementController,
+    InvoicingController,
+    DunningController,
+    QuotaAdminController,
+    SupportWorkspaceController,
+    BroadcastMaintenanceController,
+    CustomerImportController,
+    TenantExportOffboardingController,
+    ReleaseControlController,
+    LiveTenantUpgradeController,
+    SecurityOperationsController,
   ],
   providers: [
     OperationsService,
@@ -43,6 +82,19 @@ import { ControlPlaneAuditService } from "./v1/control-plane-audit.service";
     SuperAdminService,
     TenantLifecycleService,
     ControlPlaneAuditService,
+    PlansService,
+    MeteringService,
+    SubscriptionManagementService,
+    InvoicingService,
+    DunningService,
+    QuotaAdminService,
+    SupportWorkspaceService,
+    BroadcastMaintenanceService,
+    CustomerImportService,
+    TenantExportOffboardingService,
+    ReleaseControlService,
+    LiveTenantUpgradeService,
+    SecurityOperationsService,
   ],
   exports: [ControlPlaneAuditService],
 })
