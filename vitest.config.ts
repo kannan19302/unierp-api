@@ -77,9 +77,13 @@ export default defineConfig({
       // machine-readable coverage.
       reporter: ["text", "json", "html"],
       reportsDirectory: "./coverage",
-      // Only report files exercised by tests (avoids an empty report in this
-      // vitest version); untested modules fall back to the spec-presence score.
-      all: false,
+      all: true,
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
       exclude: [
         "src/**/*.spec.ts",
         "src/**/tests/**",
