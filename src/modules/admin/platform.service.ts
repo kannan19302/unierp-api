@@ -532,4 +532,23 @@ export class PlatformService {
     });
     return { ...current, lastCheckedAt: checkResult.checkedAt };
   }
+
+  async grantSupportConsent(tenantId: string, userId: string, durationHours: number) {
+    const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+    return prisma.tenantConsent.create({
+      data: {
+        tenantId,
+        grantedBy: userId,
+        status: "ACTIVE",
+        expiresAt,
+      },
+    });
+  }
+
+  async getSupportSessions(tenantId: string) {
+    return prisma.impersonationSession.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
 }

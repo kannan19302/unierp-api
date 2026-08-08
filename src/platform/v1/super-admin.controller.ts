@@ -59,6 +59,18 @@ export class SuperAdminController {
     return this.superAdminService.getTenantDetail(id);
   }
 
+  @ApiOperation({ summary: "Impersonate tenant admin" })
+  @Post("tenants/:id/impersonate")
+  @Permissions("system.tenant.impersonate")
+  @TwoPersonControl()
+  async impersonateTenant(
+    @Param("id") id: string,
+    @Req() req: Request,
+  ) {
+    const actorId = (req as any).user?.userId ?? "unknown";
+    return this.superAdminService.impersonateTenant(id, actorId, this.auditCtx(req));
+  }
+
   @ApiOperation({ summary: "Provision tenant" })
   @Post("tenants")
   @Permissions("system.tenant.create")

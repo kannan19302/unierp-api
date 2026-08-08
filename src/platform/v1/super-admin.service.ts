@@ -198,4 +198,83 @@ export class SuperAdminService {
   async getSystemHealth() {
     return { status: "ok", timestamp: new Date().toISOString() };
   }
+
+  async impersonateTenant(
+    tenantId: string,
+    actorId: string,
+    auditCtx: { actorId: string; actorRole: string; correlationId?: string; ipAddress?: string }
+  ) {
+    // 1. Verify TenantConsent exists and is ACTIVE
+    const consent = await prisma.tenantConsent.findFirst({
+      where: {
+        tenantId,
+        status: "ACTIVE",
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!consent) {
+      throw new Error("Cannot impersonate: No active tenant consent found");
+    }
+
+    // 2. Find a target user to impersonate (e.g. the primary tenant admin)
+    const targetUser = await idpPrisma.user.findFirst({
+      where: { tenantId },
+      orderBy: { createdAt: "asc" }, // Usually the first user is the founder/admin
+    });
+
+    if (!targetUser) {
+      throw new Error("No users found in tenant to impersonate");
+    }
+
+    // 3. Create ImpersonationSession
+    const session = await prisma.impersonationSession.create({
+      data: {
+        tenantId,
+        impersonatorId: actorId,
+        targetUserId: targetUser.id,
+        consentId: consent.id,
+        status: "ACTIVE",
+        expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours max
+      },
+    });
+
+    // 4. Log the impersonation event in audit log (C09 requirement)
+    await this.audit.record({
+      actorId,
+      actorRole: auditCtx.actorRole,
+      action: "impersonate",
+      targetId: tenantId,
+      details: { 
+        sessionId: session.id,
+        targetUserId: targetUser.id,
+        consentId: consent.id
+      },
+      correlationId: auditCtx.correlationId,
+      ipAddress: auditCtx.ipAddress
+    });
+
+    // 5. Generate impersonation JWT
+    const jwt = require("jsonwebtoken");
+    const secret = process.env.JWT_SECRET || "fallback_secret_for_local_dev";
+    
+    const token = jwt.sign(
+      {
+        sub: targetUser.id,
+        userId: targetUser.id,
+        tenantId: targetUser.tenantId,
+        email: targetUser.email,
+        realm: "tenant",
+        roles: ["admin"],
+        isImpersonation: true,
+        impersonatorId: actorId,
+        impersonationSessionId: session.id
+      },
+      secret,
+      { expiresIn: "2h" }
+    );
+
+    return { token, session };
+  }
 }

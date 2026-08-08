@@ -93,6 +93,23 @@ export class PlatformController {
     return this.platformService.addCustomDomain(req.user.tenantId, domain);
   }
 
+  @ApiOperation({ summary: "Grant support consent" })
+  @Post("support-consent")
+  @Permissions("admin.platform.update")
+  async grantSupportConsent(
+    @Req() req: AuthenticatedRequest,
+    @Body("durationHours") durationHours: number = 24,
+  ) {
+    return this.platformService.grantSupportConsent(req.user.tenantId, req.user.userId, durationHours);
+  }
+
+  @ApiOperation({ summary: "Get support sessions" })
+  @Get("support-sessions")
+  @Permissions("admin.platform.read")
+  async getSupportSessions(@Req() req: AuthenticatedRequest) {
+    return this.platformService.getSupportSessions(req.user.tenantId);
+  }
+
   @ApiOperation({ summary: "Get environments" })
   @Get("environments")
   @Permissions("admin.platform.read")
