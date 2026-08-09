@@ -5,6 +5,7 @@ import { ExportService } from "./services/export.service";
 import { AppLogger } from "./services/logger.service";
 import { CacheService } from "./services/cache.service";
 import { I18nService } from "./services/i18n.service";
+import { PrismaEventsService } from "./services/prisma-events.service";
 
 import { BulkOperationsService } from "./services/bulk-operations.service";
 import { BulkOperationsController } from "./controllers/bulk-operations.controller";
@@ -39,6 +40,7 @@ import { AppSettingsService } from "./settings/settings.service";
   ],
   providers: [
     PrismaService,
+    PrismaEventsService,
     AppSettingsService,
     ChangeHistoryService,
     ExportService,
@@ -55,6 +57,7 @@ import { AppSettingsService } from "./settings/settings.service";
   ],
   exports: [
     PrismaService,
+    PrismaEventsService,
     AppSettingsService,
     ChangeHistoryService,
     ExportService,

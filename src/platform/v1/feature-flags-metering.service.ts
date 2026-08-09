@@ -55,7 +55,7 @@ export class SaasFeatureFlagsMeteringDeepService {
     flagKey: string,
     context?: any,
   ) {
-    const override = await prisma.tenantFeatureOverride.findUnique({
+    const override = await (prisma as any).tenantFeatureOverride.findUnique({
       where: { tenantId_featureKey: { tenantId, featureKey: flagKey } }
     });
 
@@ -105,7 +105,7 @@ export class SaasFeatureFlagsMeteringDeepService {
     reason: string,
     expiresAt?: Date
   ) {
-    const result = await prisma.tenantFeatureOverride.upsert({
+    const result = await (prisma as any).tenantFeatureOverride.upsert({
       where: { tenantId_featureKey: { tenantId: targetTenantId, featureKey: flagKey } },
       update: {
         isEnabled,
@@ -148,7 +148,7 @@ export class SaasFeatureFlagsMeteringDeepService {
     targetTenantId: string,
   ) {
     try {
-      await prisma.tenantFeatureOverride.delete({
+      await (prisma as any).tenantFeatureOverride.delete({
         where: { tenantId_featureKey: { tenantId: targetTenantId, featureKey: flagKey } }
       });
       await this.auditService.record({
@@ -169,7 +169,7 @@ export class SaasFeatureFlagsMeteringDeepService {
   }
 
   async getFeatureFlagOverrides(tenantId: string) {
-    return prisma.tenantFeatureOverride.findMany({
+    return (prisma as any).tenantFeatureOverride.findMany({
       where: { tenantId },
       orderBy: { createdAt: "desc" }
     });

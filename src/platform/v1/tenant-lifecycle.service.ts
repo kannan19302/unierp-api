@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ConsoleGateway } from "./console.gateway";
 
 export interface ExportManifest {
   tenant: Record<string, unknown>;
@@ -22,6 +23,8 @@ export interface ExportManifest {
 
 @Injectable()
 export class TenantLifecycleService {
+  constructor(private readonly consoleGateway: ConsoleGateway) {}
+
   async getLifecycleStatus(tenantId: string) {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException("Tenant not found");
@@ -144,6 +147,8 @@ export class TenantLifecycleService {
       });
     });
 
+    this.consoleGateway.emitTenantUpdate({ action: "suspended", tenantId });
+
     return {
       message: "Tenant suspended successfully",
       tenantId,
@@ -173,6 +178,8 @@ export class TenantLifecycleService {
         },
       });
     });
+
+    this.consoleGateway.emitTenantUpdate({ action: "unsuspended", tenantId });
 
     return {
       message: "Tenant unsuspended successfully",
@@ -215,6 +222,8 @@ export class TenantLifecycleService {
       });
     });
 
+    this.consoleGateway.emitTenantUpdate({ action: "offboarding", tenantId });
+
     return {
       message: "Tenant offboarding initiated",
       tenantId,
@@ -248,6 +257,8 @@ export class TenantLifecycleService {
         },
       });
     });
+
+    this.consoleGateway.emitTenantUpdate({ action: "offboarding_cancelled", tenantId });
 
     return {
       message: "Offboarding cancelled, tenant restored to active",
@@ -297,6 +308,8 @@ export class TenantLifecycleService {
 
       await tx.tenant.delete({ where: { id: tenantId } });
     });
+
+    this.consoleGateway.emitTenantUpdate({ action: "purged", tenantId });
 
     return {
       message: "Tenant permanently purged",

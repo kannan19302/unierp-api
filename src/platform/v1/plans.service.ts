@@ -67,7 +67,7 @@ export class PlansService {
           description: dto.description,
           isPublic: dto.isPublic ?? true,
           version: 1,
-        },
+        } as any,
       });
 
       await this.audit.record(
@@ -87,7 +87,7 @@ export class PlansService {
 
   async updatePlan(id: string, dto: UpdatePlanDto, actorId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
-      const existing = await tx.saaSPlan.findUniqueOrThrow({ where: { id } });
+      const existing = await tx.saaSPlan.findUniqueOrThrow({ where: { id } }) as any;
 
       // Create a new version
       const newPlan = await tx.saaSPlan.create({
@@ -101,8 +101,8 @@ export class PlansService {
           isPublic: dto.isPublic ?? existing.isPublic,
           sortOrder: existing.sortOrder,
           status: dto.status ?? 'ACTIVE',
-          version: existing.version + 1,
-        },
+          version: (existing.version || 1) + 1,
+        } as any,
       });
 
       // Mark old as grandfathered
@@ -111,14 +111,14 @@ export class PlansService {
         data: {
           status: 'GRANDFATHERED',
           supersededBy: newPlan.id,
-        },
+        } as any,
       });
 
       // Copy prices to new plan
       const prices = await tx.saaSPlanPrice.findMany({ where: { planId: id } });
       if (prices.length > 0) {
         await tx.saaSPlanPrice.createMany({
-          data: prices.map(p => ({
+          data: prices.map((p: any) => ({
             planId: newPlan.id,
             currency: p.currency,
             region: p.region,
@@ -148,7 +148,7 @@ export class PlansService {
   async setPlanPrices(planId: string, prices: PriceDto[], actorId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
       // Create new plan version to avoid mutating price on existing subscriptions
-      const existing = await tx.saaSPlan.findUniqueOrThrow({ where: { id: planId } });
+      const existing = await tx.saaSPlan.findUniqueOrThrow({ where: { id: planId } }) as any;
 
       const newPlan = await tx.saaSPlan.create({
         data: {
@@ -161,8 +161,8 @@ export class PlansService {
           isPublic: existing.isPublic,
           sortOrder: existing.sortOrder,
           status: 'ACTIVE',
-          version: existing.version + 1,
-        },
+          version: (existing.version || 1) + 1,
+        } as any,
       });
 
       await tx.saaSPlan.update({
@@ -170,7 +170,7 @@ export class PlansService {
         data: {
           status: 'GRANDFATHERED',
           supersededBy: newPlan.id,
-        },
+        } as any,
       });
 
       await tx.saaSPlanPrice.createMany({

@@ -23,7 +23,7 @@ export class MeteringService {
   }
 
   async getEvents(tenantId: string, metric: string) {
-    return prisma.meteringEvent.findMany({
+    return (prisma as any).meteringEvent.findMany({
       where: { tenantId, metric },
       orderBy: { timestamp: 'desc' },
       take: 1000,
@@ -33,7 +33,7 @@ export class MeteringService {
   async recordEvent(tenantId: string, dto: RecordEventDto, actorId: string) {
     return prisma.$transaction(async (tx) => {
       // 1. Check idempotency (G-2)
-      const existing = await tx.meteringEvent.findUnique({
+      const existing = await (tx as any).meteringEvent.findUnique({
         where: { idempotencyKey: dto.idempotencyKey },
       });
 
@@ -43,7 +43,7 @@ export class MeteringService {
       }
 
       // 2. Insert event
-      const event = await tx.meteringEvent.create({
+      const event = await (tx as any).meteringEvent.create({
         data: {
           tenantId,
           metric: dto.metric,
@@ -76,7 +76,7 @@ export class MeteringService {
   async reconcile(tenantId: string, metric: string, actorId: string) {
     return prisma.$transaction(async (tx) => {
       // 1. Recalculate true sum from events
-      const agg = await tx.meteringEvent.aggregate({
+      const agg = await (tx as any).meteringEvent.aggregate({
         where: { tenantId, metric },
         _sum: { quantity: true },
       });

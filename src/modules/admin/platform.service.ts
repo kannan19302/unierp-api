@@ -535,7 +535,7 @@ export class PlatformService {
 
   async grantSupportConsent(tenantId: string, userId: string, durationHours: number) {
     const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000);
-    return prisma.tenantConsent.create({
+    return (prisma as any).tenantConsent.create({
       data: {
         tenantId,
         grantedBy: userId,
@@ -546,7 +546,7 @@ export class PlatformService {
   }
 
   async getSupportSessions(tenantId: string) {
-    return prisma.impersonationSession.findMany({
+    return (prisma as any).impersonationSession.findMany({
       where: { tenantId },
       orderBy: { createdAt: "desc" },
     });

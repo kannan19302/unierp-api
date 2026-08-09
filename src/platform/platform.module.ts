@@ -44,6 +44,7 @@ import { LiveTenantUpgradeController } from "./v1/live-tenant-upgrade.controller
 import { LiveTenantUpgradeService } from "./v1/live-tenant-upgrade.service";
 import { SecurityOperationsController } from "./v1/security-operations.controller";
 import { SecurityOperationsService } from "./v1/security-operations.service";
+import { ConsoleGateway } from "./v1/console.gateway";
 
 @Module({
   imports: [],
@@ -72,6 +73,7 @@ import { SecurityOperationsService } from "./v1/security-operations.service";
     SecurityOperationsController,
   ],
   providers: [
+    ConsoleGateway,
     OperationsService,
     SaasClusterRoutingDeepService,
     SaasEnterpriseScaleMasterService,
@@ -96,6 +98,6 @@ import { SecurityOperationsService } from "./v1/security-operations.service";
     LiveTenantUpgradeService,
     SecurityOperationsService,
   ],
-  exports: [ControlPlaneAuditService],
+  exports: [ControlPlaneAuditService, ConsoleGateway],
 })
 export class PlatformModule {}

@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "../../common/idp-client";
 import { ControlPlaneAuditService } from "./control-plane-audit.service";
+import { ConsoleGateway } from "./console.gateway";
 
 @Injectable()
 export class SuperAdminService {
-  constructor(private readonly audit: ControlPlaneAuditService) {}
+  constructor(
+    private readonly audit: ControlPlaneAuditService,
+    private readonly consoleGateway: ConsoleGateway,
+  ) {}
 
   async getTenants() {
     const tenants = await prisma.tenant.findMany({
@@ -142,6 +146,8 @@ export class SuperAdminService {
         data: { userId: user.id, roleId: adminRole.id },
       });
 
+      this.consoleGateway.emitTenantUpdate({ action: "created", tenantId: tenant.id });
+
       return { tenant, user };
     });
   }
@@ -177,7 +183,11 @@ export class SuperAdminService {
         },
         tx,
       );
-      return (tx as typeof prisma).tenant.update({ where: { id }, data: updateData });
+      
+      const updatedTenant = await (tx as typeof prisma).tenant.update({ where: { id }, data: updateData });
+      this.consoleGateway.emitTenantUpdate({ action: "updated", tenantId: id });
+      
+      return updatedTenant;
     });
   }
 
@@ -205,7 +215,7 @@ export class SuperAdminService {
     auditCtx: { actorId: string; actorRole: string; correlationId?: string; ipAddress?: string }
   ) {
     // 1. Verify TenantConsent exists and is ACTIVE
-    const consent = await prisma.tenantConsent.findFirst({
+    const consent = await (prisma as any).tenantConsent.findFirst({
       where: {
         tenantId,
         status: "ACTIVE",
@@ -229,7 +239,7 @@ export class SuperAdminService {
     }
 
     // 3. Create ImpersonationSession
-    const session = await prisma.impersonationSession.create({
+    const session = await (prisma as any).impersonationSession.create({
       data: {
         tenantId,
         impersonatorId: actorId,
