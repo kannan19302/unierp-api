@@ -253,6 +253,129 @@ export class AdminService {
     return { success: true, message: "User deactivated" };
   }
 
+  async activateUser(tenantId: string, userId: string) {
+    const user = await idpPrisma.user.findFirst({ where: { id: userId, tenantId } });
+    if (!user) throw new NotFoundException("User not found");
+    if (user.status === "ACTIVE") return { success: true };
+
+    await idpPrisma.user.update({
+      where: { id: userId },
+      data: { status: "ACTIVE" },
+    });
+    return { success: true, message: "User activated" };
+  }
+
+  async suspendUser(tenantId: string, userId: string) {
+    const user = await idpPrisma.user.findFirst({ where: { id: userId, tenantId } });
+    if (!user) throw new NotFoundException("User not found");
+    
+    await idpPrisma.userSession.updateMany({
+      where: { userId },
+      data: { isActive: false }
+    });
+
+    await idpPrisma.user.update({
+      where: { id: userId },
+      data: { status: "SUSPENDED" },
+    });
+    return { success: true, message: "User suspended" };
+  }
+
+  async transferOwnership(tenantId: string, fromUserId: string, toUserId: string) {
+    const ownerRole = await idpPrisma.role.findFirst({
+      where: { tenantId, name: "Owner" }
+    });
+    if (!ownerRole) {
+      throw new BadRequestException("Owner role not configured for this tenant");
+    }
+
+    const fromUser = await idpPrisma.user.findFirst({ where: { id: fromUserId, tenantId } });
+    const toUser = await idpPrisma.user.findFirst({ where: { id: toUserId, tenantId } });
+    if (!fromUser || !toUser) {
+      throw new NotFoundException("User not found in tenant");
+    }
+
+    await idpPrisma.$transaction([
+      idpPrisma.userRole.deleteMany({
+        where: { userId: fromUserId, roleId: ownerRole.id }
+      }),
+      idpPrisma.userRole.create({
+        data: { userId: toUserId, roleId: ownerRole.id }
+      })
+    ]);
+
+    return { success: true, message: "Ownership transferred successfully" };
+  }
+
+  async offboardUser(tenantId: string, userId: string, reassignToUserId: string) {
+    const user = await idpPrisma.user.findFirst({ where: { id: userId, tenantId } });
+    if (!user) throw new NotFoundException("User not found");
+    const reassignUser = await idpPrisma.user.findFirst({ where: { id: reassignToUserId, tenantId } });
+    if (!reassignUser) throw new NotFoundException("Target reassignment user not found");
+
+    // 1. Reassign records across tenant data schema models that hold approver references
+    await prisma.$transaction([
+      prisma.documentApproval.updateMany({
+        where: { approverId: userId },
+        data: { approverId: reassignToUserId }
+      }),
+      prisma.approvalRoutingRule.updateMany({
+        where: { approverId: userId },
+        data: { approverId: reassignToUserId }
+      }),
+      prisma.peopleTimeOffRequest.updateMany({
+        where: { approverId: userId },
+        data: { approverId: reassignToUserId }
+      }),
+      prisma.contract.updateMany({
+        where: { approverId: userId },
+        data: { approverId: reassignToUserId }
+      }),
+      prisma.sopDocument.updateMany({
+        where: { approverId: userId },
+        data: { approverId: reassignToUserId }
+      }),
+      prisma.orderApprovalAction.updateMany({
+        where: { approverId: userId },
+        data: { approverId: reassignToUserId }
+      })
+    ]);
+
+    // 2. Revoke sessions and update IDP status
+    await idpPrisma.userSession.updateMany({
+      where: { userId },
+      data: { isActive: false }
+    });
+
+    await idpPrisma.user.update({
+      where: { id: userId },
+      data: { status: "OFFBOARDED" }
+    });
+
+    return { success: true, message: "User offboarded and records reassigned" };
+  }
+
+  async bulkUserOperations(tenantId: string, action: string, userIds: string[], targetUserId?: string) {
+    switch (action) {
+      case "activate":
+        await idpPrisma.user.updateMany({ where: { id: { in: userIds }, tenantId }, data: { status: "ACTIVE" } });
+        break;
+      case "suspend":
+        await idpPrisma.userSession.updateMany({ where: { userId: { in: userIds } }, data: { isActive: false } });
+        await idpPrisma.user.updateMany({ where: { id: { in: userIds }, tenantId }, data: { status: "SUSPENDED" } });
+        break;
+      case "offboard":
+        if (!targetUserId) throw new BadRequestException("targetUserId is required for offboard");
+        for (const uid of userIds) {
+          await this.offboardUser(tenantId, uid, targetUserId);
+        }
+        break;
+      default:
+        throw new BadRequestException("Unsupported bulk action");
+    }
+    return { success: true, message: `Bulk action ${action} completed on ${userIds.length} users` };
+  }
+
   /**
    * Returns a high-level overview of team capacity for the SaaS portal.
    */

@@ -18,3 +18,10 @@ export type CreateAccessPackageInput = z.infer<
 export type UpdateAccessPackageInput = z.infer<
   typeof updateAccessPackageSchema
 >;
+
+export const offboardUserSchema = z.object({ reassignToUserId: z.string() });
+export const transferOwnershipSchema = z.object({ toUserId: z.string() });
+export const bulkUserActionSchema = z.object({ action: z.enum(['activate', 'suspend', 'offboard']), userIds: z.array(z.string()), targetUserId: z.string().optional() });
+export type OffboardUserInput = z.infer<typeof offboardUserSchema>;
+export type TransferOwnershipInput = z.infer<typeof transferOwnershipSchema>;
+export type BulkUserActionInput = z.infer<typeof bulkUserActionSchema>;

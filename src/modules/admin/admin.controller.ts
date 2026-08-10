@@ -32,6 +32,12 @@ import {
   updateAccessPackageSchema,
   CreateAccessPackageInput,
   UpdateAccessPackageInput,
+  offboardUserSchema,
+  OffboardUserInput,
+  transferOwnershipSchema,
+  TransferOwnershipInput,
+  bulkUserActionSchema,
+  BulkUserActionInput,
 } from "./admin.schemas";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
@@ -90,6 +96,58 @@ export class AdminController {
     @Param("id") userId: string,
   ): Promise<unknown> {
     return this.adminService.deleteUser(req.user.tenantId, userId);
+  }
+
+  @ApiOperation({ summary: "Activate user" })
+  @Post("users/:id/activate")
+  @Permissions("admin.user.update")
+  async activateUser(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") userId: string,
+  ): Promise<unknown> {
+    return this.adminService.activateUser(req.user.tenantId, userId);
+  }
+
+  @ApiOperation({ summary: "Suspend user" })
+  @Post("users/:id/suspend")
+  @Permissions("admin.user.update")
+  async suspendUser(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") userId: string,
+  ): Promise<unknown> {
+    return this.adminService.suspendUser(req.user.tenantId, userId);
+  }
+
+  @ApiOperation({ summary: "Transfer ownership" })
+  @Post("users/:id/transfer-ownership")
+  @Permissions("admin.user.manage-roles")
+  async transferOwnership(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") userId: string,
+    @Body(new ZodValidationPipe(transferOwnershipSchema)) dto: TransferOwnershipInput,
+  ): Promise<unknown> {
+    return this.adminService.transferOwnership(req.user.tenantId, userId, dto.toUserId);
+  }
+
+  @ApiOperation({ summary: "Offboard user" })
+  @Post("users/:id/offboard")
+  @Permissions("admin.user.delete")
+  async offboardUser(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") userId: string,
+    @Body(new ZodValidationPipe(offboardUserSchema)) dto: OffboardUserInput,
+  ): Promise<unknown> {
+    return this.adminService.offboardUser(req.user.tenantId, userId, dto.reassignToUserId);
+  }
+
+  @ApiOperation({ summary: "Bulk user operations" })
+  @Post("users/bulk")
+  @Permissions("admin.user.update")
+  async bulkUserOperations(
+    @Req() req: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(bulkUserActionSchema)) dto: BulkUserActionInput,
+  ): Promise<unknown> {
+    return this.adminService.bulkUserOperations(req.user.tenantId, dto.action, dto.userIds, dto.targetUserId);
   }
 
   @ApiOperation({ summary: "Get team overview" })
