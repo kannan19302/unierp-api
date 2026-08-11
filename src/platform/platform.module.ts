@@ -18,6 +18,8 @@ import { SuperAdminService } from "./v1/super-admin.service";
 import { TenantLifecycleController } from "./v1/tenant-lifecycle.controller";
 import { TenantLifecycleService } from "./v1/tenant-lifecycle.service";
 import { ControlPlaneAuditService } from "./v1/control-plane-audit.service";
+import { ControlPlaneApprovalsController } from "./v1/control-plane-approvals.controller";
+import { ControlPlaneApprovalsService } from "./v1/control-plane-approvals.service";
 import { PlansController } from "./v1/plans.controller";
 import { PlansService } from "./v1/plans.service";
 import { MeteringController } from "./v1/metering.controller";
@@ -71,6 +73,7 @@ import { ConsoleGateway } from "./v1/console.gateway";
     ReleaseControlController,
     LiveTenantUpgradeController,
     SecurityOperationsController,
+    ControlPlaneApprovalsController,
   ],
   providers: [
     ConsoleGateway,
@@ -97,6 +100,7 @@ import { ConsoleGateway } from "./v1/console.gateway";
     ReleaseControlService,
     LiveTenantUpgradeService,
     SecurityOperationsService,
+    ControlPlaneApprovalsService,
   ],
   exports: [ControlPlaneAuditService, ConsoleGateway],
 })
