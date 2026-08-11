@@ -5,6 +5,7 @@ import { SaasPortalOrgHierarchyController } from "./controllers/org-hierarchy.co
 import { SaasPortalOrgHierarchyService } from "./services/org-hierarchy.service";
 import { SaasPortalGdprComplianceController } from "./controllers/gdpr-compliance.controller";
 import { SaasPortalGdprComplianceService } from "./services/gdpr-compliance.service";
+import { GdprCryptoShredService } from "./services/gdpr-crypto-shred.service";
 import { SaasPortalAuditLogController } from "./controllers/audit-log.controller";
 import { SaasPortalAuditLogService } from "./services/audit-log.service";
 import { SaasPortalSecurityController } from "./controllers/security.controller";
@@ -54,6 +55,7 @@ import { SaasPortalEnterpriseModule } from "./saas-portal-enterprise.module";
     SaasPortalService,
     SaasPortalOrgHierarchyService,
     SaasPortalGdprComplianceService,
+    GdprCryptoShredService,
     SaasPortalAuditLogService,
     SaasPortalSecurityService,
     SaasPortalDelegationService,
@@ -71,6 +73,7 @@ import { SaasPortalEnterpriseModule } from "./saas-portal-enterprise.module";
     SaasPortalService,
     SaasPortalOrgHierarchyService,
     SaasPortalGdprComplianceService,
+    GdprCryptoShredService,
     SaasPortalAuditLogService,
     SaasPortalSecurityService,
     SaasPortalDelegationService,

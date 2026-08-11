@@ -8,6 +8,7 @@ import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import * as fs from "fs";
 import * as path from "path";
+import { GdprCryptoShredService } from "./gdpr-crypto-shred.service";
 
 interface PiiModelEntry {
   treatment: "erase" | "anonymize" | "retain-legal-hold";
@@ -38,6 +39,8 @@ export interface ErasureResult {
 export class SaasPortalGdprComplianceService {
   private readonly logger = new Logger(SaasPortalGdprComplianceService.name);
   private piiRegistry: PiiRegistry | null = null;
+
+  constructor(private readonly cryptoShred: GdprCryptoShredService) {}
 
   private readonly prismaModelMap: Record<string, string> = {
     User: "user",
@@ -272,6 +275,15 @@ export class SaasPortalGdprComplianceService {
       data: { status: "COMPLETED", erasedAt: new Date() },
     });
 
+    // D11/G-3 — the subject's own email is a personal-data reference; it
+    // is encrypted under a per-subject key (crypto-shredding) rather than
+    // written in plaintext into the immutable audit trail, which would
+    // otherwise recreate the very PII this erasure just removed. The
+    // audit log ROW itself is written once and never mutated or deleted
+    // — its integrity (and any hash chain over it) is preserved by never
+    // touching it; shred() below destroys the key, not the row.
+    const encryptedEmailRef = await this.cryptoShred.encryptForAudit(tenantId, email, email);
+
     await prisma.auditLog.create({
       data: {
         tenantId,
@@ -280,12 +292,14 @@ export class SaasPortalGdprComplianceService {
         entityType: "GDPR",
         entityId: requestId,
         changes: {
-          email,
+          subjectEmailRef: encryptedEmailRef,
           results,
           executedAt: new Date().toISOString(),
         } as never,
       },
     });
+
+    await this.cryptoShred.shred(tenantId, email);
 
     return { results };
   }
