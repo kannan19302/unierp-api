@@ -70,6 +70,8 @@ import { InfrastructureResourceController } from "./v1/infrastructure-resource.c
 import { InfrastructureResourceService } from "./v1/infrastructure-resource.service";
 import { CertificateLifecycleController } from "./v1/certificate-lifecycle.controller";
 import { CertificateLifecycleService } from "./v1/certificate-lifecycle.service";
+import { CapacityForecastController } from "./v1/capacity-forecast.controller";
+import { CapacityForecastService } from "./v1/capacity-forecast.service";
 
 @Module({
   imports: [],
@@ -102,6 +104,7 @@ import { CertificateLifecycleService } from "./v1/certificate-lifecycle.service"
     KubernetesFleetController,
     InfrastructureResourceController,
     CertificateLifecycleController,
+    CapacityForecastController,
   ],
   providers: [
     ConsoleGateway,
@@ -147,6 +150,7 @@ import { CertificateLifecycleService } from "./v1/certificate-lifecycle.service"
     KubernetesFleetService,
     InfrastructureResourceService,
     CertificateLifecycleService,
+    CapacityForecastService,
   ],
   exports: [
     ControlPlaneAuditService,
