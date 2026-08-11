@@ -8,7 +8,7 @@
  */
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
-import { allocateLineItems, type AllocationResult, type ResourceAttributionLookup } from "./cost-allocation";
+import { allocateLineItems, toCents, centsToDecimalString, type AllocationResult, type ResourceAttributionLookup } from "./cost-allocation";
 
 @Injectable()
 export class CostAllocationService {
@@ -39,5 +39,30 @@ export class CostAllocationService {
       })),
       lookup,
     );
+  }
+
+  /**
+   * M28 — a tenant's total cost for a period, aggregated across EVERY
+   * provider's ingested batch for that period (a tenant's infrastructure
+   * is rarely single-provider). Traceable side: `sourceLineItemIds` names
+   * exactly which M25 CostLineItem rows contributed, not a rolled-up
+   * number with nothing under it.
+   */
+  async getTenantCostForPeriod(tenantId: string, period: string): Promise<{ totalCost: string; sourceLineItemIds: string[] }> {
+    const batches = await (prisma as any).costIngestionBatch.findMany({ where: { period } });
+
+    let totalCostCents = 0n;
+    const sourceLineItemIds: string[] = [];
+
+    for (const batch of batches) {
+      const allocation = await this.allocateBatch(batch.providerId, period);
+      for (const share of allocation.allocated) {
+        if (share.tenantId !== tenantId) continue;
+        totalCostCents += toCents(share.amount);
+        sourceLineItemIds.push(share.lineItemId);
+      }
+    }
+
+    return { totalCost: centsToDecimalString(totalCostCents), sourceLineItemIds };
   }
 }

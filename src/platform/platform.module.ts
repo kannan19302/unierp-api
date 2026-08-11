@@ -78,6 +78,8 @@ import { TelemetryController } from "./v1/telemetry.controller";
 import { TelemetryService } from "./v1/telemetry.service";
 import { CostAllocationController } from "./v1/cost-allocation.controller";
 import { CostAllocationService } from "./v1/cost-allocation.service";
+import { MarginController } from "./v1/margin.controller";
+import { MarginService } from "./v1/margin.service";
 
 @Module({
   imports: [],
@@ -114,6 +116,7 @@ import { CostAllocationService } from "./v1/cost-allocation.service";
     CostIngestionController,
     TelemetryController,
     CostAllocationController,
+    MarginController,
   ],
   providers: [
     ConsoleGateway,
@@ -163,6 +166,7 @@ import { CostAllocationService } from "./v1/cost-allocation.service";
     CostIngestionService,
     TelemetryService,
     CostAllocationService,
+    MarginService,
   ],
   exports: [
     ControlPlaneAuditService,

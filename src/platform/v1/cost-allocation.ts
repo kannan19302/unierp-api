@@ -52,7 +52,7 @@ export interface AllocationResult {
   ingestedTotal: string;
 }
 
-function toCents(decimalString: string): bigint {
+export function toCents(decimalString: string): bigint {
   const match = /^(-?)(\d+)(?:\.(\d{1,4}))?$/.exec(decimalString.trim());
   if (!match) throw new Error(`"${decimalString}" is not a valid decimal amount`);
   const [, sign, whole, fraction = ""] = match;
@@ -66,7 +66,7 @@ function toCents(decimalString: string): bigint {
   return sign === "-" ? -cents : cents;
 }
 
-function centsToDecimalString(cents: bigint): string {
+export function centsToDecimalString(cents: bigint): string {
   const negative = cents < 0n;
   const abs = negative ? -cents : cents;
   return `${negative ? "-" : ""}${abs / 100n}.${(abs % 100n).toString().padStart(2, "0")}00`;
