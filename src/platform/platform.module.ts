@@ -94,6 +94,8 @@ import { PrivilegeElevationService } from "./v1/privilege-elevation.service";
 import { StepUpMfaService } from "../common/services/step-up-mfa.service";
 import { EstateAbacController } from "./v1/estate-abac.controller";
 import { EstateAbacService } from "./v1/estate-abac.service";
+import { ObservabilityTraceController } from "./v1/observability-trace.controller";
+import { ObservabilityTraceService } from "./v1/observability-trace.service";
 
 @Module({
   imports: [],
@@ -137,6 +139,7 @@ import { EstateAbacService } from "./v1/estate-abac.service";
     StaffIdpController,
     PrivilegeElevationController,
     EstateAbacController,
+    ObservabilityTraceController,
   ],
   providers: [
     ConsoleGateway,
@@ -195,6 +198,7 @@ import { EstateAbacService } from "./v1/estate-abac.service";
     PrivilegeElevationService,
     StepUpMfaService,
     EstateAbacService,
+    ObservabilityTraceService,
   ],
   exports: [
     ControlPlaneAuditService,

@@ -22,13 +22,23 @@ export interface JobState {
   id: string;
   planId: string | null;
   resourceId: string | null;
+  /** M34 — threaded from the console request that triggered this job, so
+   *  every pipeline-step audit record can carry it and one query
+   *  correlates the click to the provider call. */
+  correlationId?: string | null;
   status: "PENDING" | "RUNNING" | "DONE" | "FAILED" | "HALTED" | "COMPENSATED";
   stepIndex: number;
   steps: StepRecord[];
 }
 
 export interface JobStateStore {
-  createJob(id: string, planId: string | null, resourceId: string | null, steps: StepRecord[]): Promise<JobState>;
+  createJob(
+    id: string,
+    planId: string | null,
+    resourceId: string | null,
+    steps: StepRecord[],
+    correlationId?: string | null,
+  ): Promise<JobState>;
   loadJob(id: string): Promise<JobState | null>;
   saveState(job: JobState): Promise<void>;
 }

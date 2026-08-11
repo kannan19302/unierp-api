@@ -65,6 +65,7 @@ export class InfrastructureResourceService implements OnModuleInit {
     resourceId: string,
     newState: Record<string, unknown>,
     verify: () => Promise<boolean> = async () => true,
+    correlationId: string | null = null,
   ) {
     const priorDesired = await this.resources.getDesiredState(resourceId);
     const priorState = (priorDesired?.state as Record<string, unknown>) ?? null;
@@ -99,6 +100,7 @@ export class InfrastructureResourceService implements OnModuleInit {
           },
         },
       ],
+      correlationId,
     );
 
     return { job, plan };

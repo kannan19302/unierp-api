@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { trace } from "@opentelemetry/api";
 import type { JobState } from "./job-state-store";
 import { PrismaJobStateStore } from "./prisma-job-state-store";
 import { DurableExecutorCore, type JobStepDefinition } from "./durable-executor-core";
@@ -25,12 +26,20 @@ export class DurableExecutorService {
 
   constructor(store: PrismaJobStateStore, audit: ControlPlaneAuditService) {
     this.core = new DurableExecutorCore(store, async (info) => {
+      // M34: the active OTel span's traceId, when tracing is running
+      // (OTEL_EXPORTER_OTLP_ENDPOINT set — see tracing.ts), captured here
+      // and folded into the SAME audit record every other pipeline step
+      // already writes — not a second observability table. This is what
+      // lets a console view join "which plan/job step" straight to "which
+      // distributed trace in the existing Grafana/Tempo backend."
+      const traceId = trace.getActiveSpan()?.spanContext().traceId ?? null;
       await audit.record({
         actorId: "system:pipeline",
         actorRole: "system",
         action: `pipeline.step.${info.stepName}`,
         targetId: info.resourceId,
-        details: { jobId: info.jobId, planId: info.planId, stepIndex: info.stepIndex },
+        details: { jobId: info.jobId, planId: info.planId, stepIndex: info.stepIndex, traceId },
+        correlationId: info.correlationId,
       });
     });
   }
@@ -40,8 +49,9 @@ export class DurableExecutorService {
     planId: string | null,
     resourceId: string | null,
     definitions: JobStepDefinition[],
+    correlationId: string | null = null,
   ): Promise<JobState> {
-    return this.core.startJob(jobId, planId, resourceId, definitions);
+    return this.core.startJob(jobId, planId, resourceId, definitions, correlationId);
   }
 
   async resumeJob(jobId: string, definitions: JobStepDefinition[]): Promise<JobState> {

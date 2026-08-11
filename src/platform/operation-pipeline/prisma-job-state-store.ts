@@ -10,9 +10,10 @@ export class PrismaJobStateStore implements JobStateStore {
     planId: string | null,
     resourceId: string | null,
     steps: StepRecord[],
+    correlationId: string | null = null,
   ): Promise<JobState> {
     const row = await (prisma as any).job.create({
-      data: { id, planId, resourceId, status: "PENDING", stepIndex: 0, steps },
+      data: { id, planId, resourceId, correlationId, status: "PENDING", stepIndex: 0, steps },
     });
     return this.fromRow(row);
   }
@@ -34,6 +35,7 @@ export class PrismaJobStateStore implements JobStateStore {
       id: row.id,
       planId: row.planId,
       resourceId: row.resourceId,
+      correlationId: row.correlationId ?? null,
       status: row.status,
       stepIndex: row.stepIndex,
       steps: row.steps,

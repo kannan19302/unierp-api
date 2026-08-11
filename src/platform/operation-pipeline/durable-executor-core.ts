@@ -21,6 +21,9 @@ export interface StepAuditInfo {
   resourceId: string | null;
   stepIndex: number;
   stepName: string;
+  /** M34 — threaded from the console request, when the caller supplied
+   *  one to startJob(). */
+  correlationId: string | null;
 }
 
 /**
@@ -46,9 +49,10 @@ export class DurableExecutorCore {
     planId: string | null,
     resourceId: string | null,
     definitions: JobStepDefinition[],
+    correlationId: string | null = null,
   ): Promise<JobState> {
     const stepRecords: StepRecord[] = definitions.map((d) => ({ name: d.name, status: "PENDING" }));
-    await this.store.createJob(jobId, planId, resourceId, stepRecords);
+    await this.store.createJob(jobId, planId, resourceId, stepRecords, correlationId);
     return this.run(jobId, definitions);
   }
 
@@ -90,6 +94,7 @@ export class DurableExecutorCore {
           resourceId: job.resourceId,
           stepIndex: i,
           stepName: def.name,
+          correlationId: job.correlationId ?? null,
         });
         result = await def.run();
       } catch (err) {

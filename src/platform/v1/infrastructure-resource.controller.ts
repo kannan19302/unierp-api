@@ -4,7 +4,7 @@
  * rather than a second list endpoint; this controller owns the
  * kind-specific lifecycle actions M15's generic estate view does not.
  */
-import { Controller, Post, Delete, Param, Body, UseGuards } from "@nestjs/common";
+import { Controller, Post, Delete, Param, Body, Headers, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
@@ -45,8 +45,11 @@ export class InfrastructureResourceController {
   @ApiOperation({ summary: "Scale or migrate a resource: proposes a plan and applies it as a durable, reversible job" })
   @Post(":id/change")
   @Permissions("system.infrastructure.provision")
-  async change(@Param("id") id: string, @Body() body: ChangeBody) {
-    return this.infra.changeDesiredState(id, body.newState);
+  async change(@Param("id") id: string, @Body() body: ChangeBody, @Headers("x-correlation-id") correlationId?: string) {
+    // M34: the same correlation id ControlPlaneAuditInterceptor already
+    // reads/generates for this request, threaded into the job so its
+    // pipeline-step audit records join back to this exact console click.
+    return this.infra.changeDesiredState(id, body.newState, undefined, correlationId ?? null);
   }
 
   @ApiOperation({ summary: "Deprovision a resource — refused with dependents named if any depend on it" })
