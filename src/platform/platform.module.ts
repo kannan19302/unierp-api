@@ -20,6 +20,7 @@ import { TenantLifecycleService } from "./v1/tenant-lifecycle.service";
 import { ControlPlaneAuditService } from "./v1/control-plane-audit.service";
 import { ControlPlaneApprovalsController } from "./v1/control-plane-approvals.controller";
 import { ControlPlaneApprovalsService } from "./v1/control-plane-approvals.service";
+import { ProviderRegistryService } from "./provider-registry/provider-registry.service";
 import { PlansController } from "./v1/plans.controller";
 import { PlansService } from "./v1/plans.service";
 import { MeteringController } from "./v1/metering.controller";
@@ -101,7 +102,8 @@ import { ConsoleGateway } from "./v1/console.gateway";
     LiveTenantUpgradeService,
     SecurityOperationsService,
     ControlPlaneApprovalsService,
+    ProviderRegistryService,
   ],
-  exports: [ControlPlaneAuditService, ConsoleGateway],
+  exports: [ControlPlaneAuditService, ConsoleGateway, ProviderRegistryService],
 })
 export class PlatformModule {}
