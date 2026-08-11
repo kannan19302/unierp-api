@@ -21,6 +21,7 @@ import { ControlPlaneAuditService } from "./v1/control-plane-audit.service";
 import { ControlPlaneApprovalsController } from "./v1/control-plane-approvals.controller";
 import { ControlPlaneApprovalsService } from "./v1/control-plane-approvals.service";
 import { ProviderRegistryService } from "./provider-registry/provider-registry.service";
+import { RoutingService } from "./provider-registry/routing.service";
 import { PlansController } from "./v1/plans.controller";
 import { PlansService } from "./v1/plans.service";
 import { MeteringController } from "./v1/metering.controller";
@@ -103,7 +104,8 @@ import { ConsoleGateway } from "./v1/console.gateway";
     SecurityOperationsService,
     ControlPlaneApprovalsService,
     ProviderRegistryService,
+    RoutingService,
   ],
-  exports: [ControlPlaneAuditService, ConsoleGateway, ProviderRegistryService],
+  exports: [ControlPlaneAuditService, ConsoleGateway, ProviderRegistryService, RoutingService],
 })
 export class PlatformModule {}
