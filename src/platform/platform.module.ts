@@ -24,6 +24,8 @@ import { ProviderRegistryService } from "./provider-registry/provider-registry.s
 import { RoutingService } from "./provider-registry/routing.service";
 import { ResourceModelService } from "./resource-model/resource-model.service";
 import { PolicyEngineService } from "./policy-engine/policy-engine.service";
+import { PlanningService } from "./operation-pipeline/planning.service";
+import { PlanGatedExecutor } from "./operation-pipeline/plan-gated-executor.service";
 import { PlansController } from "./v1/plans.controller";
 import { PlansService } from "./v1/plans.service";
 import { MeteringController } from "./v1/metering.controller";
@@ -109,6 +111,8 @@ import { ConsoleGateway } from "./v1/console.gateway";
     RoutingService,
     ResourceModelService,
     PolicyEngineService,
+    PlanningService,
+    PlanGatedExecutor,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -117,6 +121,8 @@ import { ConsoleGateway } from "./v1/console.gateway";
     RoutingService,
     ResourceModelService,
     PolicyEngineService,
+    PlanningService,
+    PlanGatedExecutor,
   ],
 })
 export class PlatformModule {}
