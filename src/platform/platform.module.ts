@@ -28,6 +28,8 @@ import { PlanningService } from "./operation-pipeline/planning.service";
 import { PlanGatedExecutor } from "./operation-pipeline/plan-gated-executor.service";
 import { ValidationService } from "./operation-pipeline/validation.service";
 import { SchedulingService } from "./operation-pipeline/scheduling.service";
+import { DurableExecutorService } from "./operation-pipeline/durable-executor.service";
+import { PrismaJobStateStore } from "./operation-pipeline/prisma-job-state-store";
 import { PlansController } from "./v1/plans.controller";
 import { PlansService } from "./v1/plans.service";
 import { MeteringController } from "./v1/metering.controller";
@@ -117,6 +119,8 @@ import { ConsoleGateway } from "./v1/console.gateway";
     PlanGatedExecutor,
     ValidationService,
     SchedulingService,
+    PrismaJobStateStore,
+    DurableExecutorService,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -129,6 +133,8 @@ import { ConsoleGateway } from "./v1/console.gateway";
     PlanGatedExecutor,
     ValidationService,
     SchedulingService,
+    PrismaJobStateStore,
+    DurableExecutorService,
   ],
 })
 export class PlatformModule {}

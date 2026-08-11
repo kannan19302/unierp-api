@@ -7,6 +7,7 @@ import {
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { ConsoleGateway } from "./console.gateway";
+import { DurableExecutorService } from "../operation-pipeline/durable-executor.service";
 
 export interface ExportManifest {
   tenant: Record<string, unknown>;
@@ -23,7 +24,10 @@ export interface ExportManifest {
 
 @Injectable()
 export class TenantLifecycleService {
-  constructor(private readonly consoleGateway: ConsoleGateway) {}
+  constructor(
+    private readonly consoleGateway: ConsoleGateway,
+    private readonly executor: DurableExecutorService,
+  ) {}
 
   async getLifecycleStatus(tenantId: string) {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
@@ -118,6 +122,20 @@ export class TenantLifecycleService {
     return manifest;
   }
 
+  /**
+   * M12: runs on the durable operation pipeline rather than one ad hoc
+   * `$transaction`. This is not decoration over an already-safe operation —
+   * `idpPrisma.userSession.deleteMany` below was called with a SEPARATE
+   * Prisma client (the IdP datasource split) from inside what looked like
+   * `prisma`'s own transaction callback, so it was never actually atomic
+   * with the tenant status update despite the nesting; a failure between
+   * the two could leave a tenant marked SUSPENDED with its sessions still
+   * live, unrecorded. Splitting them into two durable steps makes that
+   * possibility a recorded HALT instead of a silent gap: if session
+   * revocation fails, the job halts with step 1 (status change) DONE and
+   * step 2 (session revocation) FAILED — both durably visible — rather
+   * than the caller only ever seeing whichever half happened to run.
+   */
   async suspendTenant(tenantId: string, initiatedBy?: string) {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException("Tenant not found");
@@ -126,26 +144,44 @@ export class TenantLifecycleService {
     if (tenant.status === "PURGED")
       throw new BadRequestException("Cannot suspend a purged tenant");
 
-    await prisma.$transaction(async (tx) => {
-      await tx.tenant.update({
-        where: { id: tenantId },
-        data: { status: "SUSPENDED" },
-      });
-
-      await idpPrisma.userSession.deleteMany({
-        where: { user: { tenantId } },
-      });
-
-      await tx.tenantLifecycleEvent.create({
-        data: {
-          tenantId,
-          eventType: "SUSPEND",
-          status: "COMPLETED",
-          initiatedBy,
-          completedAt: new Date(),
+    const job = await this.executor.startJob(
+      `tenant-suspend-${tenantId}-${Date.now()}`,
+      null,
+      tenantId,
+      [
+        {
+          name: "update-tenant-status-and-event",
+          run: async () => {
+            await prisma.$transaction(async (tx) => {
+              await tx.tenant.update({ where: { id: tenantId }, data: { status: "SUSPENDED" } });
+              await tx.tenantLifecycleEvent.create({
+                data: { tenantId, eventType: "SUSPEND", status: "COMPLETED", initiatedBy, completedAt: new Date() },
+              });
+            });
+            return { tenantId };
+          },
+          compensate: async () => {
+            await prisma.tenant.update({ where: { id: tenantId }, data: { status: tenant.status } });
+          },
         },
-      });
-    });
+        {
+          name: "revoke-sessions",
+          run: async () => {
+            const result = await idpPrisma.userSession.deleteMany({ where: { user: { tenantId } } });
+            return { revoked: result.count };
+          },
+          // No compensator: sessions cannot be "un-deleted". A failure here
+          // halts rather than silently reverting the status change — see
+          // this method's own doc comment for why that is the safer choice.
+        },
+      ],
+    );
+
+    if (job.status === "HALTED") {
+      throw new Error(
+        `Tenant suspend job ${job.id} halted: ${job.steps.find((s: any) => s.status === "FAILED")?.error ?? "unknown step failure"}`,
+      );
+    }
 
     this.consoleGateway.emitTenantUpdate({ action: "suspended", tenantId });
 
@@ -153,6 +189,7 @@ export class TenantLifecycleService {
       message: "Tenant suspended successfully",
       tenantId,
       status: "SUSPENDED",
+      jobId: job.id,
     };
   }
 
@@ -162,22 +199,31 @@ export class TenantLifecycleService {
     if (tenant.status !== "SUSPENDED")
       throw new ConflictException("Tenant is not currently suspended");
 
-    await prisma.$transaction(async (tx) => {
-      await tx.tenant.update({
-        where: { id: tenantId },
-        data: { status: "ACTIVE" },
-      });
-
-      await tx.tenantLifecycleEvent.create({
-        data: {
-          tenantId,
-          eventType: "UNSUSPEND",
-          status: "COMPLETED",
-          initiatedBy,
-          completedAt: new Date(),
+    const job = await this.executor.startJob(
+      `tenant-unsuspend-${tenantId}-${Date.now()}`,
+      null,
+      tenantId,
+      [
+        {
+          name: "update-tenant-status-and-event",
+          run: async () => {
+            await prisma.$transaction(async (tx) => {
+              await tx.tenant.update({ where: { id: tenantId }, data: { status: "ACTIVE" } });
+              await tx.tenantLifecycleEvent.create({
+                data: { tenantId, eventType: "UNSUSPEND", status: "COMPLETED", initiatedBy, completedAt: new Date() },
+              });
+            });
+            return { tenantId };
+          },
         },
-      });
-    });
+      ],
+    );
+
+    if (job.status === "HALTED") {
+      throw new Error(
+        `Tenant unsuspend job ${job.id} halted: ${job.steps.find((s: any) => s.status === "FAILED")?.error ?? "unknown step failure"}`,
+      );
+    }
 
     this.consoleGateway.emitTenantUpdate({ action: "unsuspended", tenantId });
 
@@ -185,6 +231,7 @@ export class TenantLifecycleService {
       message: "Tenant unsuspended successfully",
       tenantId,
       status: "ACTIVE",
+      jobId: job.id,
     };
   }
 

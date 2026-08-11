@@ -27,7 +27,8 @@
     "dist",
     "test",
     "**/*.spec.ts",
-    "**/tests/**"
+    "**/tests/**",
+    "src/platform/operation-pipeline/kill-and-resume.worker.ts"
   ],
   "watchOptions": {
     "watchFile": "priorityPollingInterval",

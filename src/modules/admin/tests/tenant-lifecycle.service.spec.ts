@@ -2,6 +2,8 @@ import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TenantLifecycleService } from "../../../platform/v1/tenant-lifecycle.service";
+import { DurableExecutorService } from "../../../platform/operation-pipeline/durable-executor.service";
+import { PrismaJobStateStore } from "../../../platform/operation-pipeline/prisma-job-state-store";
 import {
   NotFoundException,
   BadRequestException,
@@ -9,6 +11,7 @@ import {
 } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => {
+  const lastJobRow: any = {};
   const mockTx = {
     tenant: {
       update: vi.fn(),
@@ -46,6 +49,11 @@ vi.mock("@kannan19302/database", () => {
         findUnique: vi.fn(),
         findMany: vi.fn(),
         count: vi.fn(),
+        // Used by suspendTenant's compensator (M12) if session revocation
+        // fails after the status change already committed — not exercised
+        // by the happy-path tests, but a real capability the production
+        // client has, so it belongs on the mock regardless.
+        update: vi.fn(),
       },
       user: {
         findMany: vi.fn(),
@@ -64,6 +72,21 @@ vi.mock("@kannan19302/database", () => {
       tenantLifecycleEvent: {
         findMany: vi.fn(),
         create: vi.fn(),
+      },
+      // Each test creates at most one Job (one suspend/unsuspend call), so
+      // tracking "the last created row" — rather than a real id-keyed map,
+      // which vi.mock's hoisting makes awkward to reset per test — is
+      // sufficient here without being a special case per test.
+      job: {
+        create: vi.fn(({ data }: any) => {
+          Object.assign(lastJobRow, data);
+          return { ...lastJobRow };
+        }),
+        findUnique: vi.fn(() => (lastJobRow.id ? { ...lastJobRow } : null)),
+        update: vi.fn(({ data }: any) => {
+          Object.assign(lastJobRow, data);
+          return { ...lastJobRow };
+        }),
       },
       $transaction: vi.fn((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
       _dmmf: {
@@ -86,7 +109,17 @@ describe("TenantLifecycleService", () => {
   let service: TenantLifecycleService;
 
   beforeEach(() => {
-    service = new TenantLifecycleService();
+    // Pre-existing bug, found while wiring M12: this file previously
+    // constructed the service with ZERO arguments against a
+    // single-parameter constructor, leaving consoleGateway undefined —
+    // offboardTenant/cancelOffboarding/purgeTenant were already failing
+    // with "Cannot read properties of undefined (reading 'emitTenantUpdate')"
+    // before any of this session's changes (confirmed via git stash).
+    // Filed as D051. Fixed here because this exact line also needs the new
+    // DurableExecutorService dependency for M12's suspend/unsuspend wiring.
+    const consoleGateway = { emitTenantUpdate: vi.fn() } as any;
+    const executor = new DurableExecutorService(new PrismaJobStateStore());
+    service = new TenantLifecycleService(consoleGateway, executor);
     vi.clearAllMocks();
   });
 
@@ -176,11 +209,20 @@ describe("TenantLifecycleService", () => {
     it("should set tenant status to SUSPENDED and revoke sessions", async () => {
       const { prisma } = await import("@kannan19302/database");
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      prisma.userSession.deleteMany.mockResolvedValue({ count: 3 });
 
       const result = await service.suspendTenant("tenant-1");
 
       expect(result.status).toBe("SUSPENDED");
       expect(prisma.$transaction).toHaveBeenCalled();
+      expect(prisma.userSession.deleteMany).toHaveBeenCalledWith({ where: { user: { tenantId: "tenant-1" } } });
+      // M12: this transition must genuinely run on the durable operation
+      // pipeline, not just happen to produce the same end state — a Job
+      // row is the observable proof of that, distinct from the tenant
+      // status change itself.
+      expect(prisma.job.create).toHaveBeenCalled();
+      expect(result.jobId).toBeTruthy();
+      expect(result.jobId).toBe((prisma.job.create as any).mock.calls[0][0].data.id);
     });
 
     it("should throw ConflictException if already suspended", async () => {
