@@ -14,10 +14,25 @@ import {
   PaginatedResult,
   PaginationParams,
 } from "../../common/utils/pagination.util";
+import { EmployeePiiEncryptionService } from "./employee-pii-encryption.service";
 
 @Injectable()
 export class HrService {
-  constructor(private readonly eventEmitter?: EventEmitter2) {}
+  constructor(
+    private readonly eventEmitter?: EventEmitter2,
+    private readonly piiEncryption?: EmployeePiiEncryptionService,
+  ) {}
+
+  /** E20 — decrypts an employee's bankDetails on demand. Never called from
+   *  list/search paths; only from a caller that explicitly needs the real
+   *  account/routing numbers, keeping decrypted PII out of unrelated
+   *  response payloads by construction. */
+  async getEmployeeBankDetails(tenantId: string, employeeId: string) {
+    const employee = await prisma.employee.findFirst({ where: { id: employeeId, tenantId, deletedAt: null } });
+    if (!employee) throw new NotFoundException("Employee not found");
+    if (!this.piiEncryption) return employee.bankDetails;
+    return this.piiEncryption.decryptBankDetails(tenantId, employee.bankDetails as any);
+  }
 
   // ── Dashboard ──
 
@@ -171,7 +186,9 @@ export class HrService {
         employmentType: dto.employmentType || "FULL_TIME",
         status: dto.status || "ACTIVE",
         address: dto.address || undefined,
-        bankDetails: dto.bankDetails || undefined,
+        bankDetails: this.piiEncryption
+          ? (this.piiEncryption.encryptBankDetails(tenantId, dto.bankDetails) as any)
+          : (dto.bankDetails || undefined),
       },
     });
 
@@ -211,7 +228,12 @@ export class HrService {
           : undefined,
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
         address: dto.address,
-        bankDetails: dto.bankDetails,
+        bankDetails:
+          dto.bankDetails !== undefined
+            ? this.piiEncryption
+              ? (this.piiEncryption.encryptBankDetails(tenantId, dto.bankDetails) as any)
+              : dto.bankDetails
+            : undefined,
       },
     });
   }
