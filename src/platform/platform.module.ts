@@ -36,6 +36,7 @@ import { PlansController } from "./v1/plans.controller";
 import { PlansService } from "./v1/plans.service";
 import { MeteringController } from "./v1/metering.controller";
 import { MeteringService } from "./v1/metering.service";
+import { ProviderMeteringReconciliationService } from "./v1/provider-metering-reconciliation.service";
 import { SubscriptionManagementController } from "./v1/subscription-management.controller";
 import { SubscriptionManagementService } from "./v1/subscription-management.service";
 import { InvoicingController } from "./v1/invoicing.controller";
@@ -138,6 +139,7 @@ import { EntitlementQuotaBindingService } from "./v1/entitlement-quota-binding.s
     ControlPlaneAuditService,
     PlansService,
     MeteringService,
+    ProviderMeteringReconciliationService,
     SubscriptionManagementService,
     InvoicingService,
     DunningService,

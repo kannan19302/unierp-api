@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { MeteringService, RecordEventDto } from './metering.service';
+import { ProviderMeteringReconciliationService } from './provider-metering-reconciliation.service';
 import { Request } from 'express';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -19,7 +20,10 @@ import { Permissions } from '../../common/decorators/permissions.decorator';
 @SkipTenantScope()
 @UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard)
 export class MeteringController {
-  constructor(private readonly meteringService: MeteringService) {}
+  constructor(
+    private readonly meteringService: MeteringService,
+    private readonly providerReconciliation: ProviderMeteringReconciliationService,
+  ) {}
 
   @Get(':tenantId/usage')
   @Permissions('system.metering.read')
@@ -54,5 +58,32 @@ export class MeteringController {
     @Req() req: Request,
   ) {
     return this.meteringService.reconcile(tenantId, metric, (req as any).user?.id || 'SUPER_ADMIN');
+  }
+
+  /** M30 — records a provider's OWN reported consumption, distinct from
+   *  anything recorded via `recordEvent` above. */
+  @Post(':tenantId/provider-consumption/:providerId/:metric/:period')
+  @Permissions('system.metering.write')
+  async recordProviderConsumption(
+    @Param('tenantId') tenantId: string,
+    @Param('providerId') providerId: string,
+    @Param('metric') metric: string,
+    @Param('period') period: string,
+    @Body() body: { reportedQuantity: number },
+  ) {
+    return this.providerReconciliation.recordProviderConsumption(providerId, tenantId, metric, period, body.reportedQuantity);
+  }
+
+  /** M30 — extends this same reconciliation view with provider-vs-metered
+   *  variance, alongside C14's own event-vs-snapshot reconcile() above. */
+  @Get(':tenantId/provider-reconcile/:providerId/:metric/:period')
+  @Permissions('system.metering.read')
+  async reconcileAgainstProvider(
+    @Param('tenantId') tenantId: string,
+    @Param('providerId') providerId: string,
+    @Param('metric') metric: string,
+    @Param('period') period: string,
+  ) {
+    return this.providerReconciliation.reconcile(providerId, tenantId, metric, period);
   }
 }
