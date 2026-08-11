@@ -30,6 +30,7 @@ import { ValidationService } from "./operation-pipeline/validation.service";
 import { SchedulingService } from "./operation-pipeline/scheduling.service";
 import { DurableExecutorService } from "./operation-pipeline/durable-executor.service";
 import { PrismaJobStateStore } from "./operation-pipeline/prisma-job-state-store";
+import { ReconcilerService } from "./operation-pipeline/reconciler.service";
 import { PlansController } from "./v1/plans.controller";
 import { PlansService } from "./v1/plans.service";
 import { MeteringController } from "./v1/metering.controller";
@@ -121,6 +122,7 @@ import { ConsoleGateway } from "./v1/console.gateway";
     SchedulingService,
     PrismaJobStateStore,
     DurableExecutorService,
+    ReconcilerService,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -135,6 +137,7 @@ import { ConsoleGateway } from "./v1/console.gateway";
     SchedulingService,
     PrismaJobStateStore,
     DurableExecutorService,
+    ReconcilerService,
   ],
 })
 export class PlatformModule {}
