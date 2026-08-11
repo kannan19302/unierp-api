@@ -98,6 +98,8 @@ import { ObservabilityTraceController } from "./v1/observability-trace.controlle
 import { ObservabilityTraceService } from "./v1/observability-trace.service";
 import { IncidentController } from "./v1/incident.controller";
 import { IncidentService } from "./v1/incident.service";
+import { DisasterRecoveryController } from "./v1/disaster-recovery.controller";
+import { DisasterRecoveryService } from "./v1/disaster-recovery.service";
 
 @Module({
   imports: [],
@@ -143,6 +145,7 @@ import { IncidentService } from "./v1/incident.service";
     EstateAbacController,
     ObservabilityTraceController,
     IncidentController,
+    DisasterRecoveryController,
   ],
   providers: [
     ConsoleGateway,
@@ -203,6 +206,7 @@ import { IncidentService } from "./v1/incident.service";
     EstateAbacService,
     ObservabilityTraceService,
     IncidentService,
+    DisasterRecoveryService,
   ],
   exports: [
     ControlPlaneAuditService,
