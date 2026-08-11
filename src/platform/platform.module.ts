@@ -109,6 +109,8 @@ import { HttpWebhookTransport } from "./v1/http-webhook.transport";
 import { NotificationRoutingService } from "./v1/notification-routing.service";
 import { IndustrySuiteCatalogueService } from "./v1/industry-suite-catalogue.service";
 import { IndustrySuiteCatalogueController } from "./v1/industry-suite-catalogue.controller";
+import { RunbookService } from "./v1/runbook.service";
+import { RunbookController } from "./v1/runbook.controller";
 
 @Module({
   imports: [],
@@ -158,6 +160,7 @@ import { IndustrySuiteCatalogueController } from "./v1/industry-suite-catalogue.
     RetentionScheduleController,
     WebhookIntegrationController,
     IndustrySuiteCatalogueController,
+    RunbookController,
   ],
   providers: [
     ConsoleGateway,
@@ -225,6 +228,7 @@ import { IndustrySuiteCatalogueController } from "./v1/industry-suite-catalogue.
     HttpWebhookTransport,
     NotificationRoutingService,
     IndustrySuiteCatalogueService,
+    RunbookService,
   ],
   exports: [
     ControlPlaneAuditService,
