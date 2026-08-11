@@ -47,7 +47,14 @@ const steps: JobStepDefinition[] = [
 ];
 
 const store = new FileJobStateStore(jobFile);
-const executor = new DurableExecutorCore(store);
+// M14: not the real ControlPlaneAuditService (no NestJS, no live DB
+// reachable standalone) — logging to the same durable file this proof
+// already uses is enough to exercise the gate rather than skip it, which
+// is all this worker needs; the real app wires the real audit spine in
+// DurableExecutorService.
+const executor = new DurableExecutorCore(store, async (info) => {
+  log(`audit:${info.stepName}`);
+});
 
 (async () => {
   if (mode === "start") {

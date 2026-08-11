@@ -57,7 +57,7 @@ const presenceDelegates = ["userPresence", "userStatusSchedule"] as const;
 type IdentityDelegate = (typeof identityDelegates)[number];
 type PresenceDelegate = (typeof presenceDelegates)[number];
 
-export type IdpClient = Pick<typeof database.idpPrisma, IdentityDelegate> &
+export type IdpClient = Pick<typeof database.idpPrisma, IdentityDelegate | "$transaction"> &
   Pick<typeof database.prisma, PresenceDelegate>;
 
 function defineDelegates(
@@ -84,5 +84,11 @@ defineDelegates(
   presenceDelegates,
   () => database.prisma as unknown as Record<string, unknown>,
 );
+
+// Expose $transaction from idpPrisma
+Object.defineProperty(client, "$transaction", {
+  enumerable: true,
+  get: () => (database.idpPrisma as any).$transaction.bind(database.idpPrisma),
+});
 
 export const idpClient = client as IdpClient;

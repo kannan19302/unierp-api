@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TenantLifecycleService } from "../../../platform/v1/tenant-lifecycle.service";
 import { DurableExecutorService } from "../../../platform/operation-pipeline/durable-executor.service";
 import { PrismaJobStateStore } from "../../../platform/operation-pipeline/prisma-job-state-store";
+import { ControlPlaneAuditService } from "../../../platform/v1/control-plane-audit.service";
 import {
   NotFoundException,
   BadRequestException,
@@ -88,6 +89,12 @@ vi.mock("@kannan19302/database", () => {
           return { ...lastJobRow };
         }),
       },
+      // M14: DurableExecutorService now audits every step through
+      // ControlPlaneAuditService before running it — this table backs that.
+      controlPlaneAuditLog: {
+        findFirst: vi.fn(() => null),
+        create: vi.fn(({ data }: any) => ({ id: `audit-${Date.now()}`, ...data })),
+      },
       $transaction: vi.fn((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
       _dmmf: {
         datamodel: {
@@ -118,7 +125,7 @@ describe("TenantLifecycleService", () => {
     // Filed as D051. Fixed here because this exact line also needs the new
     // DurableExecutorService dependency for M12's suspend/unsuspend wiring.
     const consoleGateway = { emitTenantUpdate: vi.fn() } as any;
-    const executor = new DurableExecutorService(new PrismaJobStateStore());
+    const executor = new DurableExecutorService(new PrismaJobStateStore(), new ControlPlaneAuditService());
     service = new TenantLifecycleService(consoleGateway, executor);
     vi.clearAllMocks();
   });

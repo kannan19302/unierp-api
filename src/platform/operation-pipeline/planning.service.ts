@@ -88,6 +88,25 @@ export class PlanningService {
     };
   }
 
+  /**
+   * M14: "any resource is rolled back to any prior version by selecting
+   * it, and the rollback is itself a versioned plan." Reads the historical
+   * `DesiredStateVersion` row and hands its state to `createPlan` exactly
+   * as any other proposed change — a rollback is not a special code path
+   * with its own diff/affected-set/execution-order logic, it is a plan
+   * whose proposed state happens to equal something that was desired
+   * before.
+   */
+  async rollback(resourceId: string, targetVersion: number, cost?: CostContext): Promise<Plan> {
+    const historical = await this.resources.getDesiredStateVersion(resourceId, targetVersion);
+    if (!historical) {
+      throw new BadRequestException(
+        `Resource ${resourceId} has no recorded version ${targetVersion} to roll back to`,
+      );
+    }
+    return this.createPlan(resourceId, historical.state as Record<string, unknown>, cost);
+  }
+
   /** Same operation as createPlan(), under the name the exit criterion uses.
    *  Kept as a distinct method (not just a doc note) so a caller reading
    *  this service's public surface sees the guarantee named explicitly:

@@ -39,7 +39,11 @@ describe("M12 · durable execution — compensation and halt", () => {
 
   beforeEach(() => {
     store = new InMemoryJobStateStore();
-    executor = new DurableExecutorCore(store);
+    // A working audit writer — M14's own "audit writer removed" proof
+    // lives in durable-executor.audit-gate.spec.ts, deliberately separate
+    // from this file so these compensate/halt cases stay about that logic
+    // alone.
+    executor = new DurableExecutorCore(store, async () => {});
   });
 
   it("a job with no failures completes DONE with every step DONE", async () => {

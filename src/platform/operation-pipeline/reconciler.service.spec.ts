@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 let kinds: any[];
 let resources: any[];
 let desiredStates: any[];
+let desiredStateVersions: any[];
 let observedStates: any[];
 let driftRecords: any[];
 let holds: any[];
@@ -53,6 +54,20 @@ vi.mock("@kannan19302/database", () => ({
         return row;
       }),
       findUnique: vi.fn(({ where: { resourceId } }: any) => desiredStates.find((d) => d.resourceId === resourceId) ?? null),
+    },
+    desiredStateVersion: {
+      create: vi.fn(({ data }: any) => {
+        const row = { id: nextId("dsv"), setAt: new Date(), ...data };
+        desiredStateVersions.push(row);
+        return row;
+      }),
+      findUnique: vi.fn(({ where }: any) => {
+        const k = where.resourceId_version;
+        return desiredStateVersions.find((v) => v.resourceId === k.resourceId && v.version === k.version) ?? null;
+      }),
+      findMany: vi.fn(({ where }: any) =>
+        desiredStateVersions.filter((v) => v.resourceId === where.resourceId).sort((a, b) => a.version - b.version),
+      ),
     },
     observedState: {
       upsert: vi.fn(({ where: { resourceId }, create, update }: any) => {
@@ -140,13 +155,14 @@ describe("M13 · reconciliation and self-healing", () => {
     kinds = [];
     resources = [];
     desiredStates = [];
+    desiredStateVersions = [];
     observedStates = [];
     driftRecords = [];
     holds = [];
     auditLogs = [];
     jobRows = [];
     resourcesSvc = new ResourceModelService();
-    executor = new DurableExecutorService(new PrismaJobStateStore());
+    executor = new DurableExecutorService(new PrismaJobStateStore(), new ControlPlaneAuditService());
     audit = new ControlPlaneAuditService();
     reconciler = new ReconcilerService(resourcesSvc, executor, audit);
   });
@@ -175,12 +191,17 @@ describe("M13 · reconciliation and self-healing", () => {
     // Drift resolved — the resource is no longer "open."
     expect(await resourcesSvc.getOpenDrift(zone.id)).toHaveLength(0);
 
-    // The exit criterion's own words: audited AS A RECONCILIATION, not an
-    // operator action — the actor identity is what makes that true.
-    expect(auditLogs).toHaveLength(1);
-    expect(auditLogs[0].actorId).toBe("system:reconciler");
-    expect(auditLogs[0].action).toBe("reconciliation.restore");
-    expect(auditLogs[0].targetId).toBe(zone.id);
+    // Two audit records for one healing action, by M14's design: a generic
+    // "a pipeline step ran" record (DurableExecutorService's own audit
+    // gate, actorId "system:pipeline") and this phase's domain-specific
+    // "this was a reconciliation" record. The exit criterion's own words —
+    // audited AS A RECONCILIATION, not an operator action — are what the
+    // SECOND record proves; its presence, not the total count, is the test.
+    const reconciliationRecords = auditLogs.filter((a) => a.action === "reconciliation.restore");
+    expect(reconciliationRecords).toHaveLength(1);
+    expect(reconciliationRecords[0].actorId).toBe("system:reconciler");
+    expect(reconciliationRecords[0].targetId).toBe(zone.id);
+    expect(auditLogs.every((a) => a.actorId !== undefined), "no record may be attributed to no one").toBe(true);
   });
 
   it("a reconciler with a mis-set desired state hits the blast-radius limit and stops instead of rebuilding the estate", async () => {

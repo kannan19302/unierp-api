@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
   Optional,
 } from "@nestjs/common";
@@ -415,6 +416,62 @@ export class AdminService {
   async getRoles(tenantId: string): Promise<unknown> {
     return idpPrisma.role.findMany({
       where: { tenantId },
+    });
+  }
+
+  async createRole(tenantId: string, data: { name: string; description?: string; permissions?: string[] }) {
+    this.assertNoPlatformOnlyPermissions(data.permissions);
+    
+    return idpPrisma.role.create({
+      data: {
+        tenantId,
+        name: data.name,
+        description: data.description,
+        permissions: JSON.stringify(data.permissions || []),
+        isSystem: false,
+      },
+    });
+  }
+
+  async updateRole(tenantId: string, roleId: string, data: { name?: string; description?: string; permissions?: string[] }) {
+    const role = await idpPrisma.role.findFirst({
+      where: { id: roleId, tenantId },
+    });
+    if (!role) {
+      throw new BadRequestException("Role not found");
+    }
+    if (role.isSystem) {
+      throw new ForbiddenException("Cannot modify a system role");
+    }
+    
+    if (data.permissions) {
+      this.assertNoPlatformOnlyPermissions(data.permissions);
+    }
+    
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.permissions !== undefined) updateData.permissions = JSON.stringify(data.permissions);
+    
+    return idpPrisma.role.update({
+      where: { id: roleId },
+      data: updateData,
+    });
+  }
+
+  async deleteRole(tenantId: string, roleId: string) {
+    const role = await idpPrisma.role.findFirst({
+      where: { id: roleId, tenantId },
+    });
+    if (!role) {
+      throw new BadRequestException("Role not found");
+    }
+    if (role.isSystem) {
+      throw new ForbiddenException("Cannot delete a system role");
+    }
+    
+    return idpPrisma.role.delete({
+      where: { id: roleId },
     });
   }
 

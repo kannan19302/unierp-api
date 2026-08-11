@@ -15,11 +15,30 @@ export interface JobStepDefinition {
   compensate?: () => Promise<void>;
 }
 
+export interface StepAuditInfo {
+  jobId: string;
+  planId: string | null;
+  resourceId: string | null;
+  stepIndex: number;
+  stepName: string;
+}
+
+/**
+ * M14: called immediately BEFORE a step's `run()`, and awaited. If it
+ * throws, `run()` is never called — this is what "no pipeline stage can
+ * execute without an audit record" means as code rather than a policy: a
+ * broken audit writer does not merely fail to log, it stops execution,
+ * because the two are the same call in the same order every time.
+ */
+export type AuditWriter = (info: StepAuditInfo) => Promise<void>;
+
 export class DurableExecutorCore {
   private readonly store: JobStateStore;
+  private readonly auditWriter: AuditWriter;
 
-  constructor(store: JobStateStore) {
+  constructor(store: JobStateStore, auditWriter: AuditWriter) {
     this.store = store;
+    this.auditWriter = auditWriter;
   }
 
   async startJob(
@@ -61,6 +80,17 @@ export class DurableExecutorCore {
 
       let result: unknown;
       try {
+        // The gate: this call happens BEFORE def.run(), not after, and
+        // def.run() is textually unreachable from this catch block if the
+        // audit write throws — there is no path from "audit failed" to
+        // "the step ran anyway."
+        await this.auditWriter({
+          jobId,
+          planId: job.planId,
+          resourceId: job.resourceId,
+          stepIndex: i,
+          stepName: def.name,
+        });
         result = await def.run();
       } catch (err) {
         job.steps[i] = {

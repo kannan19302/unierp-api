@@ -25,6 +25,16 @@ const ELEVATED_ROLES = new Set(["SUPER_ADMIN", "ADMIN"]);
 @Injectable()
 export class SaasPortalDelegationService {
   async list(tenantId: string) {
+    // Lazy expiration: mark active delegations past their end date as expired
+    await prisma.delegation.updateMany({
+      where: {
+        tenantId,
+        status: "ACTIVE",
+        endDate: { lt: new Date() },
+      },
+      data: { status: "EXPIRED" },
+    });
+
     const delegations = await prisma.delegation.findMany({
       where: { tenantId },
       orderBy: { createdAt: "desc" },

@@ -181,6 +181,45 @@ export class AdminController {
     return this.adminService.getRoles(req.user.tenantId);
   }
 
+  @ApiOperation({ summary: "Create role" })
+  @Post("roles")
+  @Permissions("admin.role.create")
+  async createRole(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.object({
+      name: z.string().min(1).max(100),
+      description: z.string().max(500).optional(),
+      permissions: z.array(z.string()).optional(),
+    })) body: { name: string; description?: string; permissions?: string[] },
+  ): Promise<unknown> {
+    return this.adminService.createRole(req.user.tenantId, body);
+  }
+
+  @ApiOperation({ summary: "Update role" })
+  @Patch("roles/:id")
+  @Permissions("admin.role.update")
+  async updateRole(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") roleId: string,
+    @ZodBody(z.object({
+      name: z.string().min(1).max(100).optional(),
+      description: z.string().max(500).optional(),
+      permissions: z.array(z.string()).optional(),
+    })) body: { name?: string; description?: string; permissions?: string[] },
+  ): Promise<unknown> {
+    return this.adminService.updateRole(req.user.tenantId, roleId, body);
+  }
+
+  @ApiOperation({ summary: "Delete role" })
+  @Delete("roles/:id")
+  @Permissions("admin.role.delete")
+  async deleteRole(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") roleId: string,
+  ): Promise<unknown> {
+    return this.adminService.deleteRole(req.user.tenantId, roleId);
+  }
+
   @ApiOperation({ summary: "Get settings" })
   @Get("settings")
   @Permissions("admin.setting.read")

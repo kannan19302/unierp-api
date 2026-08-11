@@ -38,15 +38,35 @@ export class ResourceModelService {
 
   async setDesiredState(resourceId: string, state: Record<string, unknown>) {
     const existing = await (prisma as any).desiredState.findUnique({ where: { resourceId } });
-    return (prisma as any).desiredState.upsert({
+    const version = (existing?.version ?? 0) + 1;
+    const updated = await (prisma as any).desiredState.upsert({
       where: { resourceId },
-      create: { resourceId, state, version: 1 },
-      update: { state, version: (existing?.version ?? 0) + 1 },
+      create: { resourceId, state, version },
+      update: { state, version },
     });
+    // M14: every version is kept, not just the current one — otherwise
+    // "roll back to any prior version" has nothing to roll back to.
+    await (prisma as any).desiredStateVersion.create({
+      data: { resourceId, version, state },
+    });
+    return updated;
   }
 
   async getDesiredState(resourceId: string) {
     return (prisma as any).desiredState.findUnique({ where: { resourceId } });
+  }
+
+  async getDesiredStateVersion(resourceId: string, version: number) {
+    return (prisma as any).desiredStateVersion.findUnique({
+      where: { resourceId_version: { resourceId, version } },
+    });
+  }
+
+  async listDesiredStateVersions(resourceId: string) {
+    return (prisma as any).desiredStateVersion.findMany({
+      where: { resourceId },
+      orderBy: { version: "asc" },
+    });
   }
 
   /**

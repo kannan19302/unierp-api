@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 let kinds: any[];
 let resources: any[];
 let desiredStates: any[];
+let desiredStateVersions: any[];
 let dependencies: any[];
 let priceEntries: any[];
 let seq = 0;
@@ -46,6 +47,20 @@ vi.mock("@kannan19302/database", () => ({
         return row;
       }),
       findUnique: vi.fn(({ where: { resourceId } }: any) => desiredStates.find((d) => d.resourceId === resourceId) ?? null),
+    },
+    desiredStateVersion: {
+      create: vi.fn(({ data }: any) => {
+        const row = { id: nextId("dsv"), setAt: new Date(), ...data };
+        desiredStateVersions.push(row);
+        return row;
+      }),
+      findUnique: vi.fn(({ where }: any) => {
+        const k = where.resourceId_version;
+        return desiredStateVersions.find((v) => v.resourceId === k.resourceId && v.version === k.version) ?? null;
+      }),
+      findMany: vi.fn(({ where }: any) =>
+        desiredStateVersions.filter((v) => v.resourceId === where.resourceId).sort((a, b) => a.version - b.version),
+      ),
     },
     dependency: {
       create: vi.fn(({ data }: any) => {
@@ -120,6 +135,7 @@ describe("M09 · plan and dry-run", () => {
     kinds = [];
     resources = [];
     desiredStates = [];
+    desiredStateVersions = [];
     dependencies = [];
     priceEntries = [];
     resourcesSvc = new ResourceModelService();
