@@ -99,15 +99,30 @@ export class ImportExportService {
     return { valid, errors };
   }
 
+  /**
+   * D08 — all-or-nothing: 200 bad rows out of 10,000 must import
+   * NOTHING, not the other 9,800. Two error sources, both refuse the
+   * ENTIRE batch:
+   *
+   *   1. Schema validation (validateImport, upfront, no DB touched)
+   *      catches missing required fields for every row before anything
+   *      is attempted — every bad row reported with row+field+message.
+   *   2. A single Prisma transaction wraps every row's create. A
+   *      database-level failure on ANY row (e.g. a duplicate unique
+   *      constraint that upfront field validation can't see) throws,
+   *      which rolls back every row already inserted earlier in the
+   *      SAME call — a batch never partially lands.
+   *
+   * Because nothing commits on failure, the same batch (corrected) is
+   * always safely re-runnable — there is no partial state to reconcile
+   * against first.
+   */
   async executeImport(
     tenantId: string,
     orgId: string,
     targetModel: string,
     rows: ImportRow[],
-  ): Promise<{ created: number; errors: { row: number; message: string }[] }> {
-    let created = 0;
-    const errors: { row: number; message: string }[] = [];
-
+  ): Promise<{ created: number; errors: { row: number; field?: string; message: string }[] }> {
     const modelMap: Record<string, string> = {
       Customer: "customer",
       Vendor: "vendor",
@@ -123,26 +138,38 @@ export class ImportExportService {
       };
     }
 
-    for (let i = 0; i < rows.length; i++) {
-      try {
-        const data: any = { ...rows[i], tenantId, orgId };
-
-        // Convert numeric fields
-        if (targetModel === "Product") {
-          if (data.costPrice) data.costPrice = parseFloat(data.costPrice);
-          if (data.sellPrice) data.sellPrice = parseFloat(data.sellPrice);
-        }
-        if (data.paymentTerms)
-          data.paymentTerms = parseInt(data.paymentTerms, 10);
-
-        await (prisma as any)[prismaModel].create({ data });
-        created++;
-      } catch (err: any) {
-        errors.push({ row: i + 1, message: err.message || "Unknown error" });
-      }
+    // Phase 1: schema validation across the WHOLE batch, upfront. Any
+    // failure here refuses the batch before a single row is attempted.
+    const validation = await this.validateImport(tenantId, targetModel, rows);
+    if (validation.errors.length > 0) {
+      return { created: 0, errors: validation.errors };
     }
 
-    return { created, errors };
+    // Phase 2: one transaction for the whole batch. A DB-level failure
+    // on any row (e.g. a unique-constraint violation validateImport
+    // cannot see) throws out of the transaction, rolling back every
+    // row already created earlier in this same call.
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        let count = 0;
+        for (const row of rows) {
+          const data: any = { ...row, tenantId, orgId };
+          if (targetModel === "Product") {
+            if (data.costPrice) data.costPrice = parseFloat(data.costPrice);
+            if (data.sellPrice) data.sellPrice = parseFloat(data.sellPrice);
+          }
+          if (data.paymentTerms) data.paymentTerms = parseInt(data.paymentTerms, 10);
+
+          await (tx as any)[prismaModel].create({ data });
+          count++;
+        }
+        return count;
+      });
+
+      return { created, errors: [] };
+    } catch (err: any) {
+      return { created: 0, errors: [{ row: 0, message: `Import refused, nothing committed: ${err.message || "Unknown error"}` }] };
+    }
   }
 
   async exportData(
