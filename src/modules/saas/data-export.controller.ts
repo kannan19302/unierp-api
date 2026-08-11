@@ -6,6 +6,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { DataExportService } from "./data-export.service";
+import { TenantFullExportService } from "./tenant-full-export.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 interface AuthReq extends Request {
@@ -27,7 +28,10 @@ const requestExportSchema = z.object({
 @Controller("saas/exports")
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class DataExportController {
-  constructor(private readonly dataExportService: DataExportService) {}
+  constructor(
+    private readonly dataExportService: DataExportService,
+    private readonly tenantFullExport: TenantFullExportService,
+  ) {}
 
   @ApiOperation({ summary: "Request a data export" })
   @Permissions("saas.export.create")
@@ -76,5 +80,12 @@ export class DataExportController {
   @Get("formats")
   async getExportFormats() {
     return this.dataExportService.getExportFormats();
+  }
+
+  @ApiOperation({ summary: "D10: a complete, self-service export of every owned entity — requested by the tenant, no support involvement" })
+  @Permissions("saas.export.create")
+  @Get("full")
+  async exportTenantFull(@Req() req: AuthReq) {
+    return this.tenantFullExport.exportTenant(req.user.tenantId);
   }
 }

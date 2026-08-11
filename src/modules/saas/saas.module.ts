@@ -26,6 +26,7 @@ import { BrandingService } from "./branding.service";
 import { BrandingController } from "./branding.controller";
 import { DataExportService } from "./data-export.service";
 import { DataExportController } from "./data-export.controller";
+import { TenantFullExportService } from "./tenant-full-export.service";
 import { WebhooksService } from "./webhooks.service";
 import { WebhooksController } from "./webhooks.controller";
 import { TenantAnalyticsService } from "./tenant-analytics.service";
@@ -153,6 +154,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     SsoConfigService,
     BrandingService,
     DataExportService,
+    TenantFullExportService,
     WebhooksService,
     TenantAnalyticsService,
     SaasGateway,
@@ -182,6 +184,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     SsoConfigService,
     BrandingService,
     DataExportService,
+    TenantFullExportService,
     WebhooksService,
     TenantAnalyticsService,
     SaasGateway,
