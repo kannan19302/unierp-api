@@ -100,6 +100,8 @@ import { IncidentController } from "./v1/incident.controller";
 import { IncidentService } from "./v1/incident.service";
 import { DisasterRecoveryController } from "./v1/disaster-recovery.controller";
 import { DisasterRecoveryService } from "./v1/disaster-recovery.service";
+import { RetentionScheduleController } from "./v1/retention-schedule.controller";
+import { RetentionScheduleService } from "./v1/retention-schedule.service";
 
 @Module({
   imports: [],
@@ -146,6 +148,7 @@ import { DisasterRecoveryService } from "./v1/disaster-recovery.service";
     ObservabilityTraceController,
     IncidentController,
     DisasterRecoveryController,
+    RetentionScheduleController,
   ],
   providers: [
     ConsoleGateway,
@@ -207,6 +210,7 @@ import { DisasterRecoveryService } from "./v1/disaster-recovery.service";
     ObservabilityTraceService,
     IncidentService,
     DisasterRecoveryService,
+    RetentionScheduleService,
   ],
   exports: [
     ControlPlaneAuditService,
