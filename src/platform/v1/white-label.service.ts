@@ -2,12 +2,18 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { DnsService } from "../provider-registry/dns.service";
+import { CertificateLifecycleService } from "./certificate-lifecycle.service";
 
 @Injectable()
 export class SaasWhiteLabelDeepService {
   // M22: DNS provisioning goes through the shared multi-provider surface —
   // never a second, duplicated DNS implementation living in C26.
-  constructor(private readonly dns: DnsService) {}
+  // M23: certificate issuance goes through the shared secret-ref-only
+  // lifecycle service — never a second, duplicated cert model in C26.
+  constructor(
+    private readonly dns: DnsService,
+    private readonly certificates: CertificateLifecycleService,
+  ) {}
 
   async getDomains(tenantId: string) {
     return prisma.saasWhiteLabelDomain.findMany({
@@ -62,19 +68,10 @@ export class SaasWhiteLabelDeepService {
     });
   }
 
+  /** M23: this call is the ENTIRE implementation — issuance, expiry and
+   *  the secret-ref discipline all live in CertificateLifecycleService,
+   *  never duplicated here. */
   async issueSslCert(tenantId: string, domainId: string) {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 90);
-
-    return prisma.saasSslCertificate.create({
-      data: {
-        tenantId,
-        domainId,
-        provider: "LETS_ENCRYPT",
-        status: "ACTIVE",
-        expiresAt,
-        autoRenew: true,
-      },
-    });
+    return this.certificates.issue(tenantId, domainId, "LETS_ENCRYPT");
   }
 }

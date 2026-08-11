@@ -68,6 +68,8 @@ import { KubernetesFleetController } from "./v1/kubernetes-fleet.controller";
 import { KubernetesFleetService } from "./v1/kubernetes-fleet.service";
 import { InfrastructureResourceController } from "./v1/infrastructure-resource.controller";
 import { InfrastructureResourceService } from "./v1/infrastructure-resource.service";
+import { CertificateLifecycleController } from "./v1/certificate-lifecycle.controller";
+import { CertificateLifecycleService } from "./v1/certificate-lifecycle.service";
 
 @Module({
   imports: [],
@@ -99,6 +101,7 @@ import { InfrastructureResourceService } from "./v1/infrastructure-resource.serv
     CloudAccountsController,
     KubernetesFleetController,
     InfrastructureResourceController,
+    CertificateLifecycleController,
   ],
   providers: [
     ConsoleGateway,
@@ -143,6 +146,7 @@ import { InfrastructureResourceService } from "./v1/infrastructure-resource.serv
     CloudAccountService,
     KubernetesFleetService,
     InfrastructureResourceService,
+    CertificateLifecycleService,
   ],
   exports: [
     ControlPlaneAuditService,

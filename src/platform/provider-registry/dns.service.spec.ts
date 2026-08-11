@@ -74,6 +74,8 @@ import { DnsService } from "./dns.service";
 import { LoggedDnsAdapter } from "./adapters/logged-dns.adapter";
 import { RegistrarDnsAdapter } from "./adapters/registrar-dns.adapter";
 import { SaasWhiteLabelDeepService } from "../v1/white-label.service";
+import { CertificateLifecycleService } from "../v1/certificate-lifecycle.service";
+import { ControlPlaneAuditService } from "../v1/control-plane-audit.service";
 
 describe("M22 · databases, CDN and DNS — multi-provider DNS", () => {
   let providersSvc: ProviderRegistryService;
@@ -131,7 +133,7 @@ describe("M22 · databases, CDN and DNS — multi-provider DNS", () => {
     providersSvc.registerAdapter(provider.id, adapter);
     await providersSvc.recordHealthCheck(provider.id, { healthy: true });
 
-    const whiteLabel = new SaasWhiteLabelDeepService(dns);
+    const whiteLabel = new SaasWhiteLabelDeepService(dns, new CertificateLifecycleService(new ControlPlaneAuditService()));
     const domain = await whiteLabel.addCustomDomain("tenant-1", { customDomain: "shop.acme.com" });
 
     expect(domain.customDomain).toBe("shop.acme.com");
