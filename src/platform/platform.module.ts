@@ -102,6 +102,10 @@ import { DisasterRecoveryController } from "./v1/disaster-recovery.controller";
 import { DisasterRecoveryService } from "./v1/disaster-recovery.service";
 import { RetentionScheduleController } from "./v1/retention-schedule.controller";
 import { RetentionScheduleService } from "./v1/retention-schedule.service";
+import { WebhookIntegrationController } from "./v1/webhook-integration.controller";
+import { PlatformEventBusService } from "./v1/platform-event-bus.service";
+import { WebhookDeliveryService } from "./v1/webhook-delivery.service";
+import { HttpWebhookTransport } from "./v1/http-webhook.transport";
 
 @Module({
   imports: [],
@@ -149,6 +153,7 @@ import { RetentionScheduleService } from "./v1/retention-schedule.service";
     IncidentController,
     DisasterRecoveryController,
     RetentionScheduleController,
+    WebhookIntegrationController,
   ],
   providers: [
     ConsoleGateway,
@@ -211,6 +216,9 @@ import { RetentionScheduleService } from "./v1/retention-schedule.service";
     IncidentService,
     DisasterRecoveryService,
     RetentionScheduleService,
+    PlatformEventBusService,
+    WebhookDeliveryService,
+    HttpWebhookTransport,
   ],
   exports: [
     ControlPlaneAuditService,
