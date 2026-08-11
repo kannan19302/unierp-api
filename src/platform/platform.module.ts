@@ -85,6 +85,8 @@ import { BudgetController } from "./v1/budget.controller";
 import { BudgetService } from "./v1/budget.service";
 import { EntitlementQuotaBindingController } from "./v1/entitlement-quota-binding.controller";
 import { EntitlementQuotaBindingService } from "./v1/entitlement-quota-binding.service";
+import { FinOpsRecommendationController } from "./v1/finops-recommendation.controller";
+import { FinOpsRecommendationService } from "./v1/finops-recommendation.service";
 
 @Module({
   imports: [],
@@ -124,6 +126,7 @@ import { EntitlementQuotaBindingService } from "./v1/entitlement-quota-binding.s
     MarginController,
     BudgetController,
     EntitlementQuotaBindingController,
+    FinOpsRecommendationController,
   ],
   providers: [
     ConsoleGateway,
@@ -177,6 +180,7 @@ import { EntitlementQuotaBindingService } from "./v1/entitlement-quota-binding.s
     MarginService,
     BudgetService,
     EntitlementQuotaBindingService,
+    FinOpsRecommendationService,
   ],
   exports: [
     ControlPlaneAuditService,
