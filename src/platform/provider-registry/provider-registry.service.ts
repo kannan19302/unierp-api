@@ -158,4 +158,141 @@ export class ProviderRegistryService {
     }
     return providerIds;
   }
+
+  // ── M04 · health, limits, quotas and pricing — observed, not declared ──
+
+  /** The one declared thing in this section: how often a probe should run. */
+  async setHealthCheckInterval(providerId: string, intervalSeconds: number) {
+    if (intervalSeconds <= 0) {
+      throw new BadRequestException("intervalSeconds must be positive");
+    }
+    return (prisma as any).providerHealthConfig.upsert({
+      where: { providerId },
+      create: { providerId, intervalSeconds },
+      update: { intervalSeconds },
+    });
+  }
+
+  /**
+   * Record what a probe observed. This is the only way a health state is
+   * ever written — nothing sets "healthy"/"unhealthy" by hand. Appends
+   * rather than overwrites, so an incident's history survives its recovery.
+   */
+  async recordHealthCheck(
+    providerId: string,
+    result: { healthy: boolean; latencyMs?: number; error?: string },
+  ) {
+    return (prisma as any).providerHealthCheck.create({
+      data: {
+        providerId,
+        healthy: result.healthy,
+        latencyMs: result.latencyMs ?? null,
+        error: result.error ?? null,
+      },
+    });
+  }
+
+  /**
+   * Healthy means: the most recent probe said so, AND that probe ran within
+   * the provider's declared interval. A provider nobody has probed in twice
+   * its declared interval is exactly as excludable as one whose last probe
+   * failed outright — a health service that stops running is not evidence
+   * of health, it is an absence of evidence, and the exit criterion's
+   * "unhealthy within its declared interval" is precisely this staleness
+   * case, not only an explicit failure.
+   */
+  async isHealthy(providerId: string): Promise<boolean> {
+    const config = await (prisma as any).providerHealthConfig.findUnique({
+      where: { providerId },
+    });
+    const latest = await (prisma as any).providerHealthCheck.findFirst({
+      where: { providerId },
+      orderBy: { checkedAt: "desc" },
+    });
+    if (!latest) return false; // never probed — cannot be presumed healthy
+    if (!latest.healthy) return false;
+    if (config) {
+      const staleAfterMs = config.intervalSeconds * 2 * 1000;
+      const ageMs = Date.now() - new Date(latest.checkedAt).getTime();
+      if (ageMs > staleAfterMs) return false;
+    }
+    return true;
+  }
+
+  /** The name M06 (routing) will actually call. Same fact as isHealthy(),
+   *  under the name its real consumer needs. */
+  async isExcludedFromRouting(providerId: string): Promise<boolean> {
+    return !(await this.isHealthy(providerId));
+  }
+
+  async recordQuota(
+    providerId: string,
+    capabilityId: string,
+    quota: { limitValue: number; windowSeconds: number },
+  ) {
+    return (prisma as any).providerQuota.upsert({
+      where: { providerId_capabilityId: { providerId, capabilityId } },
+      create: { providerId, capabilityId, ...quota },
+      update: { ...quota, observedAt: new Date() },
+    });
+  }
+
+  async getQuota(providerId: string, capabilityId: string) {
+    return (prisma as any).providerQuota.findUnique({
+      where: { providerId_capabilityId: { providerId, capabilityId } },
+    });
+  }
+
+  /**
+   * `pricePerUnit` is a string, deliberately — not a `number`. A JS `number`
+   * literal is a float the moment it is written, before this method ever
+   * sees it; a string preserves exactly the digits the caller observed,
+   * and Prisma's `Decimal` column stores them without ever passing through
+   * floating-point arithmetic.
+   */
+  async recordPriceSheetEntry(
+    providerId: string,
+    entry: { capabilityId: string; operation: string; unit: string; pricePerUnit: string; currency?: string },
+  ) {
+    return (prisma as any).providerPriceSheetEntry.upsert({
+      where: {
+        providerId_capabilityId_operation_unit: {
+          providerId,
+          capabilityId: entry.capabilityId,
+          operation: entry.operation,
+          unit: entry.unit,
+        },
+      },
+      create: {
+        providerId,
+        capabilityId: entry.capabilityId,
+        operation: entry.operation,
+        unit: entry.unit,
+        pricePerUnit: entry.pricePerUnit,
+        currency: entry.currency ?? "USD",
+      },
+      update: {
+        pricePerUnit: entry.pricePerUnit,
+        currency: entry.currency ?? "USD",
+        observedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * The single read path — this and only this is what M06 routes on and
+   * M25 costs against. A second phase that stands up its own price lookup
+   * rather than calling this is the "second copy" the exit criterion names.
+   */
+  async getPriceFor(providerId: string, capabilityId: string, operation: string, unit: string) {
+    return (prisma as any).providerPriceSheetEntry.findUnique({
+      where: {
+        providerId_capabilityId_operation_unit: { providerId, capabilityId, operation, unit },
+      },
+    });
+  }
+
+  async getPriceSheet(providerId: string) {
+    return (prisma as any).providerPriceSheetEntry.findMany({ where: { providerId } });
+  }
 }
