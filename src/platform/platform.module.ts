@@ -87,6 +87,11 @@ import { EntitlementQuotaBindingController } from "./v1/entitlement-quota-bindin
 import { EntitlementQuotaBindingService } from "./v1/entitlement-quota-binding.service";
 import { FinOpsRecommendationController } from "./v1/finops-recommendation.controller";
 import { FinOpsRecommendationService } from "./v1/finops-recommendation.service";
+import { StaffIdpController } from "./v1/staff-idp.controller";
+import { StaffIdpService } from "./v1/staff-idp.service";
+import { PrivilegeElevationController } from "./v1/privilege-elevation.controller";
+import { PrivilegeElevationService } from "./v1/privilege-elevation.service";
+import { StepUpMfaService } from "../common/services/step-up-mfa.service";
 
 @Module({
   imports: [],
@@ -127,6 +132,8 @@ import { FinOpsRecommendationService } from "./v1/finops-recommendation.service"
     BudgetController,
     EntitlementQuotaBindingController,
     FinOpsRecommendationController,
+    StaffIdpController,
+    PrivilegeElevationController,
   ],
   providers: [
     ConsoleGateway,
@@ -181,6 +188,9 @@ import { FinOpsRecommendationService } from "./v1/finops-recommendation.service"
     BudgetService,
     EntitlementQuotaBindingService,
     FinOpsRecommendationService,
+    StaffIdpService,
+    PrivilegeElevationService,
+    StepUpMfaService,
   ],
   exports: [
     ControlPlaneAuditService,

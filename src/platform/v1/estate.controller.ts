@@ -12,8 +12,10 @@ import type { Request } from "express";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
+import { StepUpMfaGuard } from "../../common/guards/step-up-mfa.guard";
 import { SkipTenantScope } from "../../common/decorators/skip-tenant-scope.decorator";
 import { Permissions } from "../../common/decorators/permissions.decorator";
+import { RequireStepUpMfa } from "../../common/decorators/step-up-mfa.decorator";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { ResourceModelService } from "../resource-model/resource-model.service";
 import { BulkOperationService } from "../operation-pipeline/bulk-operation.service";
@@ -35,7 +37,7 @@ interface AttributeResourceBody {
 @ApiTags("platform")
 @ApiBearerAuth()
 @Controller("platform/v1/estate")
-@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard)
+@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard, StepUpMfaGuard)
 @SkipTenantScope()
 export class EstateController {
   constructor(
@@ -67,6 +69,7 @@ export class EstateController {
   @ApiOperation({ summary: "Apply a desired-state change across multiple resources, one item at a time, resumable" })
   @Post("bulk")
   @Permissions("system.estate.bulk")
+  @RequireStepUpMfa()
   async bulk(@Body() body: BulkPlanBody) {
     // Declares desired state per item (M07) rather than driving a provider
     // directly — the same separation M09 establishes for a single resource:
