@@ -20,6 +20,10 @@ export interface BillingLineItem {
   description: string;
   /** Decimal string, e.g. "1234.5600" — never a number. */
   amount: string;
+  /** M27 — the single resource this line bills, when known. */
+  resourceId?: string;
+  /** M27 — set instead of resourceId for a cost shared across resources. */
+  sharedResourceIds?: string[];
 }
 
 export interface IngestBillingExportInput {
@@ -127,7 +131,14 @@ export class CostIngestionService {
 
     for (const li of input.lineItems) {
       await (prisma as any).costLineItem.create({
-        data: { batchId: batch.id, sourceLineId: li.sourceLineId, description: li.description, amount: li.amount },
+        data: {
+          batchId: batch.id,
+          sourceLineId: li.sourceLineId,
+          description: li.description,
+          amount: li.amount,
+          resourceId: li.resourceId ?? null,
+          sharedResourceIds: li.sharedResourceIds ?? null,
+        },
       });
     }
 
