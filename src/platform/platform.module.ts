@@ -65,6 +65,8 @@ import { CloudAccountsController } from "./v1/cloud-accounts.controller";
 import { CloudAccountService } from "./provider-registry/cloud-account.service";
 import { KubernetesFleetController } from "./v1/kubernetes-fleet.controller";
 import { KubernetesFleetService } from "./v1/kubernetes-fleet.service";
+import { InfrastructureResourceController } from "./v1/infrastructure-resource.controller";
+import { InfrastructureResourceService } from "./v1/infrastructure-resource.service";
 
 @Module({
   imports: [],
@@ -95,6 +97,7 @@ import { KubernetesFleetService } from "./v1/kubernetes-fleet.service";
     EstateController,
     CloudAccountsController,
     KubernetesFleetController,
+    InfrastructureResourceController,
   ],
   providers: [
     ConsoleGateway,
@@ -137,6 +140,7 @@ import { KubernetesFleetService } from "./v1/kubernetes-fleet.service";
     BulkOperationService,
     CloudAccountService,
     KubernetesFleetService,
+    InfrastructureResourceService,
   ],
   exports: [
     ControlPlaneAuditService,
