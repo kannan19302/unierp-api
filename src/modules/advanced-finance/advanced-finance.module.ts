@@ -26,6 +26,7 @@ import { AiAnalyticsController } from "./ai-analytics.controller";
 import { ArCreditManagementController } from "./ar-credit-management.controller";
 import { AdvancedFinanceService } from "./advanced-finance.service";
 import { FinanceExpansionDeepService } from "./services/finance-expansion-deep.service";
+import { PeriodCloseGuardService } from "../finance/period-close-guard.service";
 import {
   GlAccountingService,
   BudgetingService,
@@ -170,7 +171,7 @@ const domainServices = [
     AiAnalyticsController,
     ArCreditManagementController,
   ],
-  providers: [AdvancedFinanceService, ...domainServices],
-  exports: [AdvancedFinanceService, ...domainServices],
+  providers: [AdvancedFinanceService, PeriodCloseGuardService, ...domainServices],
+  exports: [AdvancedFinanceService, PeriodCloseGuardService, ...domainServices],
 })
 export class AdvancedFinanceModule {}

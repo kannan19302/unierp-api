@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import {
@@ -209,11 +209,32 @@ export class CloseOpsService {
     });
   }
 
+  /**
+   * E06 — "reopening requires an approver." Reuses E05's generic
+   * ApprovalProcess/ApprovalRequest tables directly (entityType
+   * "financial-period-reopen", entityId = periodId) rather than a
+   * bespoke reopen-approval mechanism: a period can only be reopened once
+   * a real ApprovalRequest against it has reached status APPROVED — a
+   * bare status flip is no longer sufficient, and there is no path that
+   * bypasses this check.
+   */
   async reopenFinancialPeriod(tenantId: string, periodId: string) {
     const period = await prisma.financialPeriod.findFirst({
       where: { id: periodId, tenantId },
     });
     if (!period) throw new NotFoundException("Financial period not found");
+
+    const approvedReopen = await prisma.approvalRequest.findFirst({
+      where: { tenantId, entityType: "financial-period-reopen", entityId: periodId, status: "APPROVED" },
+    });
+    if (!approvedReopen) {
+      throw new ForbiddenException(
+        `Reopening period "${period.name}" requires an APPROVED reopen request (entityType ` +
+          `"financial-period-reopen", entityId "${periodId}"). None exists yet, or the existing one is not ` +
+          `yet approved — submit one via the approval-chain engine (E05) first.`,
+      );
+    }
+
     return prisma.financialPeriod.update({
       where: { id: periodId },
       data: { status: "OPEN" },

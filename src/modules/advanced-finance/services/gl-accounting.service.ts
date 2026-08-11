@@ -8,11 +8,15 @@ import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import { BudgetControlService } from "./budget-control.service";
+import { PeriodCloseGuardService } from "../../finance/period-close-guard.service";
 
 @Injectable()
 export class GlAccountingService {
   private readonly logger = new Logger(GlAccountingService.name);
-  constructor(private readonly budgetControlService?: BudgetControlService) {}
+  constructor(
+    private readonly budgetControlService?: BudgetControlService,
+    private readonly periodCloseGuard?: PeriodCloseGuardService,
+  ) {}
 
   // ── CHART OF ACCOUNTS ──────────────────────────────────
 
@@ -489,6 +493,10 @@ export class GlAccountingService {
       );
     }
 
+    if (this.periodCloseGuard) {
+      await this.periodCloseGuard.assertPeriodOpen(tenantId, journal.orgId, journal.date);
+    }
+
     // Budget checking
     if (this.budgetControlService) {
       const config = await this.budgetControlService.getControlConfig(tenantId);
@@ -599,6 +607,10 @@ export class GlAccountingService {
     }
 
     const date = reversalDate ? new Date(reversalDate) : new Date();
+
+    if (this.periodCloseGuard) {
+      await this.periodCloseGuard.assertPeriodOpen(tenantId, journal.orgId, date);
+    }
     const reversalEntries = journal.entries.map((entry) => ({
       accountId: entry.accountId,
       debit: Number(entry.credit), // swap debit/credit
