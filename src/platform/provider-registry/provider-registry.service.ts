@@ -39,6 +39,13 @@ export class ProviderRegistryService {
     this.adapters.set(providerId, adapter);
   }
 
+  /** M22 — the read half `registerAdapter` never had a getter for: a
+   *  caller that already knows WHICH provider (from M06's own routing
+   *  decision) needs the adapter itself to actually call `execute()`. */
+  getAdapter(providerId: string): ProviderAdapter | undefined {
+    return this.adapters.get(providerId);
+  }
+
   async bindCapability(providerId: string, capabilityId: string) {
     const provider = await (prisma as any).provider.findUnique({
       where: { id: providerId },

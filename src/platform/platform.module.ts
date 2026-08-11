@@ -22,6 +22,7 @@ import { ControlPlaneApprovalsController } from "./v1/control-plane-approvals.co
 import { ControlPlaneApprovalsService } from "./v1/control-plane-approvals.service";
 import { ProviderRegistryService } from "./provider-registry/provider-registry.service";
 import { RoutingService } from "./provider-registry/routing.service";
+import { DnsService } from "./provider-registry/dns.service";
 import { ResourceModelService } from "./resource-model/resource-model.service";
 import { PolicyEngineService } from "./policy-engine/policy-engine.service";
 import { PlanningService } from "./operation-pipeline/planning.service";
@@ -128,6 +129,7 @@ import { InfrastructureResourceService } from "./v1/infrastructure-resource.serv
     ControlPlaneApprovalsService,
     ProviderRegistryService,
     RoutingService,
+    DnsService,
     ResourceModelService,
     PolicyEngineService,
     PlanningService,
@@ -147,6 +149,7 @@ import { InfrastructureResourceService } from "./v1/infrastructure-resource.serv
     ConsoleGateway,
     ProviderRegistryService,
     RoutingService,
+    DnsService,
     ResourceModelService,
     PolicyEngineService,
     PlanningService,
