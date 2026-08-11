@@ -7,7 +7,8 @@
  * docs/programme/90-DEFECT-LOG.md for the finding this leaves behind for
  * the rest of Track M's console-facing phases.
  */
-import { Controller, Get, Post, Param, Query, Body, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Param, Query, Body, Req, UseGuards } from "@nestjs/common";
+import type { Request } from "express";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
@@ -22,6 +23,13 @@ interface BulkPlanBody {
   resourceIds: string[];
   /** Proposed desired-state field changes applied identically to every item. */
   proposedState: Record<string, unknown>;
+}
+
+interface AttributeResourceBody {
+  tenantId?: string;
+  service?: string;
+  environment?: string;
+  owner?: string;
 }
 
 @ApiTags("platform")
@@ -76,5 +84,19 @@ export class EstateController {
     return this.bulkOperations.resume(id, async (resourceId) => {
       await this.resources.setDesiredState(resourceId, body.proposedState);
     });
+  }
+
+  @ApiOperation({ summary: "Resources with no complete attribution, each with its age — the M18 unattributed bucket, never hidden" })
+  @Get("unattributed")
+  @Permissions("system.estate.read")
+  async unattributed() {
+    return this.resources.getUnattributedBucket();
+  }
+
+  @ApiOperation({ summary: "Attribute a resource to tenant, service, environment and owner" })
+  @Post("resources/:id/attribution")
+  @Permissions("system.estate.bulk")
+  async attribute(@Param("id") id: string, @Body() body: AttributeResourceBody, @Req() req: Request & { user?: { userId?: string } }) {
+    return this.resources.attributeResource(id, { ...body, attributedBy: req.user?.userId ?? "unknown" });
   }
 }

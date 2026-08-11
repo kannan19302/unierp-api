@@ -233,4 +233,82 @@ export class ResourceModelService {
     const nextCursor = cursor + items.length < total ? cursor + items.length : null;
     return { items, total, nextCursor };
   }
+
+  /**
+   * M18 — a resource is ATTRIBUTED only when every one of tenant, service,
+   * environment and owner is set. Anything less is a partial row, treated
+   * identically to no row at all: it still shows up in the unattributed
+   * bucket rather than being silently counted as done. `attributedBy` is
+   * required precisely so a partial or complete attribution always names
+   * who made it.
+   */
+  async attributeResource(
+    resourceId: string,
+    input: { tenantId?: string; service?: string; environment?: string; owner?: string; attributedBy: string },
+  ) {
+    const resource = await (prisma as any).resource.findUnique({ where: { id: resourceId } });
+    if (!resource) {
+      throw new NotFoundException(`Resource ${resourceId} not found`);
+    }
+    return (prisma as any).resourceAttribution.upsert({
+      where: { resourceId },
+      create: {
+        resourceId,
+        tenantId: input.tenantId ?? null,
+        service: input.service ?? null,
+        environment: input.environment ?? null,
+        owner: input.owner ?? null,
+        attributedBy: input.attributedBy,
+      },
+      update: {
+        tenantId: input.tenantId ?? null,
+        service: input.service ?? null,
+        environment: input.environment ?? null,
+        owner: input.owner ?? null,
+        attributedBy: input.attributedBy,
+        attributedAt: new Date(),
+      },
+    });
+  }
+
+  private isComplete(attribution: any): boolean {
+    return !!(attribution && attribution.tenantId && attribution.service && attribution.environment && attribution.owner);
+  }
+
+  /**
+   * The exit criterion's central guarantee: EVERY discovered resource is
+   * either attributed or named in this bucket, with its age — never a
+   * silent third state. `ageMs` is computed from `Resource.createdAt`
+   * (when it was first discovered/declared), not from any attribution
+   * timestamp, since an unattributed resource has none.
+   */
+  async getUnattributedBucket(): Promise<
+    Array<{ resourceId: string; name: string; kindName: string; ageMs: number; missingFields: string[] }>
+  > {
+    const resources = await (prisma as any).resource.findMany({ include: { kind: true } });
+    const attributions = await (prisma as any).resourceAttribution.findMany({});
+    const byResourceId = new Map(attributions.map((a: any) => [a.resourceId, a]));
+    const now = Date.now();
+
+    const bucket: Array<{ resourceId: string; name: string; kindName: string; ageMs: number; missingFields: string[] }> = [];
+    for (const r of resources) {
+      const attribution = byResourceId.get(r.id);
+      if (this.isComplete(attribution)) continue;
+      const missingFields = (["tenantId", "service", "environment", "owner"] as const).filter(
+        (f) => !(attribution as any)?.[f],
+      );
+      bucket.push({
+        resourceId: r.id,
+        name: r.name,
+        kindName: r.kind.name,
+        ageMs: now - new Date(r.createdAt).getTime(),
+        missingFields,
+      });
+    }
+    return bucket;
+  }
+
+  async getAttribution(resourceId: string) {
+    return (prisma as any).resourceAttribution.findUnique({ where: { resourceId } });
+  }
 }

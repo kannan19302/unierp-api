@@ -13,6 +13,7 @@ let desiredStateVersions: any[];
 let observedStates: any[];
 let dependencies: any[];
 let driftRecords: any[];
+let attributions: any[];
 let seq = 0;
 const nextId = (p: string) => `${p}-${++seq}`;
 
@@ -30,7 +31,7 @@ vi.mock("@kannan19302/database", () => ({
     },
     resource: {
       create: vi.fn(({ data }: any) => {
-        const row = { id: nextId("res"), ...data };
+        const row = { id: nextId("res"), createdAt: new Date(), ...data };
         resources.push(row);
         return row;
       }),
@@ -140,6 +141,20 @@ vi.mock("@kannan19302/database", () => ({
         return row;
       }),
     },
+    resourceAttribution: {
+      upsert: vi.fn(({ where: { resourceId }, create, update }: any) => {
+        const existing = attributions.find((a) => a.resourceId === resourceId);
+        if (existing) {
+          Object.assign(existing, update);
+          return existing;
+        }
+        const row = { id: nextId("attr"), ...create };
+        attributions.push(row);
+        return row;
+      }),
+      findUnique: vi.fn(({ where: { resourceId } }: any) => attributions.find((a) => a.resourceId === resourceId) ?? null),
+      findMany: vi.fn(() => attributions),
+    },
   },
 }));
 
@@ -157,6 +172,7 @@ describe("M07 · resource model — desired state, actual, drift", () => {
     observedStates = [];
     dependencies = [];
     driftRecords = [];
+    attributions = [];
     service = new ResourceModelService();
   });
 
@@ -270,6 +286,7 @@ describe("M15 · estate search", () => {
     observedStates = [];
     dependencies = [];
     driftRecords = [];
+    attributions = [];
     service = new ResourceModelService();
   });
 
@@ -315,5 +332,92 @@ describe("M15 · estate search", () => {
     const page3 = await service.searchResources({ sortBy: "name", sortDir: "asc", limit: 3, cursor: 6 });
     expect(page3.items.map((it) => it.name)).toEqual(["res-6"]);
     expect(page3.nextCursor).toBeNull(); // no more pages
+  });
+});
+
+describe("M18 · estate inventory, topology and tenant attribution", () => {
+  let service: ResourceModelService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    kinds = [];
+    resources = [];
+    desiredStates = [];
+    desiredStateVersions = [];
+    observedStates = [];
+    dependencies = [];
+    driftRecords = [];
+    attributions = [];
+    service = new ResourceModelService();
+  });
+
+  it("every discovered resource is attributed OR listed in the unattributed bucket — never a third, silent state", async () => {
+    await service.registerResourceKind("k", "k");
+    const attributed = await service.createResource("k", "fully-attributed");
+    const partial = await service.createResource("k", "partially-attributed");
+    const untouched = await service.createResource("k", "never-touched");
+
+    await service.attributeResource(attributed.id, {
+      tenantId: "tenant-1",
+      service: "billing",
+      environment: "prod",
+      owner: "team-payments",
+      attributedBy: "operator-1",
+    });
+    // Missing `owner` — a partial row is NOT attributed.
+    await service.attributeResource(partial.id, {
+      tenantId: "tenant-1",
+      service: "billing",
+      environment: "prod",
+      attributedBy: "operator-1",
+    });
+
+    const bucket = await service.getUnattributedBucket();
+    const bucketIds = bucket.map((b) => b.resourceId);
+
+    expect(bucketIds).not.toContain(attributed.id);
+    expect(bucketIds).toContain(partial.id);
+    expect(bucketIds).toContain(untouched.id);
+
+    // Total accounted-for is exactly all three resources: 1 attributed + 2 in the bucket.
+    expect(bucket).toHaveLength(2);
+  });
+
+  it("the bucket names an age, computed from when the resource was discovered, and the missing fields — never hidden", async () => {
+    await service.registerResourceKind("k", "k");
+    const r = await service.createResource("k", "orphan");
+
+    const bucket = await service.getUnattributedBucket();
+    const entry = bucket.find((b) => b.resourceId === r.id)!;
+
+    expect(entry.ageMs).toBeGreaterThanOrEqual(0);
+    expect(entry.missingFields.sort()).toEqual(["environment", "owner", "service", "tenantId"]);
+  });
+
+  it("re-attributing a resource updates the same row, not a second mapping", async () => {
+    await service.registerResourceKind("k", "k");
+    const r = await service.createResource("k", "res");
+
+    await service.attributeResource(r.id, {
+      tenantId: "tenant-1",
+      service: "billing",
+      environment: "prod",
+      owner: "team-a",
+      attributedBy: "operator-1",
+    });
+    await service.attributeResource(r.id, {
+      tenantId: "tenant-1",
+      service: "billing",
+      environment: "prod",
+      owner: "team-b", // ownership transferred
+      attributedBy: "operator-2",
+    });
+
+    const attribution = await service.getAttribution(r.id);
+    expect(attribution.owner).toBe("team-b");
+    expect(attribution.attributedBy).toBe("operator-2");
+
+    const bucket = await service.getUnattributedBucket();
+    expect(bucket.map((b) => b.resourceId)).not.toContain(r.id);
   });
 });
