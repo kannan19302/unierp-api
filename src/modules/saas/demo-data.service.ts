@@ -221,8 +221,15 @@ export class DemoDataService {
     await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`;
 
+      // D07/G-18: every seeded row is tracked in DemoDataRecord as it's
+      // created — this is the ONLY thing that makes "removable in one
+      // action with no residue" possible later, so it happens in the
+      // SAME transaction as the row itself, never as an afterthought.
+      const track = async (entityType: string, entityId: string) =>
+        tx.demoDataRecord.create({ data: { tenantId, entityType, entityId, module: "onboarding" } });
+
       // 1. Seed sample customers
-      await tx.customer.create({
+      const customer1 = await tx.customer.create({
         data: {
           tenantId,
           orgId: org.id,
@@ -236,8 +243,9 @@ export class DemoDataService {
           notes: "Key enterprise customer seeded on signup.",
         },
       });
+      await track("Customer", customer1.id);
 
-      await tx.customer.create({
+      const customer2 = await tx.customer.create({
         data: {
           tenantId,
           orgId: org.id,
@@ -251,9 +259,10 @@ export class DemoDataService {
           notes: "Regular retail supplier partner.",
         },
       });
+      await track("Customer", customer2.id);
 
       // 2. Seed sample vendors
-      await tx.vendor.create({
+      const vendor1 = await tx.vendor.create({
         data: {
           tenantId,
           orgId: org.id,
@@ -265,8 +274,9 @@ export class DemoDataService {
           notes: "Seeded IT and component vendor.",
         },
       });
+      await track("Vendor", vendor1.id);
 
-      await tx.vendor.create({
+      const vendor2 = await tx.vendor.create({
         data: {
           tenantId,
           orgId: org.id,
@@ -278,10 +288,11 @@ export class DemoDataService {
           notes: "Fulfillment and shipping logistics supplier.",
         },
       });
+      await track("Vendor", vendor2.id);
 
       // 3. Seed sample products
       for (const prod of mockProducts) {
-        await tx.product.create({
+        const product = await tx.product.create({
           data: {
             tenantId,
             orgId: org.id,
@@ -294,6 +305,7 @@ export class DemoDataService {
             sellPrice: new Prisma.Decimal(prod.sell),
           },
         });
+        await track("Product", product.id);
       }
 
       // 4. Update tenant demo loaded flag
@@ -310,5 +322,48 @@ export class DemoDataService {
       success: true,
       message: `Demo data for the '${industry}' profile successfully populated with sample products, customers, and vendors.`,
     };
+  }
+
+  /**
+   * D07/G-18 — "removable in one action with no residue." Reads exactly
+   * what seedDemoData tracked in DemoDataRecord and deletes every one of
+   * those real rows, grouped by entityType, plus the tracking rows
+   * themselves — in one transaction, so a partial purge (real rows gone
+   * but tracking rows left behind, or vice versa) is not a state this
+   * method can leave a tenant in. A tenant with nothing seeded is a safe
+   * no-op, not an error.
+   */
+  async purgeDemoData(tenantId: string): Promise<{ success: boolean; removedCount: number }> {
+    const records = await prisma.demoDataRecord.findMany({ where: { tenantId } });
+    if (records.length === 0) {
+      return { success: true, removedCount: 0 };
+    }
+
+    const idsByType = new Map<string, string[]>();
+    for (const record of records) {
+      const ids = idsByType.get(record.entityType) ?? [];
+      ids.push(record.entityId);
+      idsByType.set(record.entityType, ids);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const customerIds = idsByType.get("Customer");
+      if (customerIds?.length) await tx.customer.deleteMany({ where: { id: { in: customerIds } } });
+
+      const vendorIds = idsByType.get("Vendor");
+      if (vendorIds?.length) await tx.vendor.deleteMany({ where: { id: { in: vendorIds } } });
+
+      const productIds = idsByType.get("Product");
+      if (productIds?.length) await tx.product.deleteMany({ where: { id: { in: productIds } } });
+
+      await tx.demoDataRecord.deleteMany({ where: { tenantId } });
+
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: { demoDataLoaded: false, demoLoadedAt: null },
+      });
+    });
+
+    return { success: true, removedCount: records.length };
   }
 }

@@ -258,6 +258,17 @@ export class OnboardingController {
     };
   }
 
+  @ApiOperation({ summary: "Remove all seeded demo data for the tenant, in one action, with no residue (G-18)" })
+  @Permissions("saas.portal.create")
+  @Post("demo-data/purge")
+  async purgeDemoData(@Req() req: AuthReq) {
+    const result = await this.demoDataService.purgeDemoData(req.user.tenantId);
+    return {
+      demoDataLoaded: false,
+      removedCount: result.removedCount,
+    };
+  }
+
   @ApiOperation({ summary: "List available tutorials" })
   @Permissions("saas.portal.read")
   @Get("tutorials")

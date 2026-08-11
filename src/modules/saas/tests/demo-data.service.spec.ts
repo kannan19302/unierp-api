@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   vendorCreate: vi.fn(),
   productCreate: vi.fn(),
   executeRaw: vi.fn().mockResolvedValue(1),
+  demoDataRecordCreate: vi.fn(),
 }));
 
 vi.mock("@kannan19302/database", () => {
@@ -23,6 +24,7 @@ vi.mock("@kannan19302/database", () => {
     customer: { create: mocks.customerCreate },
     vendor: { create: mocks.vendorCreate },
     product: { create: mocks.productCreate },
+    demoDataRecord: { create: mocks.demoDataRecordCreate },
     $transaction: vi.fn(async (cb: (tx: unknown) => unknown) =>
       cb({
         $executeRaw: mocks.executeRaw,
@@ -30,6 +32,7 @@ vi.mock("@kannan19302/database", () => {
         vendor: { create: mocks.vendorCreate },
         product: { create: mocks.productCreate },
         tenant: { update: mocks.tenantUpdate },
+        demoDataRecord: { create: mocks.demoDataRecordCreate },
       }),
     ),
   };
@@ -42,6 +45,11 @@ describe("DemoDataService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.executeRaw.mockResolvedValue(1);
+    let idSeq = 0;
+    mocks.customerCreate.mockImplementation(async () => ({ id: `cust-${++idSeq}` }));
+    mocks.vendorCreate.mockImplementation(async () => ({ id: `vend-${++idSeq}` }));
+    mocks.productCreate.mockImplementation(async (args: any) => ({ id: `prod-${++idSeq}`, ...args.data }));
+    mocks.demoDataRecordCreate.mockResolvedValue({ id: `ddr-${++idSeq}` });
     service = new DemoDataService();
   });
 
