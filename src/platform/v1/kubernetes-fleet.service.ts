@@ -91,7 +91,7 @@ export class KubernetesFleetService {
     }
 
     const job = await this.executor.startJob(
-      `routing-weight-${resourceId}-${Date.now()}`,
+      `routing-weight-${resourceId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       null,
       resourceId,
       [

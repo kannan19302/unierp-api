@@ -133,7 +133,7 @@ export class ReconcilerService {
     const desiredState = (desired?.state as Record<string, unknown>) ?? {};
 
     const job = await this.executor.startJob(
-      `reconcile-${resourceId}-${Date.now()}`,
+      `reconcile-${resourceId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       null,
       resourceId,
       [

@@ -53,6 +53,7 @@ import { TenantExportOffboardingController } from "./v1/tenant-export-offboardin
 import { TenantExportOffboardingService } from "./v1/tenant-export-offboarding.service";
 import { ReleaseControlController } from "./v1/release-control.controller";
 import { ReleaseControlService } from "./v1/release-control.service";
+import { ReleasePromotionService } from "./v1/release-promotion.service";
 import { LiveTenantUpgradeController } from "./v1/live-tenant-upgrade.controller";
 import { LiveTenantUpgradeService } from "./v1/live-tenant-upgrade.service";
 import { SecurityOperationsController } from "./v1/security-operations.controller";
@@ -118,6 +119,7 @@ import { KubernetesFleetService } from "./v1/kubernetes-fleet.service";
     CustomerImportService,
     TenantExportOffboardingService,
     ReleaseControlService,
+    ReleasePromotionService,
     LiveTenantUpgradeService,
     SecurityOperationsService,
     ControlPlaneApprovalsService,

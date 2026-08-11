@@ -8,6 +8,7 @@ import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decor
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { TwoPersonControl } from '../../common/decorators/two-person-control.decorator';
 import { ReleaseControlService } from './release-control.service';
+import { ReleasePromotionService } from './release-promotion.service';
 
 /**
  * Release control (C27's backing surface).
@@ -22,7 +23,10 @@ import { ReleaseControlService } from './release-control.service';
 @SkipTenantScope()
 @UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard, TwoPersonControlGuard)
 export class ReleaseControlController {
-  constructor(private readonly releaseControl: ReleaseControlService) {}
+  constructor(
+    private readonly releaseControl: ReleaseControlService,
+    private readonly promotionService: ReleasePromotionService,
+  ) {}
 
   @Get('manifest')
   @Permissions('system.release.read')
@@ -36,5 +40,20 @@ export class ReleaseControlController {
   @TwoPersonControl()
   triggerRollback(@Body() body: { targetManifestVersion: string; reason: string; actorId?: string }) {
     return this.releaseControl.triggerRollback(body, body.actorId || 'SYSTEM');
+  }
+
+  /**
+   * M20 — a promotion as a plan with a health gate, not a manual step. The
+   * caller supplies the health signal (`healthy`) because the actual
+   * health probe — synthetic checks, smoke tests, whatever the environment
+   * runs post-deploy — is outside this platform's scope; what this
+   * endpoint owns is what happens with that signal: DONE and desired
+   * state moves to the target manifest, or COMPENSATED and desired state
+   * reverts to the previous one, automatically, inside the same call.
+   */
+  @Post('promote')
+  @Permissions('system.release.promote')
+  promote(@Body() body: { environmentName: string; targetManifestVersion: string; healthy: boolean }) {
+    return this.promotionService.promote(body.environmentName, body.targetManifestVersion, async () => body.healthy);
   }
 }

@@ -145,7 +145,7 @@ export class TenantLifecycleService {
       throw new BadRequestException("Cannot suspend a purged tenant");
 
     const job = await this.executor.startJob(
-      `tenant-suspend-${tenantId}-${Date.now()}`,
+      `tenant-suspend-${tenantId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       null,
       tenantId,
       [
@@ -200,7 +200,7 @@ export class TenantLifecycleService {
       throw new ConflictException("Tenant is not currently suspended");
 
     const job = await this.executor.startJob(
-      `tenant-unsuspend-${tenantId}-${Date.now()}`,
+      `tenant-unsuspend-${tenantId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       null,
       tenantId,
       [
