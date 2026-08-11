@@ -80,6 +80,10 @@ import { CostAllocationController } from "./v1/cost-allocation.controller";
 import { CostAllocationService } from "./v1/cost-allocation.service";
 import { MarginController } from "./v1/margin.controller";
 import { MarginService } from "./v1/margin.service";
+import { BudgetController } from "./v1/budget.controller";
+import { BudgetService } from "./v1/budget.service";
+import { EntitlementQuotaBindingController } from "./v1/entitlement-quota-binding.controller";
+import { EntitlementQuotaBindingService } from "./v1/entitlement-quota-binding.service";
 
 @Module({
   imports: [],
@@ -117,6 +121,8 @@ import { MarginService } from "./v1/margin.service";
     TelemetryController,
     CostAllocationController,
     MarginController,
+    BudgetController,
+    EntitlementQuotaBindingController,
   ],
   providers: [
     ConsoleGateway,
@@ -167,6 +173,8 @@ import { MarginService } from "./v1/margin.service";
     TelemetryService,
     CostAllocationService,
     MarginService,
+    BudgetService,
+    EntitlementQuotaBindingService,
   ],
   exports: [
     ControlPlaneAuditService,
