@@ -3,15 +3,13 @@ import { Test, TestingModule } from "@nestjs/testing";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
-    saasPortalUsageDashboard: {
+    usageRecord: {
       findMany: vi.fn(),
-      upsert: vi.fn(),
     },
   },
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
 import { SaasPortalUsageMetricsPortalService } from "../saas-portal-usage-metrics-portal.service";
 
 describe("SaasPortalUsageMetricsPortalService", () => {
@@ -32,23 +30,17 @@ describe("SaasPortalUsageMetricsPortalService", () => {
     expect(service).toBeDefined();
   });
 
-  describe("updateUsageMetric", () => {
-    it("should calculate percentage used and upsert dashboard snapshot", async () => {
-      const mockResult = {
-        id: "ud-1",
-        metricName: "API_CALLS",
-        percentUsed: 50.0,
-      };
-      (prisma.saasPortalUsageDashboard.upsert as any).mockResolvedValue(
-        mockResult,
-      );
+  describe("getUsageDashboard", () => {
+    it("reads the real UsageRecord table — D21: reconciles exactly with what invoicing computed from", async () => {
+      (prisma.usageRecord.findMany as any).mockResolvedValue([
+        { id: "ur-1", tenantId: "t1", metric: "API_CALLS_COUNT", currentValue: 500, limitValue: 1000, updatedAt: new Date() },
+      ]);
 
-      const res = await service.updateUsageMetric("t1", {
-        metricName: "API_CALLS",
-        currentUsage: 500,
-        quotaLimit: 1000,
-      });
-      expect(res.percentUsed).toBe(50.0);
+      const res = await service.getUsageDashboard("t1");
+      expect(res[0].currentValue).toBe(500);
+      expect(res[0].limitValue).toBe(1000);
+      expect(res[0].percentUsed).toBe(50);
+      expect(res[0].isOverLimit).toBe(false);
     });
   });
 });
