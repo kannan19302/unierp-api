@@ -7,6 +7,7 @@ import { SaasPortalGdprComplianceController } from "./controllers/gdpr-complianc
 import { SaasPortalGdprComplianceService } from "./services/gdpr-compliance.service";
 import { GdprCryptoShredService } from "./services/gdpr-crypto-shred.service";
 import { RecordLegalHoldService } from "./services/record-legal-hold.service";
+import { SettingsChangeControlService } from "./services/settings-change-control.service";
 import { SaasPortalAuditLogController } from "./controllers/audit-log.controller";
 import { SaasPortalAuditLogService } from "./services/audit-log.service";
 import { SaasPortalSecurityController } from "./controllers/security.controller";
@@ -58,6 +59,7 @@ import { SaasPortalEnterpriseModule } from "./saas-portal-enterprise.module";
     SaasPortalGdprComplianceService,
     GdprCryptoShredService,
     RecordLegalHoldService,
+    SettingsChangeControlService,
     SaasPortalAuditLogService,
     SaasPortalSecurityService,
     SaasPortalDelegationService,
@@ -77,6 +79,7 @@ import { SaasPortalEnterpriseModule } from "./saas-portal-enterprise.module";
     SaasPortalGdprComplianceService,
     GdprCryptoShredService,
     RecordLegalHoldService,
+    SettingsChangeControlService,
     SaasPortalAuditLogService,
     SaasPortalSecurityService,
     SaasPortalDelegationService,
