@@ -74,6 +74,8 @@ import { CapacityForecastController } from "./v1/capacity-forecast.controller";
 import { CapacityForecastService } from "./v1/capacity-forecast.service";
 import { CostIngestionController } from "./v1/cost-ingestion.controller";
 import { CostIngestionService } from "./v1/cost-ingestion.service";
+import { TelemetryController } from "./v1/telemetry.controller";
+import { TelemetryService } from "./v1/telemetry.service";
 
 @Module({
   imports: [],
@@ -108,6 +110,7 @@ import { CostIngestionService } from "./v1/cost-ingestion.service";
     CertificateLifecycleController,
     CapacityForecastController,
     CostIngestionController,
+    TelemetryController,
   ],
   providers: [
     ConsoleGateway,
@@ -155,6 +158,7 @@ import { CostIngestionService } from "./v1/cost-ingestion.service";
     CertificateLifecycleService,
     CapacityForecastService,
     CostIngestionService,
+    TelemetryService,
   ],
   exports: [
     ControlPlaneAuditService,
