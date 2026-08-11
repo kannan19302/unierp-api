@@ -27,6 +27,7 @@ import { PolicyEngineService } from "./policy-engine/policy-engine.service";
 import { PlanningService } from "./operation-pipeline/planning.service";
 import { PlanGatedExecutor } from "./operation-pipeline/plan-gated-executor.service";
 import { ValidationService } from "./operation-pipeline/validation.service";
+import { SchedulingService } from "./operation-pipeline/scheduling.service";
 import { PlansController } from "./v1/plans.controller";
 import { PlansService } from "./v1/plans.service";
 import { MeteringController } from "./v1/metering.controller";
@@ -115,6 +116,7 @@ import { ConsoleGateway } from "./v1/console.gateway";
     PlanningService,
     PlanGatedExecutor,
     ValidationService,
+    SchedulingService,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -126,6 +128,7 @@ import { ConsoleGateway } from "./v1/console.gateway";
     PlanningService,
     PlanGatedExecutor,
     ValidationService,
+    SchedulingService,
   ],
 })
 export class PlatformModule {}
