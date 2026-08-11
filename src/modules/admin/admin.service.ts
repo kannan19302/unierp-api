@@ -13,6 +13,7 @@ import {
   CreateUserInput,
   UpdateUserInput,
   PERMISSION_REGISTRY,
+  CONTROL_PLANE_NAMESPACES,
 } from "@kannan19302/shared";
 import {
   CreateAccessPackageInput,
@@ -668,17 +669,32 @@ export class AdminService {
 
   /**
    * Tenant-created access packages/custom roles must never grant a
-   * platform-operator-only permission (e.g. `saas.analytics.read`,
-   * `platform.overview.read` — see PermissionDefinition.platformOnly).
-   * Reject the whole request rather than silently stripping, so callers get
-   * an explicit error instead of a confusing partial grant.
+   * control-plane permission. Two independent checks, unioned:
+   *
+   *   1. NAMESPACE (D03): any code inside `CONTROL_PLANE_NAMESPACES`
+   *      (`system.*`/`platform.*`) — the SAME constant `hasPermission()`
+   *      and `ControlPlaneGuard` already enforce elsewhere, so a code
+   *      never needs a second, manually-set flag to be structurally
+   *      un-grantable to a tenant. Before this check existed, every
+   *      `system.*`/`platform.*` code that nobody had remembered to flag
+   *      `platformOnly` (18 of ~20 registered at the time this was found)
+   *      was silently assignable to a tenant custom role.
+   *   2. `platformOnly` (pre-existing): a code OUTSIDE the control-plane
+   *      namespace can still be marked platform-operator-only by hand
+   *      (e.g. `saas.analytics.read`) — preserved, not replaced, since
+   *      the namespace check alone would let that one through.
+   *
+   * Reject the whole request rather than silently stripping, so callers
+   * get an explicit error instead of a confusing partial grant.
    */
   private assertNoPlatformOnlyPermissions(permissions: string[] | undefined) {
     if (!permissions || permissions.length === 0) return;
     const platformOnlyCodes = new Set(
       PERMISSION_REGISTRY.filter((p) => p.platformOnly).map((p) => p.code),
     );
-    const rejected = permissions.filter((code) => platformOnlyCodes.has(code));
+    const isControlPlaneNamespace = (code: string) =>
+      CONTROL_PLANE_NAMESPACES.some((ns: string) => code === ns || code.startsWith(`${ns}.`));
+    const rejected = permissions.filter((code) => platformOnlyCodes.has(code) || isControlPlaneNamespace(code));
     if (rejected.length > 0) {
       throw new BadRequestException(
         `Permission(s) not assignable to tenant access packages: ${rejected.join(", ")}`,
