@@ -1,7 +1,6 @@
 import { Injectable, Optional } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue } from "bullmq";
 import { prisma } from "@kannan19302/database";
+import { NotificationRoutingService } from "@/platform/v1/notification-routing.service";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { OnEvent } from "@nestjs/event-emitter";
 import { createHmac } from "node:crypto";
@@ -52,7 +51,6 @@ interface NotificationPreferenceRow {
   isEnabled: boolean;
 }
 
-const EMAIL_QUEUE_JOB = "notification-email";
 const DEFAULT_USER = "system";
 
 /** True when the given HH:MM clock time is inside the [start, end) window (handles midnight wrap). */
@@ -91,7 +89,7 @@ function isWithinQuietWindow(start: string, end: string, timeZone?: string): boo
 @Injectable()
 export class NotificationDeliveryService {
   constructor(
-    @Optional() @InjectQueue("email") private readonly emailQueue?: Queue,
+    @Optional() private readonly notificationRouting?: NotificationRoutingService,
   ) {}
 
   /**
@@ -286,9 +284,13 @@ export class NotificationDeliveryService {
   }
 
   /**
-   * Email delivery goes through the BullMQ `email` queue (the SMTP transport
-   * owned by `common/queues/email.processor.ts`). The engine is the only place
-   * a module's mail can originate — no module builds a transport or calls SMTP.
+   * M42 — email delivery goes through M06's multi-provider routing
+   * (NotificationRoutingService), which fails over to a secondary provider
+   * same-call rather than relying on a single hardcoded SMTP transport.
+   * This is the ONLY place a module's mail can originate — no module
+   * builds a transport or calls SMTP, and this engine no longer does
+   * either directly (the BullMQ `email` queue this replaced was itself
+   * that single hardcoded path).
    */
   private async deliverEmail(payload: NotificationPayload) {
     const to = payload.to ?? (await this.resolveUserEmail(payload));
@@ -297,24 +299,21 @@ export class NotificationDeliveryService {
       return;
     }
     const rendered = await this.renderContent(payload);
-    const job = {
-      to,
-      subject: rendered.title,
-      body: rendered.body ?? "",
-      tenantId: payload.tenantId,
-      template: payload.templateId,
-      variables: payload.variables,
-    };
-    if (this.emailQueue) {
-      await this.emailQueue.add(EMAIL_QUEUE_JOB, job, { attempts: 3 });
+    if (this.notificationRouting) {
+      const result = await this.notificationRouting.sendEmail(payload.tenantId, {
+        to,
+        subject: rendered.title,
+        body: rendered.body ?? "",
+      });
+      await this.logDelivery(payload, "EMAIL", "QUEUED", undefined, undefined, { to, providerId: result.providerId });
     } else {
       const { pinoLogger } = await import("../../common/services/logger.service");
       pinoLogger.info(
         { channel: "EMAIL", to, subject: rendered.title, tenantId: payload.tenantId },
         "Email notification queued",
       );
+      await this.logDelivery(payload, "EMAIL", "QUEUED", undefined, undefined, { to });
     }
-    await this.logDelivery(payload, "EMAIL", "QUEUED", undefined, undefined, { to });
   }
 
   /**

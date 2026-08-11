@@ -94,6 +94,62 @@ export class RoutingService {
     );
   }
 
+  /**
+   * M42 — the ordered candidate list `resolve()` only ever hands back the
+   * first element of. A caller that needs same-call failover (try the
+   * primary, and on failure try the next one immediately, rather than
+   * waiting for the circuit breaker's 5-failure threshold) resolves the
+   * whole list once and walks it. Pin and sticky remain absolute — either
+   * short-circuits to a single-element list, exactly as `resolve()` treats
+   * them, since a pin is a deliberate operator choice this router still
+   * never second-guesses.
+   */
+  async resolveCandidates(request: RoutingRequest): Promise<RoutingDecision[]> {
+    const override = await (prisma as any).tenantProviderOverride.findUnique({
+      where: {
+        tenantId_capabilityId: { tenantId: request.tenantId, capabilityId: request.capabilityId },
+      },
+    });
+    if (override) {
+      return [{ providerId: override.providerId, reason: "pinned" }];
+    }
+
+    if (request.stickyKey) {
+      const sticky = await (prisma as any).stickyRouteAssignment.findUnique({
+        where: {
+          tenantId_capabilityId_stickyKey: {
+            tenantId: request.tenantId,
+            capabilityId: request.capabilityId,
+            stickyKey: request.stickyKey,
+          },
+        },
+      });
+      if (sticky && (await this.isRoutable(sticky.providerId, request.capabilityId))) {
+        return [{ providerId: sticky.providerId, reason: "sticky" }];
+      }
+    }
+
+    const bindings = await (prisma as any).providerBinding.findMany({
+      where: { capabilityId: request.capabilityId },
+      orderBy: { priority: "asc" },
+    });
+
+    const candidates: RoutingDecision[] = [];
+    for (let i = 0; i < bindings.length; i++) {
+      const providerId = bindings[i].providerId;
+      if (await this.isRoutable(providerId, request.capabilityId)) {
+        candidates.push({ providerId, reason: i === 0 ? "primary" : "fallback" });
+      }
+    }
+
+    if (candidates.length === 0) {
+      throw new Error(
+        `No routable provider for capability "${request.capabilityId}" — all bound providers are excluded (unhealthy, circuit-open, or quota-exhausted)`,
+      );
+    }
+    return candidates;
+  }
+
   private async isRoutable(providerId: string, capabilityId: string): Promise<boolean> {
     if (await this.isCircuitOpen(providerId)) return false;
     if (await this.providers.isExcludedFromRouting(providerId)) return false;

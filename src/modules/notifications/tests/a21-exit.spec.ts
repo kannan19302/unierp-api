@@ -85,10 +85,10 @@ describe("A21 exit criterion — unified notification & delivery engine", () => 
       expect(offenders, `direct mail-send sites:\n${offenders.join("\n")}`).toEqual([]);
     });
 
-    it("the engine is the single mail route: it injects the email queue and enqueues via it", () => {
+    it("the engine is the single mail route: it delegates to M42's multi-provider NotificationRoutingService, never a hardcoded transport", () => {
       const src = readFileSync(ENGINE_FILE, "utf8");
-      expect(src).toContain("InjectQueue");
-      expect(src).toContain("emailQueue.add");
+      expect(src).toContain("NotificationRoutingService");
+      expect(src).toContain("notificationRouting.sendEmail");
     });
   });
 

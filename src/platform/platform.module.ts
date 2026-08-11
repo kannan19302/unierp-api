@@ -106,6 +106,7 @@ import { WebhookIntegrationController } from "./v1/webhook-integration.controlle
 import { PlatformEventBusService } from "./v1/platform-event-bus.service";
 import { WebhookDeliveryService } from "./v1/webhook-delivery.service";
 import { HttpWebhookTransport } from "./v1/http-webhook.transport";
+import { NotificationRoutingService } from "./v1/notification-routing.service";
 
 @Module({
   imports: [],
@@ -219,6 +220,7 @@ import { HttpWebhookTransport } from "./v1/http-webhook.transport";
     PlatformEventBusService,
     WebhookDeliveryService,
     HttpWebhookTransport,
+    NotificationRoutingService,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -235,6 +237,7 @@ import { HttpWebhookTransport } from "./v1/http-webhook.transport";
     PrismaJobStateStore,
     DurableExecutorService,
     ReconcilerService,
+    NotificationRoutingService,
   ],
 })
 export class PlatformModule {}

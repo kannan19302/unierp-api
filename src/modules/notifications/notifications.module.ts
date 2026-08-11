@@ -12,8 +12,10 @@ import { DeviceTokensService } from "./device-tokens.service";
 import { NotificationsGateway } from "./notifications.gateway";
 import { InvoiceOverdueNotificationService } from "./invoice-overdue-notification.service";
 import { PipelineRiskNotificationService } from "./pipeline-risk-notification.service";
+import { PlatformModule } from "@/platform/platform.module";
 
 @Module({
+  imports: [PlatformModule],
   controllers: [
     NotificationsGeneratedController,
     NotificationsController,
