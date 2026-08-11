@@ -60,6 +60,8 @@ import { SecurityOperationsService } from "./v1/security-operations.service";
 import { ConsoleGateway } from "./v1/console.gateway";
 import { EstateController } from "./v1/estate.controller";
 import { BulkOperationService } from "./operation-pipeline/bulk-operation.service";
+import { CloudAccountsController } from "./v1/cloud-accounts.controller";
+import { CloudAccountService } from "./provider-registry/cloud-account.service";
 
 @Module({
   imports: [],
@@ -88,6 +90,7 @@ import { BulkOperationService } from "./operation-pipeline/bulk-operation.servic
     SecurityOperationsController,
     ControlPlaneApprovalsController,
     EstateController,
+    CloudAccountsController,
   ],
   providers: [
     ConsoleGateway,
@@ -127,6 +130,7 @@ import { BulkOperationService } from "./operation-pipeline/bulk-operation.servic
     DurableExecutorService,
     ReconcilerService,
     BulkOperationService,
+    CloudAccountService,
   ],
   exports: [
     ControlPlaneAuditService,
