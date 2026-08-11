@@ -43,6 +43,13 @@ export class KubernetesFleetController {
     return this.fleet.listRoutingWeights(clusterId);
   }
 
+  @ApiOperation({ summary: "Get one routing row plus its desired-state version history" })
+  @Get("routing/:id")
+  @Permissions("system.clusters.read")
+  async getRouting(@Param("id") id: string) {
+    return this.fleet.getRoutingById(id);
+  }
+
   @ApiOperation({ summary: "Propose a routing-weight change: compiles a plan and requests approval" })
   @Post("routing/propose")
   @Permissions("system.clusters.update")

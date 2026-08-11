@@ -136,4 +136,13 @@ export class KubernetesFleetService {
       where: clusterId ? { clusterId } : undefined,
     });
   }
+
+  async getRoutingById(id: string) {
+    const row = await (prisma as any).saasTenantNodeRouting.findUnique({ where: { id } });
+    if (!row) throw new NotFoundException(`No routing row "${id}"`);
+    const resourceName = `${row.tenantId}::${row.clusterId}`;
+    const resource = await (prisma as any).resource.findFirst({ where: { name: resourceName } });
+    const versions = resource ? await this.resources.listDesiredStateVersions(resource.id) : [];
+    return { ...row, resourceId: resource?.id ?? null, versions };
+  }
 }
