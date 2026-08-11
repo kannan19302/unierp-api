@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AdvancedFinanceController } from "./advanced-finance.controller";
+import { OpeningBalanceMigrationController } from "./opening-balance-migration.controller";
+import { OpeningBalanceMigrationService } from "./services/opening-balance-migration.service";
 
 import { FinanceExpansionDeepController } from "./finance-expansion-deep.controller";
 import { FinanceMoreDeepController } from "./finance-more-deep.controller";
@@ -82,6 +84,7 @@ import { ArCreditManagementService } from "./services/ar-credit-management.servi
 
 const domainServices = [
   GlAccountingService,
+  OpeningBalanceMigrationService,
   BudgetingService,
   BankingService,
   CardSpendLimitService,
@@ -143,6 +146,7 @@ const domainServices = [
 @Module({
   controllers: [
     AdvancedFinanceController,
+    OpeningBalanceMigrationController,
 
     FinanceExpansionDeepController,
     FinanceMoreDeepController,
