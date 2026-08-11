@@ -107,6 +107,8 @@ import { PlatformEventBusService } from "./v1/platform-event-bus.service";
 import { WebhookDeliveryService } from "./v1/webhook-delivery.service";
 import { HttpWebhookTransport } from "./v1/http-webhook.transport";
 import { NotificationRoutingService } from "./v1/notification-routing.service";
+import { IndustrySuiteCatalogueService } from "./v1/industry-suite-catalogue.service";
+import { IndustrySuiteCatalogueController } from "./v1/industry-suite-catalogue.controller";
 
 @Module({
   imports: [],
@@ -155,6 +157,7 @@ import { NotificationRoutingService } from "./v1/notification-routing.service";
     DisasterRecoveryController,
     RetentionScheduleController,
     WebhookIntegrationController,
+    IndustrySuiteCatalogueController,
   ],
   providers: [
     ConsoleGateway,
@@ -221,6 +224,7 @@ import { NotificationRoutingService } from "./v1/notification-routing.service";
     WebhookDeliveryService,
     HttpWebhookTransport,
     NotificationRoutingService,
+    IndustrySuiteCatalogueService,
   ],
   exports: [
     ControlPlaneAuditService,

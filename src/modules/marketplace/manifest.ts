@@ -120,6 +120,10 @@ export interface AppManifest {
   pages?: ManifestPage[];
   automations?: ManifestAutomation[];
   assets?: ManifestAsset[];
+  /** M44 — M02 capability ids this extension consumes (e.g. "email.send").
+   *  Checked against M02's capability-registry resolve() before approval;
+   *  a declared capability with no bound provider blocks approval. */
+  capabilities?: string[];
 }
 
 const SEMVER = /^\d+\.\d+\.\d+([-+].+)?$/;

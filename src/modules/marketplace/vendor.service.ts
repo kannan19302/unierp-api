@@ -12,6 +12,7 @@ import { idpClient as idpPrisma } from "@/common/idp-client";
 import { BundleStoreService } from "./bundle-store.service";
 import { validateManifest, AppManifest } from "./manifest";
 import { resolveUniqueSlug } from "../../common/utils/slug.util";
+import { resolve as resolveCapability } from "@kannan19302/shared";
 
 /**
  * Third-party publishing pipeline: a Vendor owns AppPackages; each package has
@@ -323,6 +324,25 @@ export class VendorService {
     }
   }
 
+  /**
+   * M44 — an extension declaring a capability with no bound provider (M02's
+   * own resolve(), UNSATISFIED) cannot be approved. A manifest with no
+   * `capabilities` field declares none and is unaffected — this only gates
+   * extensions that actually claim to consume something the platform
+   * cannot currently satisfy.
+   */
+  private assertCapabilitiesSatisfied(manifest: AppManifest): void {
+    const declared = (manifest as any).capabilities as string[] | undefined;
+    if (!declared || declared.length === 0) return;
+
+    const unsatisfied = declared.filter((id) => resolveCapability(id).state === "UNSATISFIED");
+    if (unsatisfied.length > 0) {
+      throw new BadRequestException(
+        `Cannot approve: extension declares unsatisfied capabilities ${unsatisfied.join(", ")} — no bound provider exists for ${unsatisfied.length === 1 ? "it" : "them"}.`,
+      );
+    }
+  }
+
   async approveBundle(bundleId: string, reviewedBy: string) {
     const bundle = await prisma.appBundle.findUnique({
       where: { id: bundleId },
@@ -349,6 +369,7 @@ export class VendorService {
     await this.assertSignedForPublication(bundle);
 
     const manifest = validateManifest(bundle.manifest);
+    this.assertCapabilitiesSatisfied(manifest);
 
     const published = await prisma.appBundle.update({
       where: { id: bundleId },
