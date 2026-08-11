@@ -92,6 +92,8 @@ import { StaffIdpService } from "./v1/staff-idp.service";
 import { PrivilegeElevationController } from "./v1/privilege-elevation.controller";
 import { PrivilegeElevationService } from "./v1/privilege-elevation.service";
 import { StepUpMfaService } from "../common/services/step-up-mfa.service";
+import { EstateAbacController } from "./v1/estate-abac.controller";
+import { EstateAbacService } from "./v1/estate-abac.service";
 
 @Module({
   imports: [],
@@ -134,6 +136,7 @@ import { StepUpMfaService } from "../common/services/step-up-mfa.service";
     FinOpsRecommendationController,
     StaffIdpController,
     PrivilegeElevationController,
+    EstateAbacController,
   ],
   providers: [
     ConsoleGateway,
@@ -191,6 +194,7 @@ import { StepUpMfaService } from "../common/services/step-up-mfa.service";
     StaffIdpService,
     PrivilegeElevationService,
     StepUpMfaService,
+    EstateAbacService,
   ],
   exports: [
     ControlPlaneAuditService,
