@@ -67,4 +67,15 @@ export class SalesDocumentsDeepController {
       status,
     );
   }
+
+  @ApiOperation({ summary: "Edit a document template's content — no code change, no redeploy" })
+  @Permissions("sales.documents.update")
+  @Put("templates/:id/content")
+  async editTemplateContent(
+    @Req() req: any,
+    @Param("id") id: string,
+    @Body("content") content: string,
+  ) {
+    return this.documentsService.editTemplateContent(req.user.tenantId, id, content);
+  }
 }

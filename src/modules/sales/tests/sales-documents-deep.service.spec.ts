@@ -21,13 +21,14 @@ vi.mock("@kannan19302/database", () => ({
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { SalesDocumentsDeepService } from "../sales-documents-deep.service";
+import { DocumentTemplateEngineService } from "../document-template-engine.service";
 
 describe("SalesDocumentsDeepService", () => {
   let service: SalesDocumentsDeepService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SalesDocumentsDeepService],
+      providers: [SalesDocumentsDeepService, DocumentTemplateEngineService],
     }).compile();
 
     service = module.get<SalesDocumentsDeepService>(SalesDocumentsDeepService);

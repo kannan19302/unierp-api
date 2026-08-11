@@ -41,6 +41,7 @@ import { SalesIntelligenceSignalsService } from "./sales-intelligence-signals.se
 import { SalesIntelligenceSignalsController } from "./sales-intelligence-signals.controller";
 import { SalesDocumentsDeepService } from "./sales-documents-deep.service";
 import { SalesDocumentsDeepController } from "./sales-documents-deep.controller";
+import { DocumentTemplateEngineService } from "./document-template-engine.service";
 import { SalesReturnsService } from "./sales-returns.service";
 import { SalesReturnsController } from "./sales-returns.controller";
 import { SalesGamificationDeepService } from "./sales-gamification-deep.service";
@@ -114,6 +115,7 @@ import { SalesEnterpriseModule } from "./sales-enterprise.module";
     SalesPlaybooksDeepService,
     SalesIntelligenceSignalsService,
     SalesDocumentsDeepService,
+    DocumentTemplateEngineService,
     SalesReturnsService,
     SalesGamificationDeepService,
     SalesAdvancedPricingDeepService,
