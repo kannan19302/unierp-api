@@ -5,6 +5,19 @@ import * as crypto from "node:crypto";
 
 @Injectable()
 export class WebhooksService {
+  /**
+   * D20 — credentials never rendered after save. `secret` is returned
+   * ONLY at the moment it's generated (createEndpoint/rotateSecret —
+   * the "save" event itself, a one-time reveal); every other read path
+   * (list, get, update) strips it entirely, never a partial/masked
+   * version derived from the real value either.
+   */
+  private sanitize<T extends { secret?: string }>(endpoint: T): Omit<T, "secret"> {
+    const { secret, ...rest } = endpoint;
+    return rest;
+  }
+
+
   private readonly availableEvents = [
     {
       id: "subscription.created",
@@ -93,10 +106,11 @@ export class WebhooksService {
   }
 
   async listEndpoints(tenantId: string) {
-    return prisma.tenantWebhookEndpoint.findMany({
+    const endpoints = await prisma.tenantWebhookEndpoint.findMany({
       where: { tenantId },
       orderBy: { createdAt: "desc" },
     });
+    return endpoints.map((e) => this.sanitize(e));
   }
 
   async createEndpoint(
@@ -163,10 +177,11 @@ export class WebhooksService {
     if (dto.events !== undefined) updateData.events = dto.events as any;
     if (dto.enabled !== undefined) updateData.isActive = dto.enabled;
 
-    return prisma.tenantWebhookEndpoint.update({
+    const updated = await prisma.tenantWebhookEndpoint.update({
       where: { id },
       data: updateData,
     });
+    return this.sanitize(updated);
   }
 
   async deleteEndpoint(tenantId: string, id: string) {
@@ -185,9 +200,11 @@ export class WebhooksService {
       where: { id, tenantId },
     });
     if (!endpoint) throw new NotFoundException("Webhook endpoint not found");
-    return endpoint;
+    return this.sanitize(endpoint);
   }
 
+  /** No real secret characters — a presence marker only. Rotate the
+   *  secret (a new save event) to see a real value again. */
   async getEndpointSecret(tenantId: string, id: string) {
     const endpoint = await prisma.tenantWebhookEndpoint.findFirst({
       where: { id, tenantId },
@@ -195,7 +212,7 @@ export class WebhooksService {
     if (!endpoint) throw new NotFoundException("Webhook endpoint not found");
     return {
       id: endpoint.id,
-      secret: endpoint.secret.substring(0, 10) + "****",
+      hasSecret: Boolean(endpoint.secret),
     };
   }
 
