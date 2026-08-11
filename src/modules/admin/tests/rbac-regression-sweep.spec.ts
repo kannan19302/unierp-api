@@ -240,16 +240,57 @@ describe("Admin RBAC regression sweep (US-P0-1a, real controller metadata)", () 
     });
   });
 
-  describe("cross-check: GET /admin/operations/jobs (tenant-scoped admin.operations.read) still works normally and is distinct from the backup surface", () => {
-    it("admin.operations.read grants GET /admin/operations/jobs", async () => {
+  /**
+   * AMENDED by M47 / D046. See D047 for the defect this block encoded.
+   *
+   * These two cases previously asserted that `admin.operations.read` GRANTS
+   * `OperationsController.getBackgroundJobs`, described as a "tenant-scoped
+   * admin.operations.* endpoint" distinct from the backup surface.
+   *
+   * `OperationsController` is `@Controller("platform/v1/operations")` and
+   * `@SkipTenantScope()`. It is plane 1 — C05's operations dashboard, mounted in
+   * platform.module.ts. There is no `/admin/operations/*` route anywhere in the
+   * codebase; `grep -rn '@Controller(.*operations' src/` returns four hits and
+   * none of them is one. So the assertion granted a tenant-held code
+   * (`admin.*` satisfies `admin.operations.read`) access to a cross-tenant
+   * controller. That is the escalation PLATFORM_ARCHITECTURE § 1.2 documents.
+   *
+   * It also never held at runtime. The suite drives RbacGuard alone, but the
+   * real chain runs ControlPlaneGuard too, and that guard rejects any
+   * cross-tenant handler guarded by a non-control-plane code before RbacGuard's
+   * result matters. The endpoint returned 403 to everyone. Passing here while
+   * failing in production is the same "claim outliving its mechanism" shape the
+   * defect log catalogues.
+   *
+   * The permission is now `system.operations.read`, so the boundary is asserted
+   * in the direction it should always have run.
+   */
+  describe("plane boundary: GET /platform/v1/operations/jobs is control-plane, not tenant-scoped", () => {
+    it("admin.operations.read does NOT grant it — a tenant-held code cannot reach a cross-tenant controller", async () => {
       await expect(
         callWithRole(guard, OperationsController, "getBackgroundJobs", [
           "admin.operations.read",
         ]),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("the tenant admin wildcard admin.* does NOT grant it either", async () => {
+      await expect(
+        callWithRole(guard, OperationsController, "getBackgroundJobs", [
+          "admin.*",
+        ]),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("system.operations.read DOES grant it — proving the rejections are a boundary, not a broken guard", async () => {
+      await expect(
+        callWithRole(guard, OperationsController, "getBackgroundJobs", [
+          "system.operations.read",
+        ]),
       ).resolves.toBe(true);
     });
 
-    it("system.operations.backup does NOT grant GET /admin/operations/jobs (permission boundary is not accidentally bidirectional)", async () => {
+    it("system.operations.backup does NOT grant it (the boundary is not accidentally bidirectional)", async () => {
       await expect(
         callWithRole(guard, OperationsController, "getBackgroundJobs", [
           "system.operations.backup",
@@ -310,23 +351,34 @@ describe("Admin RBAC regression sweep (US-P0-1a, real controller metadata)", () 
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it("the same Tenant Admin persona legitimately succeeds on tenant-scoped admin.operations.* endpoints (proves the rejection above is a real boundary, not a broken guard)", async () => {
-      await expect(
-        callWithRole(
-          guard,
-          OperationsController,
-          "getBackgroundJobs",
-          realisticTenantAdminPermissions,
-        ),
-      ).resolves.toBe(true);
-      await expect(
-        callWithRole(
-          guard,
-          OperationsController,
-          "retryJobs",
-          realisticTenantAdminPermissions,
-        ),
-      ).resolves.toBe(true);
+    /**
+     * AMENDED by M47 / D046, same reasoning as the plane-boundary block above
+     * and filed as D047. This asserted that the realistic Tenant Admin persona
+     * "legitimately succeeds" on `getBackgroundJobs` and `retryJobs`. Both are
+     * handlers on the plane-1 `platform/v1/operations` controller, so success
+     * there is the escalation, not the control.
+     *
+     * The "not a broken guard" half of the original intent is preserved and is
+     * still worth asserting — it is just demonstrated with the credential that
+     * SHOULD work rather than the one that must not.
+     */
+    it("the Tenant Admin persona is rejected on the plane-1 jobs surface too, while a control-plane grant succeeds (proves the rejections are a boundary, not a broken guard)", async () => {
+      for (const handler of ["getBackgroundJobs", "retryJobs"]) {
+        await expect(
+          callWithRole(
+            guard,
+            OperationsController,
+            handler,
+            realisticTenantAdminPermissions,
+          ),
+          `tenant admin must not reach OperationsController.${handler}`,
+        ).rejects.toThrow(ForbiddenException);
+
+        await expect(
+          callWithRole(guard, OperationsController, handler, ["system.*"]),
+          `a control-plane grant must reach OperationsController.${handler}`,
+        ).resolves.toBe(true);
+      }
     });
 
     it('only a role literally granted system.operations.backup (or a "*"/"system.*" wildcard) can create or list backups', async () => {
