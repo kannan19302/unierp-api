@@ -62,6 +62,8 @@ import { EstateController } from "./v1/estate.controller";
 import { BulkOperationService } from "./operation-pipeline/bulk-operation.service";
 import { CloudAccountsController } from "./v1/cloud-accounts.controller";
 import { CloudAccountService } from "./provider-registry/cloud-account.service";
+import { KubernetesFleetController } from "./v1/kubernetes-fleet.controller";
+import { KubernetesFleetService } from "./v1/kubernetes-fleet.service";
 
 @Module({
   imports: [],
@@ -91,6 +93,7 @@ import { CloudAccountService } from "./provider-registry/cloud-account.service";
     ControlPlaneApprovalsController,
     EstateController,
     CloudAccountsController,
+    KubernetesFleetController,
   ],
   providers: [
     ConsoleGateway,
@@ -131,6 +134,7 @@ import { CloudAccountService } from "./provider-registry/cloud-account.service";
     ReconcilerService,
     BulkOperationService,
     CloudAccountService,
+    KubernetesFleetService,
   ],
   exports: [
     ControlPlaneAuditService,
