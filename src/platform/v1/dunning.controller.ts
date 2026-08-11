@@ -5,7 +5,6 @@ import { RbacGuard } from '../../common/guards/rbac.guard';
 import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
 import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
-import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 import { DunningService, DunningStep } from './dunning.service';
 
 /**
@@ -29,7 +28,6 @@ export class DunningController {
 
   @Post(':tenantId/execute')
   @Permissions('system.dunning.execute')
-  @TrackChanges('Tenant')
   executeDunningStep(
     @Param('tenantId') tenantId: string,
     @Body() body: { step: DunningStep; actorId: string },
@@ -39,7 +37,6 @@ export class DunningController {
 
   @Post(':tenantId/recover')
   @Permissions('system.dunning.execute')
-  @TrackChanges('Tenant')
   recoverFromDunning(@Param('tenantId') tenantId: string, @Body() body: { actorId: string }) {
     return this.dunning.recoverFromDunning(tenantId, body.actorId || 'SYSTEM');
   }

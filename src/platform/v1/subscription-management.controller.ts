@@ -7,7 +7,6 @@ import { RbacGuard } from '../../common/guards/rbac.guard';
 import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
 import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
-import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 
 /**
  * Subscription management (C15's backing surface).
@@ -30,7 +29,6 @@ export class SubscriptionManagementController {
 
   @Post(':tenantId')
   @Permissions('system.subscription.write')
-  @TrackChanges('Subscription')
   async createSubscription(
     @Param('tenantId') tenantId: string,
     @Body() dto: SubscriptionTransitionDto,
@@ -41,7 +39,6 @@ export class SubscriptionManagementController {
 
   @Put(':tenantId/transition')
   @Permissions('system.subscription.write')
-  @TrackChanges('Subscription')
   async transitionSubscription(
     @Param('tenantId') tenantId: string,
     @Body() dto: SubscriptionTransitionDto,
@@ -52,21 +49,18 @@ export class SubscriptionManagementController {
 
   @Post(':tenantId/pause')
   @Permissions('system.subscription.write')
-  @TrackChanges('Subscription')
   async pauseSubscription(@Param('tenantId') tenantId: string, @Req() req: Request) {
     return this.subService.pauseSubscription(tenantId, (req as any).user?.id || 'SUPER_ADMIN');
   }
 
   @Post(':tenantId/resume')
   @Permissions('system.subscription.write')
-  @TrackChanges('Subscription')
   async winBackOrResume(@Param('tenantId') tenantId: string, @Req() req: Request) {
     return this.subService.winBackOrResume(tenantId, (req as any).user?.id || 'SUPER_ADMIN');
   }
 
   @Post(':tenantId/cancel')
   @Permissions('system.subscription.write')
-  @TrackChanges('Subscription')
   async cancelSubscription(@Param('tenantId') tenantId: string, @Req() req: Request) {
     return this.subService.cancelSubscription(tenantId, (req as any).user?.id || 'SUPER_ADMIN');
   }

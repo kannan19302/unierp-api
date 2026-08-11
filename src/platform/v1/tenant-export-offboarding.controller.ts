@@ -7,7 +7,6 @@ import { TwoPersonControlGuard } from '../../common/guards/two-person-control.gu
 import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { TwoPersonControl } from '../../common/decorators/two-person-control.decorator';
-import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 import { TenantExportOffboardingService } from './tenant-export-offboarding.service';
 
 /**
@@ -43,7 +42,6 @@ export class TenantExportOffboardingController {
 
   @Post(':tenantId/export')
   @Permissions('system.offboarding.write')
-  @TrackChanges('Tenant')
   startExport(@Param('tenantId') tenantId: string, @Body() body: any) {
     return this.offboarding.startExport({ tenantId, ...body }, body.actorId || 'SYSTEM');
   }
@@ -53,7 +51,6 @@ export class TenantExportOffboardingController {
   @Post(':tenantId/offboard')
   @Permissions('system.offboarding.write')
   @TwoPersonControl()
-  @TrackChanges('Tenant')
   offboardTenant(
     @Param('tenantId') tenantId: string,
     @Body() body: { reason: string; actorId: string },

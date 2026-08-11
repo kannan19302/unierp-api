@@ -6,7 +6,6 @@ import { RbacGuard } from '../../common/guards/rbac.guard';
 import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
 import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
-import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 
 /**
  * Quota and limit administration (C18's backing surface).
@@ -29,7 +28,6 @@ export class QuotaAdminController {
 
   @Post('rules')
   @Permissions('system.quota.write')
-  @TrackChanges('QuotaRule')
   setQuotaRule(@Body() body: any) {
     return this.quota.setQuotaRule(body, body.actorId || 'SYSTEM');
   }
@@ -42,7 +40,6 @@ export class QuotaAdminController {
 
   @Post(':tenantId/alert')
   @Permissions('system.quota.write')
-  @TrackChanges('Tenant')
   logUsageAlert(@Param('tenantId') tenantId: string, @Body() body: any) {
     return this.quota.logUsageAlert(tenantId, body.metric, body.currentValue, body.limitValue, body.actorId || 'SYSTEM');
   }

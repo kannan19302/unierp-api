@@ -6,7 +6,6 @@ import { RbacGuard } from '../../common/guards/rbac.guard';
 import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
 import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
-import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 
 /**
  * Tenant migration and cluster movement (C22's backing surface).
@@ -35,21 +34,18 @@ export class SaasTenantMigrationDeepController {
 
   @Post(':tenantId/start')
   @Permissions('system.migration.execute')
-  @TrackChanges('Tenant')
   startMigration(@Param('tenantId') tenantId: string, @Body() body: any) {
     return this.migration.startMigration({ tenantId, ...body }, body.actorId || 'SYSTEM');
   }
 
   @Post('jobs/:jobId/complete')
   @Permissions('system.migration.execute')
-  @TrackChanges('Tenant')
   completeMigration(@Param('jobId') jobId: string, @Body() body: { actorId: string }) {
     return this.migration.completeMigration(jobId, body.actorId || 'SYSTEM');
   }
 
   @Post('jobs/:jobId/rollback')
   @Permissions('system.migration.rollback')
-  @TrackChanges('Tenant')
   rollbackMigration(@Param('jobId') jobId: string, @Body() body: { actorId: string }) {
     return this.migration.rollbackMigration(jobId, body.actorId || 'SYSTEM');
   }

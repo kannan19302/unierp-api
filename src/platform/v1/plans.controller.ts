@@ -5,7 +5,6 @@ import { RbacGuard } from '../../common/guards/rbac.guard';
 import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
 import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
-import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 import { PlansService, CreatePlanDto, UpdatePlanDto, PriceDto } from './plans.service';
 import { Request } from 'express';
 
@@ -41,7 +40,6 @@ export class PlansController {
 
   @Post()
   @Permissions('system.plan.write')
-  @TrackChanges('SaaSPlan')
   async createPlan(
     @Body() dto: CreatePlanDto,
     @Req() req: Request,
@@ -51,7 +49,6 @@ export class PlansController {
 
   @Put(':id')
   @Permissions('system.plan.write')
-  @TrackChanges('SaaSPlan')
   async updatePlan(
     @Param('id') id: string,
     @Body() body: { data: UpdatePlanDto; reason: string },
@@ -71,7 +68,6 @@ export class PlansController {
 
   @Post(':id/prices')
   @Permissions('system.plan.write')
-  @TrackChanges('SaaSPlan')
   async setPlanPrices(
     @Param('id') id: string,
     @Body() body: { prices: PriceDto[]; reason: string },

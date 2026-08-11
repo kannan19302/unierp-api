@@ -16,7 +16,6 @@ import { RbacGuard } from "../../common/guards/rbac.guard";
 import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
 import { SkipTenantScope } from "../../common/decorators/skip-tenant-scope.decorator";
 import { Permissions } from "../../common/decorators/permissions.decorator";
-import { TrackChanges } from "../../common/decorators/track-changes.decorator";
 import { TwoPersonControl } from "../../common/decorators/two-person-control.decorator";
 import { TwoPersonControlGuard } from "../../common/guards/two-person-control.guard";
 import { TenantLifecycleService } from "./tenant-lifecycle.service";
@@ -75,7 +74,6 @@ export class TenantLifecycleController {
   @ApiOperation({ summary: "Suspend tenant" })
   @Post(":id/suspend")
   @Permissions("system.tenant.suspend")
-  @TrackChanges("Tenant")
   @HttpCode(200)
   async suspendTenant(
     @Param("id") tenantId: string,
@@ -90,7 +88,6 @@ export class TenantLifecycleController {
   @ApiOperation({ summary: "Unsuspend tenant" })
   @Post(":id/unsuspend")
   @Permissions("system.tenant.unsuspend")
-  @TrackChanges("Tenant")
   @HttpCode(200)
   async unsuspendTenant(
     @Param("id") tenantId: string,
@@ -105,7 +102,6 @@ export class TenantLifecycleController {
   @ApiOperation({ summary: "Start tenant offboarding" })
   @Post(":id/offboard")
   @Permissions("system.tenant.offboard")
-  @TrackChanges("Tenant")
   @HttpCode(200)
   async offboardTenant(
     @Param("id") tenantId: string,
@@ -123,7 +119,6 @@ export class TenantLifecycleController {
   @ApiOperation({ summary: "Cancel pending offboarding" })
   @Post(":id/cancel-offboarding")
   @Permissions("system.tenant.offboard")
-  @TrackChanges("Tenant")
   @HttpCode(200)
   async cancelOffboarding(
     @Param("id") tenantId: string,
@@ -138,7 +133,6 @@ export class TenantLifecycleController {
   @ApiOperation({ summary: "Permanently purge tenant" })
   @Post(":id/purge")
   @Permissions("system.tenant.purge")
-  @TrackChanges("Tenant")
   @TwoPersonControl()
   @HttpCode(200)
   async purgeTenant(

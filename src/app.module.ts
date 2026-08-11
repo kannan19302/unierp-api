@@ -3,6 +3,8 @@ import { APP_INTERCEPTOR, APP_GUARD } from "@nestjs/core";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ThrottlerModule, ThrottlerStorage } from "@nestjs/throttler";
 import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
+import { ControlPlaneAuditInterceptor } from "./common/interceptors/control-plane-audit.interceptor";
+import { ControlPlaneAuditService } from "./platform/v1/control-plane-audit.service";
 import { TenantInterceptor } from "./common/guards/tenant.interceptor";
 import { TenantThrottlerGuard } from "./common/guards/tenant-throttler.guard";
 import { TenantWriteGuard } from "./common/guards/tenant-write.guard";
@@ -302,6 +304,13 @@ import {
     { provide: APP_INTERCEPTOR, useClass: TenantInterceptor },
     // Always-on compliance audit log for every mutating request.
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
+    // C03 / D048: the tamper-evident hash-chain log for plane-1 mutations —
+    // AuditInterceptor above writes to the plain, non-chained audit_logs table
+    // and skips entirely when request.user has no tenantId, which every
+    // control-plane session satisfies. This one runs only on @SkipTenantScope()
+    // handlers (plane 1) and calls ControlPlaneAuditService, which nothing else
+    // in the codebase invoked before this. See control-plane-audit.interceptor.ts.
+    { provide: APP_INTERCEPTOR, useClass: ControlPlaneAuditInterceptor },
     // Track G.3: opt-in exactly-once writes via the Idempotency-Key header.
     // Runs after TenantInterceptor so request.user.tenantId is available.
     {

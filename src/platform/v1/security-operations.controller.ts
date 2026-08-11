@@ -7,7 +7,6 @@ import { TwoPersonControlGuard } from '../../common/guards/two-person-control.gu
 import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { TwoPersonControl } from '../../common/decorators/two-person-control.decorator';
-import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 import { SecurityOperationsService } from './security-operations.service';
 
 /**
@@ -27,7 +26,6 @@ export class SecurityOperationsController {
 
   @Post(':tenantId/revoke-sessions')
   @Permissions('system.soc.execute')
-  @TrackChanges('Tenant')
   revokeTenantSessions(
     @Param('tenantId') tenantId: string,
     @Body() body: { reason: string; actorId?: string },
@@ -40,7 +38,6 @@ export class SecurityOperationsController {
   @Post(':tenantId/quarantine')
   @Permissions('system.soc.execute')
   @TwoPersonControl()
-  @TrackChanges('Tenant')
   quarantineTenant(
     @Param('tenantId') tenantId: string,
     @Body() body: { reason: string; actorId?: string },

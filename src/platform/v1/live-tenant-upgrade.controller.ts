@@ -6,7 +6,6 @@ import { RbacGuard } from '../../common/guards/rbac.guard';
 import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
 import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
-import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 
 /**
  * Live tenant version upgrade (C29's backing surface).
@@ -35,7 +34,6 @@ export class LiveTenantUpgradeController {
 
   @Post(':tenantId/upgrade')
   @Permissions('system.upgrade.execute')
-  @TrackChanges('Tenant')
   startTenantUpgrade(
     @Param('tenantId') tenantId: string,
     @Body() body: { targetVersion: string; actorId?: string },
@@ -45,7 +43,6 @@ export class LiveTenantUpgradeController {
 
   @Post(':tenantId/rollback')
   @Permissions('system.upgrade.rollback')
-  @TrackChanges('Tenant')
   rollbackTenantUpgrade(
     @Param('tenantId') tenantId: string,
     @Body() body: { previousVersion: string; actorId?: string },
