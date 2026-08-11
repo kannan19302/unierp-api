@@ -72,9 +72,60 @@ const TENANT_MODELS = new Set([
   "campaign",
 ]);
 
+// E07 — "a 10,000-row bulk edit reports per-row outcomes, does not time
+// out, and does not lock the table for other tenants." Every write method
+// below previously wrapped its ENTIRE loop (all N records) in one single
+// prisma.$transaction. At 10,000 rows that (a) blows past any realistic
+// transaction timeout, (b) holds row/table locks for the whole operation's
+// duration, and (c) on Postgres, a single failing statement aborts the
+// WHOLE transaction — every subsequent write in the loop then throws too,
+// so "per-row outcomes" silently becomes "everything after the first
+// failure is misreported as failed." CONCURRENCY_BATCH_SIZE bounds how
+// many independent, individually-atomic writes run at once — no write
+// shares a transaction with any other, so one row's failure can never
+// affect another row's outcome, and no lock is ever held across the whole
+// operation.
+const CONCURRENCY_BATCH_SIZE = 50;
+
 @Injectable()
 export class BulkOperationsService {
   constructor(private readonly eventEmitter?: EventEmitter2) {}
+
+  /**
+   * Runs `perItem` for every item in `items`, CONCURRENCY_BATCH_SIZE at a
+   * time, with no shared transaction across items — each item's own write
+   * is its own atomic operation. Never accumulates into one long-running,
+   * lock-holding, timeout-prone transaction regardless of `items.length`.
+   */
+  private async runBatched<T>(
+    items: T[],
+    perItem: (item: T, index: number) => Promise<{ ok: true } | { ok: false; message: string }>,
+  ): Promise<BulkOperationResult> {
+    const result: BulkOperationResult = { succeeded: 0, failed: 0, errors: [], total: items.length };
+    for (let start = 0; start < items.length; start += CONCURRENCY_BATCH_SIZE) {
+      const batch = items.slice(start, start + CONCURRENCY_BATCH_SIZE);
+      const outcomes = await Promise.all(
+        batch.map(async (item, offsetInBatch) => {
+          const index = start + offsetInBatch;
+          try {
+            return { index, item, outcome: await perItem(item, index) };
+          } catch (err: any) {
+            return { index, item, outcome: { ok: false as const, message: err.message || "Unknown error" } };
+          }
+        }),
+      );
+      for (const { index, item, outcome } of outcomes) {
+        if (outcome.ok) {
+          result.succeeded++;
+        } else {
+          result.failed++;
+          const id = typeof item === "string" ? item : undefined;
+          result.errors.push({ index, id, message: outcome.message });
+        }
+      }
+    }
+    return result;
+  }
 
   private getModel(modelName: string): any {
     if (!ALLOWED_BULK_MODELS.has(modelName)) {
@@ -104,28 +155,12 @@ export class BulkOperationsService {
     if (!records || records.length === 0) {
       throw new BadRequestException("Records array is required");
     }
-    const model = this.getModel(modelName);
-    const result: BulkOperationResult = {
-      succeeded: 0,
-      failed: 0,
-      errors: [],
-      total: records.length,
-    };
+    this.getModel(modelName);
 
-    await prisma.$transaction(async (tx) => {
-      for (let i = 0; i < records.length; i++) {
-        try {
-          const record = this.addTenantScope(tenantId, modelName, records[i]);
-          await (tx as any)[modelName].create({ data: record });
-          result.succeeded++;
-        } catch (err: any) {
-          result.failed++;
-          result.errors.push({
-            index: i,
-            message: err.message || "Unknown error",
-          });
-        }
-      }
+    const result = await this.runBatched(records, async (record) => {
+      const scoped = this.addTenantScope(tenantId, modelName, record);
+      await (prisma as any)[modelName].create({ data: scoped });
+      return { ok: true };
     });
 
     if (this.eventEmitter) {
@@ -150,34 +185,19 @@ export class BulkOperationsService {
     if (!ids || ids.length === 0) {
       throw new BadRequestException("IDs array is required");
     }
-    const model = this.getModel(modelName);
-    const result: BulkOperationResult = {
-      succeeded: 0,
-      failed: 0,
-      errors: [],
-      total: ids.length,
-    };
+    this.getModel(modelName);
 
-    await prisma.$transaction(async (tx) => {
-      for (const id of ids) {
-        try {
-          const where: any = { id };
-          if (TENANT_MODELS.has(modelName)) {
-            where.tenantId = tenantId;
-          }
-          const existing = await (tx as any)[modelName].findUnique({ where });
-          if (!existing) {
-            result.failed++;
-            result.errors.push({ id, message: `Record ${id} not found` });
-            continue;
-          }
-          await (tx as any)[modelName].update({ where, data: updates });
-          result.succeeded++;
-        } catch (err: any) {
-          result.failed++;
-          result.errors.push({ id, message: err.message || "Unknown error" });
-        }
+    const result = await this.runBatched(ids, async (id) => {
+      const where: any = { id };
+      if (TENANT_MODELS.has(modelName)) {
+        where.tenantId = tenantId;
       }
+      const existing = await (prisma as any)[modelName].findUnique({ where });
+      if (!existing) {
+        return { ok: false, message: `Record ${id} not found` };
+      }
+      await (prisma as any)[modelName].update({ where, data: updates });
+      return { ok: true };
     });
 
     if (this.eventEmitter) {
@@ -201,39 +221,19 @@ export class BulkOperationsService {
     if (!ids || ids.length === 0) {
       throw new BadRequestException("IDs array is required");
     }
-    const model = this.getModel(modelName);
-    const result: BulkOperationResult = {
-      succeeded: 0,
-      failed: 0,
-      errors: [],
-      total: ids.length,
-    };
+    this.getModel(modelName);
 
-    await prisma.$transaction(async (tx) => {
-      for (const id of ids) {
-        try {
-          const where: any = { id };
-          if (TENANT_MODELS.has(modelName)) {
-            where.tenantId = tenantId;
-          }
-          const existing = await (tx as any)[modelName].findUnique({ where });
-          if (!existing) {
-            result.failed++;
-            result.errors.push({ id, message: `Record ${id} not found` });
-            continue;
-          }
-          const updateData: any = { deletedAt: new Date() };
-          if (TENANT_MODELS.has(modelName)) {
-            await (tx as any)[modelName].update({ where, data: updateData });
-          } else {
-            await (tx as any)[modelName].update({ where, data: updateData });
-          }
-          result.succeeded++;
-        } catch (err: any) {
-          result.failed++;
-          result.errors.push({ id, message: err.message || "Unknown error" });
-        }
+    const result = await this.runBatched(ids, async (id) => {
+      const where: any = { id };
+      if (TENANT_MODELS.has(modelName)) {
+        where.tenantId = tenantId;
       }
+      const existing = await (prisma as any)[modelName].findUnique({ where });
+      if (!existing) {
+        return { ok: false, message: `Record ${id} not found` };
+      }
+      await (prisma as any)[modelName].update({ where, data: { deletedAt: new Date() } });
+      return { ok: true };
     });
 
     if (this.eventEmitter) {
@@ -258,36 +258,18 @@ export class BulkOperationsService {
       throw new BadRequestException("IDs array is required");
     }
     this.getModel(modelName);
-    const result: BulkOperationResult = {
-      succeeded: 0,
-      failed: 0,
-      errors: [],
-      total: ids.length,
-    };
 
-    await prisma.$transaction(async (tx) => {
-      for (const id of ids) {
-        try {
-          const where: any = { id };
-          if (TENANT_MODELS.has(modelName)) {
-            where.tenantId = tenantId;
-          }
-          const existing = await (tx as any)[modelName].findUnique({ where });
-          if (!existing) {
-            result.failed++;
-            result.errors.push({ id, message: `Record ${id} not found` });
-            continue;
-          }
-          await (tx as any)[modelName].update({
-            where,
-            data: { deletedAt: null },
-          });
-          result.succeeded++;
-        } catch (err: any) {
-          result.failed++;
-          result.errors.push({ id, message: err.message || "Unknown error" });
-        }
+    const result = await this.runBatched(ids, async (id) => {
+      const where: any = { id };
+      if (TENANT_MODELS.has(modelName)) {
+        where.tenantId = tenantId;
       }
+      const existing = await (prisma as any)[modelName].findUnique({ where });
+      if (!existing) {
+        return { ok: false, message: `Record ${id} not found` };
+      }
+      await (prisma as any)[modelName].update({ where, data: { deletedAt: null } });
+      return { ok: true };
     });
 
     if (this.eventEmitter) {
@@ -316,33 +298,18 @@ export class BulkOperationsService {
       throw new BadRequestException("Status value is required");
     }
     this.getModel(modelName);
-    const result: BulkOperationResult = {
-      succeeded: 0,
-      failed: 0,
-      errors: [],
-      total: ids.length,
-    };
 
-    await prisma.$transaction(async (tx) => {
-      for (const id of ids) {
-        try {
-          const where: any = { id };
-          if (TENANT_MODELS.has(modelName)) {
-            where.tenantId = tenantId;
-          }
-          const existing = await (tx as any)[modelName].findUnique({ where });
-          if (!existing) {
-            result.failed++;
-            result.errors.push({ id, message: `Record ${id} not found` });
-            continue;
-          }
-          await (tx as any)[modelName].update({ where, data: { status } });
-          result.succeeded++;
-        } catch (err: any) {
-          result.failed++;
-          result.errors.push({ id, message: err.message || "Unknown error" });
-        }
+    const result = await this.runBatched(ids, async (id) => {
+      const where: any = { id };
+      if (TENANT_MODELS.has(modelName)) {
+        where.tenantId = tenantId;
       }
+      const existing = await (prisma as any)[modelName].findUnique({ where });
+      if (!existing) {
+        return { ok: false, message: `Record ${id} not found` };
+      }
+      await (prisma as any)[modelName].update({ where, data: { status } });
+      return { ok: true };
     });
 
     if (this.eventEmitter) {
