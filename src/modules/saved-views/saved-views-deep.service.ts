@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 
@@ -268,12 +268,41 @@ export class SavedViewsDeepService {
     throw new NotFoundException("Layout not found for this view");
   }
 
+  /**
+   * E08 — "a shared view respects the viewer's permissions, not the
+   * author's." The pre-existing implementation returned a view's filters
+   * and column config to ANY caller who knew its id, with no check that
+   * the caller owned the view or had ever been granted a share — an
+   * authorization bypass, not a permissions nuance. This is the fix: the
+   * caller must be the view's own author, or hold a real
+   * SavedViewSharing grant, before any config is returned. The
+   * underlying resource permission (whether this viewer may actually see
+   * "customers" filtered this way) is still enforced separately by that
+   * resource's own RbacGuard-protected endpoint when it executes the
+   * returned filters — this check only gates access to the SAVED VIEW
+   * CONFIGURATION itself.
+   */
+  private async assertViewAccessible(tenantId: string, userId: string, viewId: string): Promise<void> {
+    const view = await prisma.savedView.findFirst({ where: { id: viewId, tenantId } });
+    if (!view) throw new NotFoundException("Saved view not found");
+    if (view.userId === userId) return;
+    const share = await prisma.savedViewSharing.findFirst({
+      where: { tenantId, viewId, sharedWithUserId: userId },
+    });
+    if (!share) {
+      throw new ForbiddenException(
+        `User "${userId}" is not authorized to access saved view "${viewId}" — not the author and no active share grant exists.`,
+      );
+    }
+  }
+
   async applyViewConfig(
     tenantId: string,
     userId: string,
     viewId: string,
     resourceName: string,
   ) {
+    await this.assertViewAccessible(tenantId, userId, viewId);
     const [layout, filters, columns] = await Promise.all([
       prisma.savedViewLayout.findFirst({ where: { tenantId, userId, viewId } }),
       prisma.savedViewFilter.findMany({
