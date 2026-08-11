@@ -38,6 +38,37 @@ vi.mock("@kannan19302/database", () => ({
       delete: vi.fn(({ where: { id } }: any) => {
         resources = resources.filter((r) => r.id !== id);
       }),
+      findMany: vi.fn(({ where, orderBy, skip, take }: any) => {
+        let rows = resources.map((r) => ({ ...r, kind: kinds.find((k) => k.id === r.kindId) }));
+        if (where?.name?.contains) {
+          const needle = where.name.contains.toLowerCase();
+          rows = rows.filter((r) => r.name.toLowerCase().includes(needle));
+        }
+        if (where?.kind?.name) {
+          rows = rows.filter((r) => r.kind?.name === where.kind.name);
+        }
+        if (orderBy) {
+          const [field] = Object.keys(orderBy);
+          const dir = orderBy[field];
+          rows = [...rows].sort((a, b) => {
+            const av = a[field], bv = b[field];
+            const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+            return dir === "desc" ? -cmp : cmp;
+          });
+        }
+        return rows.slice(skip ?? 0, (skip ?? 0) + (take ?? rows.length));
+      }),
+      count: vi.fn(({ where }: any) => {
+        let rows = resources;
+        if (where?.name?.contains) {
+          const needle = where.name.contains.toLowerCase();
+          rows = rows.filter((r) => r.name.toLowerCase().includes(needle));
+        }
+        if (where?.kind?.name) {
+          rows = rows.filter((r) => kinds.find((k) => k.id === r.kindId)?.name === where.kind.name);
+        }
+        return rows.length;
+      }),
     },
     desiredState: {
       upsert: vi.fn(({ where: { resourceId }, create, update }: any) => {
@@ -224,5 +255,65 @@ describe("M07 · resource model — desired state, actual, drift", () => {
     const a = await service.createResource("k", "Standalone");
     await service.deleteResource(a.id);
     expect(resources.some((r) => r.id === a.id)).toBe(false);
+  });
+});
+
+describe("M15 · estate search", () => {
+  let service: ResourceModelService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    kinds = [];
+    resources = [];
+    desiredStates = [];
+    desiredStateVersions = [];
+    observedStates = [];
+    dependencies = [];
+    driftRecords = [];
+    service = new ResourceModelService();
+  });
+
+  it("a requested limit above 100 is capped at 100, never passed through", async () => {
+    await service.registerResourceKind("k", "k");
+    for (let i = 0; i < 5; i++) await service.createResource("k", `res-${i}`);
+
+    await service.searchResources({ limit: 5000 });
+
+    const { prisma } = await import("@kannan19302/database");
+    const call = (prisma as any).resource.findMany.mock.calls[0][0];
+    expect(call.take).toBeLessThanOrEqual(100);
+  });
+
+  it("filters by resource kind and by name substring", async () => {
+    await service.registerResourceKind("dns-zone", "z");
+    await service.registerResourceKind("db-instance", "d");
+    await service.createResource("dns-zone", "acme.com zone");
+    await service.createResource("dns-zone", "widgets.io zone");
+    await service.createResource("db-instance", "acme primary db");
+
+    const byKind = await service.searchResources({ kindName: "dns-zone" });
+    expect(byKind.items).toHaveLength(2);
+    expect(byKind.items.every((it) => it.kindName === "dns-zone")).toBe(true);
+
+    const byName = await service.searchResources({ nameContains: "acme" });
+    expect(byName.items.map((it) => it.name).sort()).toEqual(["acme primary db", "acme.com zone"]);
+  });
+
+  it("sorts and paginates with a total and a next cursor", async () => {
+    await service.registerResourceKind("k", "k");
+    for (let i = 0; i < 7; i++) await service.createResource("k", `res-${i}`);
+
+    const page1 = await service.searchResources({ sortBy: "name", sortDir: "asc", limit: 3, cursor: 0 });
+    expect(page1.items.map((it) => it.name)).toEqual(["res-0", "res-1", "res-2"]);
+    expect(page1.total).toBe(7);
+    expect(page1.nextCursor).toBe(3);
+
+    const page2 = await service.searchResources({ sortBy: "name", sortDir: "asc", limit: 3, cursor: 3 });
+    expect(page2.items.map((it) => it.name)).toEqual(["res-3", "res-4", "res-5"]);
+    expect(page2.nextCursor).toBe(6);
+
+    const page3 = await service.searchResources({ sortBy: "name", sortDir: "asc", limit: 3, cursor: 6 });
+    expect(page3.items.map((it) => it.name)).toEqual(["res-6"]);
+    expect(page3.nextCursor).toBeNull(); // no more pages
   });
 });

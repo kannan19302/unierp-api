@@ -191,4 +191,46 @@ export class ResourceModelService {
     }
     await (prisma as any).resource.delete({ where: { id: resourceId } });
   }
+
+  /**
+   * M15 — server-side search across every resource kind, backing the
+   * console's estate view. `limit` is hard-capped at 100 regardless of what
+   * is requested: the exit criterion this supports ("no limit > 100 page")
+   * is enforced here, once, rather than trusted to every caller.
+   */
+  async searchResources(params: {
+    kindName?: string;
+    nameContains?: string;
+    sortBy?: "name" | "createdAt";
+    sortDir?: "asc" | "desc";
+    cursor?: number;
+    limit?: number;
+  }): Promise<{ items: Array<{ id: string; name: string; kindName: string; createdAt: Date }>; total: number; nextCursor: number | null }> {
+    const limit = Math.min(Math.max(params.limit ?? 25, 1), 100);
+    const cursor = Math.max(params.cursor ?? 0, 0);
+    const where: Record<string, unknown> = {};
+    if (params.nameContains) {
+      where.name = { contains: params.nameContains, mode: "insensitive" };
+    }
+    if (params.kindName) {
+      where.kind = { name: params.kindName };
+    }
+    const sortBy = params.sortBy ?? "createdAt";
+    const sortDir = params.sortDir ?? "desc";
+
+    const [rows, total] = await Promise.all([
+      (prisma as any).resource.findMany({
+        where,
+        include: { kind: true },
+        orderBy: { [sortBy]: sortDir },
+        skip: cursor,
+        take: limit,
+      }),
+      (prisma as any).resource.count({ where }),
+    ]);
+
+    const items = rows.map((r: any) => ({ id: r.id, name: r.name, kindName: r.kind.name, createdAt: r.createdAt }));
+    const nextCursor = cursor + items.length < total ? cursor + items.length : null;
+    return { items, total, nextCursor };
+  }
 }

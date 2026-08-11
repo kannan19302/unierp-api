@@ -58,6 +58,8 @@ import { LiveTenantUpgradeService } from "./v1/live-tenant-upgrade.service";
 import { SecurityOperationsController } from "./v1/security-operations.controller";
 import { SecurityOperationsService } from "./v1/security-operations.service";
 import { ConsoleGateway } from "./v1/console.gateway";
+import { EstateController } from "./v1/estate.controller";
+import { BulkOperationService } from "./operation-pipeline/bulk-operation.service";
 
 @Module({
   imports: [],
@@ -85,6 +87,7 @@ import { ConsoleGateway } from "./v1/console.gateway";
     LiveTenantUpgradeController,
     SecurityOperationsController,
     ControlPlaneApprovalsController,
+    EstateController,
   ],
   providers: [
     ConsoleGateway,
@@ -123,6 +126,7 @@ import { ConsoleGateway } from "./v1/console.gateway";
     PrismaJobStateStore,
     DurableExecutorService,
     ReconcilerService,
+    BulkOperationService,
   ],
   exports: [
     ControlPlaneAuditService,
