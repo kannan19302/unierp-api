@@ -34,12 +34,13 @@ interface AuthenticatedRequest extends Request {
 @Controller("platform/v1/operations")
 @UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard, TwoPersonControlGuard)
 @UseInterceptors(TenantInterceptor)
+@SkipTenantScope()
 export class OperationsController {
   constructor(private readonly operationsService: OperationsService) {}
 
   @ApiOperation({ summary: "Get system health" })
   @Get("health")
-  @Permissions("admin.operations.read")
+  @Permissions("system.operations.read")
   async getSystemHealth() {
     return this.operationsService.getSystemHealth();
   }
@@ -54,35 +55,35 @@ export class OperationsController {
 
   @ApiOperation({ summary: "Get background jobs" })
   @Get("jobs")
-  @Permissions("admin.operations.read")
+  @Permissions("system.operations.read")
   async getBackgroundJobs(@Req() req: AuthenticatedRequest) {
     return this.operationsService.getBackgroundJobs(req.user.tenantId);
   }
 
   @ApiOperation({ summary: "Retry jobs" })
   @Post("jobs/retry")
-  @Permissions("admin.operations.update")
+  @Permissions("system.operations.update")
   async retryJobs(@Req() req: AuthenticatedRequest) {
     return this.operationsService.retryJobs(req.user.tenantId);
   }
 
   @ApiOperation({ summary: "Get scheduled tasks" })
   @Get("tasks")
-  @Permissions("admin.operations.read")
+  @Permissions("system.operations.read")
   async getScheduledTasks(@Req() req: AuthenticatedRequest) {
     return this.operationsService.getScheduledTasks(req.user.tenantId);
   }
 
   @ApiOperation({ summary: "Trigger task" })
   @Post("tasks/:id/trigger")
-  @Permissions("admin.operations.update")
+  @Permissions("system.operations.update")
   async triggerTask(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
     return this.operationsService.triggerTask(req.user.tenantId, id);
   }
 
   @ApiOperation({ summary: "Get error logs" })
   @Get("logs")
-  @Permissions("admin.operations.read")
+  @Permissions("system.operations.read")
   async getErrorLogs(
     @Req() req: AuthenticatedRequest,
     @Query("page") page?: string,
@@ -97,7 +98,7 @@ export class OperationsController {
 
   @ApiOperation({ summary: "Resolve error log" })
   @Post("logs/:id/resolve")
-  @Permissions("admin.operations.update")
+  @Permissions("system.operations.update")
   async resolveErrorLog(
     @Param("id") id: string,
     @Req() req: AuthenticatedRequest,
@@ -137,7 +138,7 @@ export class OperationsController {
 
   @ApiOperation({ summary: "Get db schema" })
   @Get("db-schema")
-  @Permissions("admin.operations.read")
+  @Permissions("system.operations.read")
   async getDbSchema() {
     return this.operationsService.getDbSchema();
   }

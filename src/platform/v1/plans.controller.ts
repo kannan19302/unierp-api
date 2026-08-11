@@ -1,17 +1,36 @@
 import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Req, NotFoundException } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RbacGuard } from '../../common/guards/rbac.guard';
+import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
+import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 import { PlansService, CreatePlanDto, UpdatePlanDto, PriceDto } from './plans.service';
 import { Request } from 'express';
 
+/**
+ * Plans, packaging and price books (C13's backing surface).
+ * M47 / D046: shipped with no guard. Plan and price definitions are the single
+ * source the runtime enforces entitlements from, so an unguarded write here
+ * changes what every tenant is entitled to and billed for.
+ */
+@ApiTags('admin')
+@ApiBearerAuth()
 @Controller('platform/v1/plans')
+@SkipTenantScope()
+@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard)
 export class PlansController {
   constructor(private readonly plansService: PlansService) {}
 
   @Get()
+  @Permissions('system.plan.read')
   async listPlans(@Query('includeArchived') includeArchived?: string) {
     return this.plansService.listPlans(includeArchived === 'true');
   }
 
   @Get(':id')
+  @Permissions('system.plan.read')
   async getPlan(@Param('id') id: string) {
     try {
       return await this.plansService.getPlan(id);
@@ -21,6 +40,8 @@ export class PlansController {
   }
 
   @Post()
+  @Permissions('system.plan.write')
+  @TrackChanges('SaaSPlan')
   async createPlan(
     @Body() dto: CreatePlanDto,
     @Req() req: Request,
@@ -29,6 +50,8 @@ export class PlansController {
   }
 
   @Put(':id')
+  @Permissions('system.plan.write')
+  @TrackChanges('SaaSPlan')
   async updatePlan(
     @Param('id') id: string,
     @Body() body: { data: UpdatePlanDto; reason: string },
@@ -47,6 +70,8 @@ export class PlansController {
   }
 
   @Post(':id/prices')
+  @Permissions('system.plan.write')
+  @TrackChanges('SaaSPlan')
   async setPlanPrices(
     @Param('id') id: string,
     @Body() body: { prices: PriceDto[]; reason: string },

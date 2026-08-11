@@ -16,6 +16,16 @@ import { PERMISSION_REGISTRY } from "@kannan19302/shared";
 
 const MODULES_DIR = join(__dirname, "..", "..");
 
+/**
+ * M47 / D046: this sweep scanned `src/modules` only, so every controller under
+ * `src/platform` — the entire control plane — was outside it. That is how 54
+ * plane-1 endpoints shipped with no `@Permissions` at all and how 72 more were
+ * guarded by codes in the shared `saas.*`/`admin.*` namespaces without anything
+ * noticing. A drift check that cannot see the highest-privilege surface in the
+ * application is not a drift check.
+ */
+const PLATFORM_DIR = join(__dirname, "..", "..", "..", "platform");
+
 function getControllerFilesRecursively(
   dir: string,
   fileList: string[] = [],
@@ -35,7 +45,10 @@ function getControllerFilesRecursively(
 }
 
 function getControllerFiles(): string[] {
-  return getControllerFilesRecursively(MODULES_DIR);
+  return [
+    ...getControllerFilesRecursively(MODULES_DIR),
+    ...getControllerFilesRecursively(PLATFORM_DIR),
+  ];
 }
 
 interface PermissionCallSite {

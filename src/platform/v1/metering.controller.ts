@@ -1,17 +1,35 @@
-import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { MeteringService, RecordEventDto } from './metering.service';
 import { Request } from 'express';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RbacGuard } from '../../common/guards/rbac.guard';
+import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
+import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { TrackChanges } from '../../common/decorators/track-changes.decorator';
 
+/**
+ * Metering and usage (C14's backing surface).
+ * M47 / D046: shipped with no authorization guard of any kind. Every route
+ * here acts on a tenant named in the URL.
+ */
+@ApiTags('admin')
+@ApiBearerAuth()
 @Controller('platform/v1/metering')
+@SkipTenantScope()
+@UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard)
 export class MeteringController {
   constructor(private readonly meteringService: MeteringService) {}
 
   @Get(':tenantId/usage')
+  @Permissions('system.metering.read')
   async getUsage(@Param('tenantId') tenantId: string) {
     return this.meteringService.getUsage(tenantId);
   }
 
   @Get(':tenantId/events/:metric')
+  @Permissions('system.metering.read')
   async getEvents(
     @Param('tenantId') tenantId: string,
     @Param('metric') metric: string,
@@ -20,6 +38,7 @@ export class MeteringController {
   }
 
   @Post(':tenantId/events')
+  @Permissions('system.metering.write')
   async recordEvent(
     @Param('tenantId') tenantId: string,
     @Body() dto: RecordEventDto,
@@ -29,6 +48,7 @@ export class MeteringController {
   }
 
   @Post(':tenantId/reconcile/:metric')
+  @Permissions('system.metering.write')
   async reconcile(
     @Param('tenantId') tenantId: string,
     @Param('metric') metric: string,

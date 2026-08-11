@@ -13,7 +13,9 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
+import { ControlPlaneGuard } from '../../common/guards/control-plane.guard';
 import { Permissions } from "../../common/decorators/permissions.decorator";
+import { SkipTenantScope } from '../../common/decorators/skip-tenant-scope.decorator';
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { TwoPersonControl } from "../../common/decorators/two-person-control.decorator";
 import { TwoPersonControlGuard } from "../../common/guards/two-person-control.guard";
@@ -21,8 +23,9 @@ import { SaasEnterpriseScaleMasterService } from "./enterprise-scale.service";
 
 @ApiTags("SaaS Enterprise Scale Master")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RbacGuard, TwoPersonControlGuard)
+@UseGuards(JwtAuthGuard, RbacGuard, TwoPersonControlGuard, ControlPlaneGuard)
 @Controller("platform/v1/enterprise-scale")
+@SkipTenantScope()
 export class SaasEnterpriseScaleMasterController {
   constructor(private readonly service: SaasEnterpriseScaleMasterService) {}
 
@@ -31,25 +34,25 @@ export class SaasEnterpriseScaleMasterController {
   // 1. Enterprise SLA Uptime Monitoring
   @Get("sla-uptimes")
   @ApiOperation({ summary: "List sla-uptimes" })
-  @Permissions("saas.sla.read")
+  @Permissions("system.sla.read")
   async listSlaUptimes(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(u.tenantId, "sla-uptimes", q);
   }
   @Post("sla-uptimes")
   @ApiOperation({ summary: "Create sla-uptimes" })
-  @Permissions("saas.sla.write")
+  @Permissions("system.sla.write")
   async createSlaUptime(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(u.tenantId, "create-sla-uptime", b);
   }
   @Get("sla-uptimes/:id")
   @ApiOperation({ summary: "Get SLA uptime by ID" })
-  @Permissions("saas.sla.read")
+  @Permissions("system.sla.read")
   async getSlaUptimeById(@CurrentUser() u: any, @Param("id") id: string) {
     return this.service.fetchEnterpriseQuery(u.tenantId, "sla-uptimes", { id });
   }
   @Patch("sla-uptimes/:id")
   @ApiOperation({ summary: "Update SLA uptime" })
-  @Permissions("saas.sla.write")
+  @Permissions("system.sla.write")
   async updateSlaUptime(
     @CurrentUser() u: any,
     @Param("id") id: string,
@@ -62,7 +65,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Delete("sla-uptimes/:id")
   @ApiOperation({ summary: "Delete SLA uptime" })
-  @Permissions("saas.sla.write")
+  @Permissions("system.sla.write")
   async deleteSlaUptime(@CurrentUser() u: any, @Param("id") id: string) {
     return this.service.processEnterpriseOp(u.tenantId, "delete-sla-uptime", {
       id,
@@ -70,7 +73,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("sla-uptimes/:id/recalculate")
   @ApiOperation({ summary: "Recalculate SLA uptime" })
-  @Permissions("saas.sla.write")
+  @Permissions("system.sla.write")
   async recalculateSlaUptime(@CurrentUser() u: any, @Param("id") id: string) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -80,7 +83,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("sla-uptimes/:id/certify")
   @ApiOperation({ summary: "Certify SLA uptime" })
-  @Permissions("saas.sla.admin")
+  @Permissions("system.sla.admin")
   async certifySlaUptime(@CurrentUser() u: any, @Param("id") id: string) {
     return this.service.processEnterpriseOp(u.tenantId, "certify-sla-uptime", {
       id,
@@ -88,7 +91,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Get("sla-uptimes/metrics/monthly")
   @ApiOperation({ summary: "Get monthly SLA uptime metrics" })
-  @Permissions("saas.sla.read")
+  @Permissions("system.sla.read")
   async monthlySlaUptime(@CurrentUser() u: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -98,7 +101,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("sla-uptimes/batch-audit")
   @ApiOperation({ summary: "Batch audit SLA uptimes" })
-  @Permissions("saas.sla.write")
+  @Permissions("system.sla.write")
   async batchAuditSlaUptime(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -108,7 +111,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Get("sla-uptimes/export/pdf")
   @ApiOperation({ summary: "Export SLA uptime report PDF" })
-  @Permissions("saas.sla.read")
+  @Permissions("system.sla.read")
   async exportSlaUptimeReportPdf(@CurrentUser() u: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -120,7 +123,7 @@ export class SaasEnterpriseScaleMasterController {
   // 2. Tenant Database Isolation Policies
   @Get("isolation-policies")
   @ApiOperation({ summary: "List isolation-policies" })
-  @Permissions("saas.isolation.read")
+  @Permissions("system.isolation.read")
   async listIsolationPolicies(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -130,7 +133,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("isolation-policies")
   @ApiOperation({ summary: "Create isolation-policies" })
-  @Permissions("saas.isolation.write")
+  @Permissions("system.isolation.write")
   async createIsolationPolicy(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -142,7 +145,7 @@ export class SaasEnterpriseScaleMasterController {
   // 3. Billing Invoicing Cycle Automations
   @Get("billing-automations")
   @ApiOperation({ summary: "List billing-automations" })
-  @Permissions("saas.billing.read")
+  @Permissions("system.billing.read")
   async listBillingAutomations(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -152,7 +155,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("billing-automations")
   @ApiOperation({ summary: "Create billing-automations" })
-  @Permissions("saas.billing.write")
+  @Permissions("system.billing.write")
   async createBillingAutomation(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -164,13 +167,13 @@ export class SaasEnterpriseScaleMasterController {
   // 4. Custom Tenant Branding & Domain Routing
   @Get("domain-routings")
   @ApiOperation({ summary: "List domain-routings" })
-  @Permissions("saas.domain.read")
+  @Permissions("system.domain.read")
   async listDomainRoutings(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(u.tenantId, "domain-routings", q);
   }
   @Post("domain-routings")
   @ApiOperation({ summary: "Create domain-routings" })
-  @Permissions("saas.domain.write")
+  @Permissions("system.domain.write")
   async createDomainRouting(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -182,13 +185,13 @@ export class SaasEnterpriseScaleMasterController {
   // 5. Tenant Encryption Key Rotation Schedules
   @Get("key-rotations")
   @ApiOperation({ summary: "List key-rotations" })
-  @Permissions("saas.security.read")
+  @Permissions("system.security.read")
   async listKeyRotations(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(u.tenantId, "key-rotations", q);
   }
   @Post("key-rotations")
   @ApiOperation({ summary: "Create key-rotations" })
-  @Permissions("saas.security.write")
+  @Permissions("system.security.write")
   @TwoPersonControl()
   async createKeyRotation(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
@@ -201,7 +204,7 @@ export class SaasEnterpriseScaleMasterController {
   // 6. Automated Backup Retention Schedules
   @Get("backup-retentions")
   @ApiOperation({ summary: "List backup-retentions" })
-  @Permissions("saas.backup.read")
+  @Permissions("system.backup.read")
   async listBackupRetentions(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -211,7 +214,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("backup-retentions")
   @ApiOperation({ summary: "Create backup-retentions" })
-  @Permissions("saas.backup.write")
+  @Permissions("system.backup.write")
   async createBackupRetention(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -223,7 +226,7 @@ export class SaasEnterpriseScaleMasterController {
   // 7. Multi-Region Data Residency Governance
   @Get("residency-governances")
   @ApiOperation({ summary: "List residency-governances" })
-  @Permissions("saas.residency.read")
+  @Permissions("system.residency.read")
   async listResidencyGovernances(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -233,7 +236,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("residency-governances")
   @ApiOperation({ summary: "Create residency-governances" })
-  @Permissions("saas.residency.write")
+  @Permissions("system.residency.write")
   async createResidencyGovernance(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -245,7 +248,7 @@ export class SaasEnterpriseScaleMasterController {
   // 8. OAuth2 Partner Application Credentials
   @Get("oauth-credentials")
   @ApiOperation({ summary: "List oauth-credentials" })
-  @Permissions("saas.oauth.read")
+  @Permissions("system.oauth.read")
   async listOauthCredentials(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -255,7 +258,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("oauth-credentials")
   @ApiOperation({ summary: "Create oauth-credentials" })
-  @Permissions("saas.oauth.write")
+  @Permissions("system.oauth.write")
   async createOauthCredential(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -267,13 +270,13 @@ export class SaasEnterpriseScaleMasterController {
   // 9. SaaS Pricing Tier Matrix Overrides
   @Get("tier-overrides")
   @ApiOperation({ summary: "List tier-overrides" })
-  @Permissions("saas.pricing.read")
+  @Permissions("system.pricing.read")
   async listTierOverrides(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(u.tenantId, "tier-overrides", q);
   }
   @Post("tier-overrides")
   @ApiOperation({ summary: "Create tier-overrides" })
-  @Permissions("saas.pricing.write")
+  @Permissions("system.pricing.write")
   async createTierOverride(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -285,7 +288,7 @@ export class SaasEnterpriseScaleMasterController {
   // 10. Customer Support Escalation Channels
   @Get("support-escalations")
   @ApiOperation({ summary: "List support-escalations" })
-  @Permissions("saas.support.read")
+  @Permissions("system.support.read")
   async listSupportEscalations(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -295,7 +298,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("support-escalations")
   @ApiOperation({ summary: "Create support-escalations" })
-  @Permissions("saas.support.write")
+  @Permissions("system.support.write")
   async createSupportEscalation(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -307,7 +310,7 @@ export class SaasEnterpriseScaleMasterController {
   // 11. Multi-Tenant User Federation Mappings
   @Get("federation-mappings")
   @ApiOperation({ summary: "List federation-mappings" })
-  @Permissions("saas.federation.read")
+  @Permissions("system.federation.read")
   async listFederationMappings(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -317,7 +320,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("federation-mappings")
   @ApiOperation({ summary: "Create federation-mappings" })
-  @Permissions("saas.federation.write")
+  @Permissions("system.federation.write")
   async createFederationMapping(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -329,13 +332,13 @@ export class SaasEnterpriseScaleMasterController {
   // 12. Enterprise Audit Event Stream Consumers
   @Get("audit-streams")
   @ApiOperation({ summary: "List audit-streams" })
-  @Permissions("saas.audit.read")
+  @Permissions("system.audit.read")
   async listAuditStreams(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(u.tenantId, "audit-streams", q);
   }
   @Post("audit-streams")
   @ApiOperation({ summary: "Create audit-streams" })
-  @Permissions("saas.audit.write")
+  @Permissions("system.audit.write")
   async createAuditStream(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -347,7 +350,7 @@ export class SaasEnterpriseScaleMasterController {
   // 13. Tenant Resource Limits & Rate Limit Policies
   @Get("rate-limit-policies")
   @ApiOperation({ summary: "List rate-limit-policies" })
-  @Permissions("saas.ratelimit.read")
+  @Permissions("system.ratelimit.read")
   async listRateLimitPolicies(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -357,7 +360,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("rate-limit-policies")
   @ApiOperation({ summary: "Create rate-limit-policies" })
-  @Permissions("saas.ratelimit.write")
+  @Permissions("system.ratelimit.write")
   async createRateLimitPolicy(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -369,13 +372,13 @@ export class SaasEnterpriseScaleMasterController {
   // 14. SaaS Subscription Addon Package Catalog
   @Get("addon-catalogs")
   @ApiOperation({ summary: "List addon-catalogs" })
-  @Permissions("saas.addons.read")
+  @Permissions("system.addons.read")
   async listAddonCatalogs(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(u.tenantId, "addon-catalogs", q);
   }
   @Post("addon-catalogs")
   @ApiOperation({ summary: "Create addon-catalogs" })
-  @Permissions("saas.addons.write")
+  @Permissions("system.addons.write")
   async createAddonCatalog(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
@@ -387,7 +390,7 @@ export class SaasEnterpriseScaleMasterController {
   // 15. Tenant Offboarding & Data Deletion Seals
   @Get("offboarding-seals")
   @ApiOperation({ summary: "List offboarding-seals" })
-  @Permissions("saas.offboarding.read")
+  @Permissions("system.offboarding.read")
   async listOffboardingSeals(@CurrentUser() u: any, @Query() q: any) {
     return this.service.fetchEnterpriseQuery(
       u.tenantId,
@@ -397,7 +400,7 @@ export class SaasEnterpriseScaleMasterController {
   }
   @Post("offboarding-seals")
   @ApiOperation({ summary: "Create offboarding-seals" })
-  @Permissions("saas.offboarding.write")
+  @Permissions("system.offboarding.write")
   async createOffboardingSeal(@CurrentUser() u: any, @Body() b: any) {
     return this.service.processEnterpriseOp(
       u.tenantId,
