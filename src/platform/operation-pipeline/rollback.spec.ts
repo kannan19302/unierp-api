@@ -72,6 +72,7 @@ vi.mock("@kannan19302/shared", () => ({ bindProvider: vi.fn(), unbindProvider: v
 
 import { ResourceModelService } from "../resource-model/resource-model.service";
 import { ProviderRegistryService } from "../provider-registry/provider-registry.service";
+import { PolicyEngineService } from "../policy-engine/policy-engine.service";
 import { PlanningService } from "./planning.service";
 
 describe("M14 · versioning and rollback", () => {
@@ -86,7 +87,7 @@ describe("M14 · versioning and rollback", () => {
     desiredStateVersions = [];
     dependencies = [];
     resourcesSvc = new ResourceModelService();
-    planning = new PlanningService(resourcesSvc, new ProviderRegistryService());
+    planning = new PlanningService(resourcesSvc, new ProviderRegistryService(), new PolicyEngineService());
   });
 
   it("every setDesiredState call is versioned — history accumulates rather than being overwritten", async () => {

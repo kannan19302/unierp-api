@@ -12,6 +12,8 @@ let desiredStates: any[];
 let desiredStateVersions: any[];
 let dependencies: any[];
 let priceEntries: any[];
+let tenants: any[];
+let policies: any[];
 let seq = 0;
 const nextId = (p: string) => `${p}-${++seq}`;
 
@@ -96,6 +98,25 @@ vi.mock("@kannan19302/database", () => ({
     },
     providerHealthConfig: { findUnique: vi.fn(() => null) },
     providerHealthCheck: { findFirst: vi.fn(() => null), create: vi.fn() },
+    tenant: {
+      findUnique: vi.fn(({ where: { id } }: any) => tenants.find((t) => t.id === id) ?? null),
+    },
+    policy: {
+      findUnique: vi.fn(({ where: { name } }: any) => policies.find((p) => p.name === name) ?? null),
+      upsert: vi.fn(({ where: { name }, create, update }: any) => {
+        const existing = policies.find((p) => p.name === name);
+        if (existing) {
+          Object.assign(existing, update);
+          return existing;
+        }
+        const row = { id: nextId("policy"), name, ...create };
+        policies.push(row);
+        return row;
+      }),
+    },
+    policyOverride: {
+      findFirst: vi.fn(() => null),
+    },
   },
 }));
 vi.mock("@kannan19302/shared", () => ({ bindProvider: vi.fn(), unbindProvider: vi.fn() }));
@@ -104,6 +125,7 @@ import { PlanningService } from "./planning.service";
 import { PlanGatedExecutor } from "./plan-gated-executor.service";
 import { ResourceModelService } from "../resource-model/resource-model.service";
 import { ProviderRegistryService } from "../provider-registry/provider-registry.service";
+import { PolicyEngineService } from "../policy-engine/policy-engine.service";
 import type { CapabilityAdapter, ExecutionResult, HealthProbeResult } from "../provider-registry/adapter-contract";
 import type { DiscoveredCapability } from "../provider-registry/provider-adapter.interface";
 
@@ -138,9 +160,11 @@ describe("M09 · plan and dry-run", () => {
     desiredStateVersions = [];
     dependencies = [];
     priceEntries = [];
+    tenants = [];
+    policies = [];
     resourcesSvc = new ResourceModelService();
     providers = new ProviderRegistryService();
-    planning = new PlanningService(resourcesSvc, providers);
+    planning = new PlanningService(resourcesSvc, providers, new PolicyEngineService());
     executor = new PlanGatedExecutor();
   });
 
@@ -250,5 +274,54 @@ describe("M09 · plan and dry-run", () => {
       quantity: 1,
     });
     expect(plan.estimatedCostDelta).toBeNull();
+  });
+});
+
+describe("M17 · regions, residency and placement", () => {
+  let planning: PlanningService;
+  let resourcesSvc: ResourceModelService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    kinds = [];
+    resources = [];
+    desiredStates = [];
+    desiredStateVersions = [];
+    dependencies = [];
+    priceEntries = [];
+    tenants = [];
+    policies = [];
+    resourcesSvc = new ResourceModelService();
+    planning = new PlanningService(resourcesSvc, new ProviderRegistryService(), new PolicyEngineService());
+  });
+
+  it("a resource placement violating a tenant's hard residency constraint is refused AT PLAN TIME", async () => {
+    tenants.push({ id: "tenant-eu", residencyRegion: "eu-west-1" });
+    await resourcesSvc.registerResourceKind("db-instance", "db");
+    const db = await resourcesSvc.createResource("db-instance", "eu-customer-db", { region: "eu-west-1" });
+
+    await expect(
+      planning.createPlan(db.id, { region: "us-east-1" }, undefined, "tenant-eu"),
+    ).rejects.toThrow(/residency policy.*us-east-1.*eu-west-1/is);
+
+    // Refused BEFORE any Plan/reversal object is produced — nothing to
+    // execute, nothing partially built.
+  });
+
+  it("a placement matching the tenant's residency constraint is allowed", async () => {
+    tenants.push({ id: "tenant-eu", residencyRegion: "eu-west-1" });
+    await resourcesSvc.registerResourceKind("db-instance", "db");
+    const db = await resourcesSvc.createResource("db-instance", "eu-customer-db", { region: "eu-west-1" });
+
+    const plan = await planning.createPlan(db.id, { region: "eu-west-1" }, undefined, "tenant-eu");
+    expect(plan.diff).toEqual([]);
+  });
+
+  it("a resource with no tenantId (platform-owned) is never subject to the residency check", async () => {
+    await resourcesSvc.registerResourceKind("db-instance", "db");
+    const db = await resourcesSvc.createResource("db-instance", "platform-db", { region: "us-east-1" });
+
+    const plan = await planning.createPlan(db.id, { region: "ap-south-1" });
+    expect(plan.diff).toEqual([{ field: "region", desiredValue: "us-east-1", observedValue: "ap-south-1" }]);
   });
 });

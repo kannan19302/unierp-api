@@ -2,6 +2,9 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { ResourceModelService, type FieldDiff } from "../resource-model/resource-model.service";
 import { ProviderRegistryService } from "../provider-registry/provider-registry.service";
+import { PolicyEngineService } from "../policy-engine/policy-engine.service";
+
+const RESIDENCY_POLICY_NAME = "resource-placement-residency";
 
 export interface CostContext {
   providerId: string;
@@ -52,20 +55,73 @@ export interface Plan {
  */
 @Injectable()
 export class PlanningService {
+  private residencyPolicyRegistered = false;
+
   constructor(
     private readonly resources: ResourceModelService,
     private readonly providers: ProviderRegistryService,
+    private readonly policyEngine: PolicyEngineService,
   ) {}
+
+  /**
+   * M17 — refused HERE, before a Plan object is even constructed, not at
+   * execution: the exit criterion's own words. `tenantId` is optional
+   * because most resources this platform manages (M02-M16) are not
+   * tenant-scoped at all; the check is a no-op unless both a tenantId and
+   * a `region` field on the proposed state are present.
+   */
+  private async enforceResidency(tenantId: string | undefined, proposedState: Record<string, unknown>): Promise<void> {
+    const region = proposedState.region;
+    if (!tenantId || typeof region !== "string") return;
+
+    const tenant = await (prisma as any).tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) return;
+
+    if (!this.residencyPolicyRegistered) {
+      await this.policyEngine.registerPolicy(
+        RESIDENCY_POLICY_NAME,
+        "A resource may not be placed in a region outside its tenant's residency constraint",
+        (change) => {
+          const proposedRegion = change.region as string;
+          const constraint = change.tenantResidencyRegion as string;
+          if (proposedRegion === constraint) return { allowed: true };
+          return {
+            allowed: false,
+            violation: {
+              rule: RESIDENCY_POLICY_NAME,
+              field: "region",
+              reason: `Placement in "${proposedRegion}" violates tenant's residency constraint "${constraint}"`,
+            },
+          };
+        },
+      );
+      this.residencyPolicyRegistered = true;
+    }
+
+    const result = await this.policyEngine.evaluate(
+      RESIDENCY_POLICY_NAME,
+      [{ type: "TENANT", id: tenantId }, { type: "PLATFORM" }],
+      { region, tenantResidencyRegion: tenant.residencyRegion },
+    );
+    if (!result.allowed) {
+      throw new BadRequestException(
+        `Plan refused by residency policy: ${result.violation.reason}`,
+      );
+    }
+  }
 
   async createPlan(
     resourceId: string,
     proposedState: Record<string, unknown>,
     cost?: CostContext,
+    tenantId?: string,
   ): Promise<Plan> {
     const resource = await (prisma as any).resource.findUnique({ where: { id: resourceId } });
     if (!resource) {
       throw new BadRequestException(`Resource ${resourceId} not found`);
     }
+
+    await this.enforceResidency(tenantId, proposedState);
 
     const currentDesired = await this.resources.getDesiredState(resourceId);
     const currentState = (currentDesired?.state as Record<string, unknown>) ?? {};
