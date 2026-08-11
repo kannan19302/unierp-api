@@ -50,6 +50,7 @@ import { AdvancedHrModule } from "./modules/advanced-hr/advanced-hr.module";
 import { HrAdvancedModule } from "./modules/hr-advanced/hr-advanced.module";
 import { WorkflowModule } from "./modules/workflow/workflow.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
+import { OrgStructureModule } from "./modules/org-structure/org-structure.module";
 import { StorageModule } from "./modules/storage/storage.module";
 import { ReportingModule } from "./modules/reporting/reporting.module";
 import { ApiPlatformModule } from "./modules/api-platform/api-platform.module";
@@ -214,6 +215,7 @@ import {
 
     // Phase 9 — Notifications
     NotificationsModule,
+    OrgStructureModule,
 
     // Phase 10 — Storage
     StorageModule,
