@@ -186,6 +186,29 @@ export class CrmCampaignManagementService {
   }
 
   // ── F87: Campaign Audience Builder ──────────────────
+  /**
+   * E23 — "consented communication via A21." A21's own exit criterion
+   * requires "a per-user preference suppresses delivery across all 45
+   * modules," and the schema already carries a generic, entity-agnostic
+   * `CommunicationOptOut` model for exactly this — but it had ZERO
+   * usages anywhere in the codebase before this fix. Every audience this
+   * method built silently included opted-out leads/contacts/customers.
+   * This filters them out for the EMAIL channel (the channel campaigns
+   * actually target) before returning any audience.
+   */
+  private async excludeOptedOut<T extends { id: string }>(
+    tenantId: string,
+    entityType: "LEAD" | "CONTACT" | "CUSTOMER",
+    records: T[],
+  ): Promise<T[]> {
+    if (records.length === 0) return records;
+    const optOuts = await (prisma as any).communicationOptOut.findMany({
+      where: { tenantId, entityType, entityId: { in: records.map((r) => r.id) }, channel: "EMAIL" },
+    });
+    const optedOutIds = new Set(optOuts.map((o: any) => o.entityId));
+    return records.filter((r) => !optedOutIds.has(r.id));
+  }
+
   async buildAudience(
     tenantId: string,
     criteria: {
@@ -210,12 +233,12 @@ export class CrmCampaignManagementService {
           };
       }
 
-      const leads = await prisma.lead.findMany({ where, take: 10 });
-      const totalCount = await prisma.lead.count({ where });
+      const allLeads = await prisma.lead.findMany({ where });
+      const consented = await this.excludeOptedOut(tenantId, "LEAD", allLeads);
 
       return {
-        totalCount,
-        sample: leads.map((l) => ({
+        totalCount: consented.length,
+        sample: consented.slice(0, 10).map((l) => ({
           id: l.id,
           name: `${l.firstName} ${l.lastName}`,
           email: l.email || "",
@@ -225,12 +248,12 @@ export class CrmCampaignManagementService {
 
     if (criteria.entityType === "CONTACT") {
       const where: Prisma.ContactWhereInput = { tenantId, deletedAt: null };
-      const contacts = await prisma.contact.findMany({ where, take: 10 });
-      const totalCount = await prisma.contact.count({ where });
+      const allContacts = await prisma.contact.findMany({ where });
+      const consented = await this.excludeOptedOut(tenantId, "CONTACT", allContacts);
 
       return {
-        totalCount,
-        sample: contacts.map((c) => ({
+        totalCount: consented.length,
+        sample: consented.slice(0, 10).map((c) => ({
           id: c.id,
           name: `${c.firstName} ${c.lastName}`,
           email: c.email || "",
@@ -239,17 +262,14 @@ export class CrmCampaignManagementService {
     }
 
     // CUSTOMER
-    const customers = await prisma.customer.findMany({
-      where: { tenantId, deletedAt: null },
-      take: 10,
-    });
-    const totalCount = await prisma.customer.count({
+    const allCustomers = await prisma.customer.findMany({
       where: { tenantId, deletedAt: null },
     });
+    const consented = await this.excludeOptedOut(tenantId, "CUSTOMER", allCustomers);
 
     return {
-      totalCount,
-      sample: customers.map((c) => ({
+      totalCount: consented.length,
+      sample: consented.slice(0, 10).map((c) => ({
         id: c.id,
         name: c.name,
         email: c.email || "",
