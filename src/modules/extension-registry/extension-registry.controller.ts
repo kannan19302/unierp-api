@@ -75,6 +75,17 @@ export class ExtensionRegistryController {
   }
 
   /**
+   * G03: deliberately a SEPARATE call from uninstall — only valid once an
+   * installation is already UNINSTALLED, so an accidental uninstall can
+   * never cascade into unrecoverable data loss.
+   */
+  @Post(":id/purge-data")
+  @Permissions("admin.extensions.manage")
+  async purgeExtensionData(@Req() req, @Param("id") extensionId: string) {
+    return this.registryService.purgeExtensionData(req.user.tenantId, extensionId);
+  }
+
+  /**
    * G04: real, tenant-scoped per-invocation resource/error visibility —
    * "a tenant sees what an installed extension is doing." Reuses the
    * same "admin.extensions.read" permission the extension list itself

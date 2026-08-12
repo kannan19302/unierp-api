@@ -91,6 +91,40 @@ export class ExtensionSchemaService {
     return rows.map((r) => r.table_name);
   }
 
+  /**
+   * G03 exit criterion: "Uninstall leaves no residue and no dangling
+   * permissions." The comment above (and § 14 Phase 4) already promised
+   * "reclaiming storage is a separate, deliberate operation" — but no
+   * such operation existed anywhere in this codebase, confirmed by grep:
+   * an uninstalled extension's tables stayed in the database forever
+   * with no path to remove them, ever, even deliberately. This is that
+   * operation. It is deliberately NOT called from uninstall() — the
+   * caller (ExtensionRegistryService.purgeExtensionData) must confirm
+   * the installation is already UNINSTALLED before calling this, so a
+   * purge can never run against live data by accident.
+   *
+   * Table names come from `listTables()`'s own query against
+   * `information_schema.tables` — real, already-existing table names
+   * this database itself reported, never a string the caller or an
+   * extension supplied — so there is no argument through which an
+   * arbitrary table name could reach this DDL.
+   */
+  async dropTables(extensionId: string): Promise<string[]> {
+    const tables = await this.listTables(extensionId);
+    for (const table of tables) {
+      await prisma.$executeRaw(
+        Prisma.raw(`DROP POLICY IF EXISTS "tenant_isolation_${table}" ON "${table}"`),
+      );
+      await prisma.$executeRaw(Prisma.raw(`DROP TABLE IF EXISTS "${table}"`));
+    }
+    if (tables.length) {
+      this.logger.log(
+        `Purged ${tables.length} table(s) for extension ${extensionId}: ${tables.join(", ")}`,
+      );
+    }
+    return tables;
+  }
+
   private async createTable(
     table: string,
     entity: ExtensionEntity,

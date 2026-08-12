@@ -180,6 +180,37 @@ export class ExtensionRegistryService {
   }
 
   /**
+   * G03 exit criterion: "Uninstall leaves no residue." Deliberately a
+   * SEPARATE operation from uninstall() (see ExtensionSchemaService.
+   * dropTables()'s own docstring and § 14 Phase 4) — an installation
+   * must already be UNINSTALLED before its tables can be purged, so an
+   * accidental double-click on "uninstall" can never cascade into
+   * unrecoverable data loss. This is the "separate, deliberate
+   * operation" this codebase's own comments already promised existed;
+   * it did not, until now.
+   */
+  async purgeExtensionData(tenantId: string, extensionId: string) {
+    // Deliberately NOT this.require() — require() excludes UNINSTALLED
+    // installations entirely (throws NotFoundException for them), but a
+    // purge is ONLY ever valid for an installation that IS uninstalled.
+    const found = await prisma.tenantExtensionInstallation.findUnique({
+      where: { tenantId_extensionId: { tenantId, extensionId } },
+    });
+    if (!found) {
+      throw new NotFoundException(
+        `Extension ${extensionId} has no installation record for this tenant.`,
+      );
+    }
+    if (found.status !== "UNINSTALLED") {
+      throw new BadRequestException(
+        `Extension ${extensionId} must be uninstalled before its data can be purged (current status: ${found.status}).`,
+      );
+    }
+    const droppedTables = await this.schemaService.dropTables(extensionId);
+    return { extensionId, droppedTables };
+  }
+
+  /**
    * Platform kill switch (§ 8.3) — reachable from the Platform Admin Console.
    * Distinct from DISABLED, which is the tenant's own choice: a killed
    * extension cannot be re-enabled by the tenant.
