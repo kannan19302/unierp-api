@@ -15,6 +15,7 @@ import { Request } from "express";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
+import { RequireIdempotencyKey } from "../../common/idempotency/require-idempotency-key.decorator";
 import { PosService } from "./pos.service";
 import {
   CreatePosOrderSchema,
@@ -201,6 +202,7 @@ export class PosController {
   @ApiOperation({ summary: "Create order" })
   @Post("orders")
   @Permissions("pos.order.create")
+  @RequireIdempotencyKey()
   async createOrder(
     @Req() req: AuthenticatedRequest,
     @ZodBody(z.any()) dto: CreatePosOrderDto,

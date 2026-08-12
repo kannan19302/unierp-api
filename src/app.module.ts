@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { APP_INTERCEPTOR, APP_GUARD } from "@nestjs/core";
+import { APP_INTERCEPTOR, APP_GUARD, Reflector } from "@nestjs/core";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ThrottlerModule, ThrottlerStorage } from "@nestjs/throttler";
 import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
@@ -317,12 +317,14 @@ import {
     // Runs after TenantInterceptor so request.user.tenantId is available.
     {
       provide: IdempotencyInterceptor,
-      useFactory: () =>
+      useFactory: (reflector: Reflector) =>
         new IdempotencyInterceptor(
           process.env.REDIS_URL
             ? new RedisIdempotencyStore(process.env.REDIS_URL)
             : new InMemoryIdempotencyStore(),
+          reflector,
         ),
+      inject: [Reflector],
     },
     { provide: APP_INTERCEPTOR, useExisting: IdempotencyInterceptor },
     // Track G.7: Per-tenant rate limiting with plan-based tiers and Redis backing.

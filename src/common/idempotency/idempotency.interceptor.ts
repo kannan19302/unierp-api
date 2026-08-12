@@ -16,6 +16,7 @@
  * Requests without the header are untouched.
  */
 import {
+  BadRequestException,
   CallHandler,
   ConflictException,
   ExecutionContext,
@@ -23,10 +24,12 @@ import {
   NestInterceptor,
   UnprocessableEntityException,
 } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import type { Request, Response } from "express";
 import { createHash } from "node:crypto";
 import { Observable, from, of, switchMap } from "rxjs";
 import type { IdempotencyStore } from "./idempotency.store";
+import { REQUIRE_IDEMPOTENCY_KEY } from "./require-idempotency-key.decorator";
 
 export const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -38,16 +41,34 @@ interface TenantRequest extends Request {
 
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {
-  constructor(private readonly store: IdempotencyStore) {}
+  constructor(
+    private readonly store: IdempotencyStore,
+    private readonly reflector?: Reflector,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<TenantRequest>();
     const clientKey = request.headers["idempotency-key"];
+    const isMutating = MUTATING_METHODS.has(request.method);
+
+    if ((!clientKey || typeof clientKey !== "string") && isMutating) {
+      const required = this.reflector?.getAllAndOverride<boolean>(
+        REQUIRE_IDEMPOTENCY_KEY,
+        [context.getHandler(), context.getClass()],
+      );
+      if (required) {
+        throw new BadRequestException({
+          message:
+            "This endpoint requires an Idempotency-Key header (8-128 chars of [A-Za-z0-9_-]) to prevent duplicate writes on retry or double-submit.",
+          code: "IDEMPOTENCY_KEY_REQUIRED",
+        });
+      }
+    }
 
     if (
       !clientKey ||
       typeof clientKey !== "string" ||
-      !MUTATING_METHODS.has(request.method)
+      !isMutating
     ) {
       return next.handle();
     }

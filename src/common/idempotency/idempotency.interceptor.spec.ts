@@ -47,9 +47,15 @@ function makeContext(overrides: {
         getRequest: () => request,
         getResponse: () => response,
       }),
+      getHandler: () => ({}),
+      getClass: () => ({}),
     } as never,
     response,
   };
+}
+
+function makeReflector(required: boolean) {
+  return { getAllAndOverride: () => required } as never;
 }
 
 const KEY = "order-create-0001";
@@ -203,6 +209,59 @@ describe("IdempotencyInterceptor (Track G.3)", () => {
     expect(() =>
       interceptor.intercept(bad.context, { handle: () => of("x") } as never),
     ).toThrow(UnprocessableEntityException);
+  });
+
+  describe("@RequireIdempotencyKey() — E43: mandatory on routes that opt in", () => {
+    it("rejects a mutating request to a @RequireIdempotencyKey() route with no header", async () => {
+      const store = new InMemoryIdempotencyStore();
+      const interceptor = new IdempotencyInterceptor(
+        store,
+        makeReflector(true),
+      );
+      const { context } = makeContext({ key: undefined });
+      expect(() =>
+        interceptor.intercept(context, { handle: () => of("x") } as never),
+      ).toThrow(/requires an Idempotency-Key/i);
+    });
+
+    it("does not reject a mutating request with no header on a route that has NOT opted in", async () => {
+      const store = new InMemoryIdempotencyStore();
+      const interceptor = new IdempotencyInterceptor(
+        store,
+        makeReflector(false),
+      );
+      const { context } = makeContext({ key: undefined });
+      const result = await firstValueFrom(
+        interceptor.intercept(context, { handle: () => of("fresh") } as never),
+      );
+      expect(result).toBe("fresh");
+    });
+
+    it("a double-submitted POST with the same Idempotency-Key on a required route creates exactly one record", async () => {
+      const store = new InMemoryIdempotencyStore();
+      const interceptor = new IdempotencyInterceptor(
+        store,
+        makeReflector(true),
+      );
+      const handler = vi.fn(() => of({ id: "order-1" }));
+
+      const first = makeContext({ key: KEY });
+      const second = makeContext({ key: KEY });
+
+      const firstResult = await firstValueFrom(
+        interceptor.intercept(first.context, { handle: handler } as never),
+      );
+      const secondResult = await firstValueFrom(
+        interceptor.intercept(second.context, { handle: handler } as never),
+      );
+
+      expect(firstResult).toEqual({ id: "order-1" });
+      expect(secondResult).toEqual({ id: "order-1" });
+      // The handler that actually creates the record ran exactly once —
+      // the second "submission" (same key, same payload) was served from
+      // the stored response, never re-invoking the create logic.
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
   });
 });
 
