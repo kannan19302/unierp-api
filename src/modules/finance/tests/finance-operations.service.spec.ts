@@ -785,6 +785,26 @@ describe("FinanceOperationsService", () => {
       expect(result).toHaveProperty("totalExpenses");
       expect(result).toHaveProperty("netIncome");
     });
+
+    it("E34: excludes DRAFT (unposted) journal entries from revenue/expense totals", async () => {
+      mockPrisma.account.findMany.mockResolvedValue([
+        { id: "acc-1", code: "4000", name: "Revenue", type: "REVENUE" },
+      ]);
+      const allEntries = [
+        { id: "je-posted", accountId: "acc-1", debit: 0, credit: 100, journalStatus: "POSTED" },
+        { id: "je-draft", accountId: "acc-1", debit: 0, credit: 9000, journalStatus: "DRAFT" },
+      ];
+      mockPrisma.journalEntry.findMany.mockImplementation((args: any) => {
+        const requiredStatus = args?.where?.journal?.status;
+        return Promise.resolve(
+          allEntries.filter((e) => (requiredStatus ? e.journalStatus === requiredStatus : true)),
+        );
+      });
+
+      const result = await service.getProfitLoss("t-1", "2026-01-01", "2026-12-31");
+
+      expect(result.totalRevenue).toBe(100);
+    });
   });
 
   describe("getBalanceSheet", () => {
@@ -867,6 +887,26 @@ describe("FinanceOperationsService", () => {
       const result = await service.getTrialBalance("t-1", "2026-12-31");
       expect(result).toHaveProperty("accounts");
       expect(result).toHaveProperty("totals");
+    });
+
+    it("E34: excludes DRAFT (unposted) journal entries from account balances", async () => {
+      mockPrisma.account.findMany.mockResolvedValue([
+        { id: "acc-1", code: "1000", name: "Cash", type: "ASSET", isActive: true },
+      ]);
+      const allEntries = [
+        { id: "je-posted", accountId: "acc-1", debit: 100, credit: 0, journalStatus: "POSTED" },
+        { id: "je-draft", accountId: "acc-1", debit: 9000, credit: 0, journalStatus: "DRAFT" },
+      ];
+      mockPrisma.journalEntry.findMany.mockImplementation((args: any) => {
+        const requiredStatus = args?.where?.journal?.status;
+        return Promise.resolve(
+          allEntries.filter((e) => (requiredStatus ? e.journalStatus === requiredStatus : true)),
+        );
+      });
+
+      const result = await service.getTrialBalance("t-1", "2026-12-31");
+
+      expect(result.totals.totalDebits).toBe(100);
     });
   });
 

@@ -2173,11 +2173,15 @@ export class FinanceOperationsService {
         prisma.account.findMany({
           where: { tenantId, type: "EXPENSE", isActive: true },
         }),
+        // E34: same POSTED-only requirement as getBalanceSheet — a P&L
+        // built from unposted, unapproved journal entries cannot
+        // reconcile to the actual ledger.
         prisma.journalEntry.findMany({
           where: {
             tenantId,
             createdAt: { gte: start, lte: end },
             account: { type: "REVENUE" },
+            journal: { status: "POSTED" },
           },
         }),
         prisma.journalEntry.findMany({
@@ -2185,6 +2189,7 @@ export class FinanceOperationsService {
             tenantId,
             createdAt: { gte: start, lte: end },
             account: { type: "EXPENSE" },
+            journal: { status: "POSTED" },
           },
         }),
       ]);
@@ -2526,8 +2531,11 @@ export class FinanceOperationsService {
     const accounts = await prisma.account.findMany({
       where: { tenantId, isActive: true },
     });
+    // E34: same POSTED-only requirement as getBalanceSheet — a trial
+    // balance built from unposted, unapproved journal entries cannot
+    // reconcile to the actual ledger.
     const entries = await prisma.journalEntry.findMany({
-      where: { tenantId, createdAt: { lte: asOf } },
+      where: { tenantId, createdAt: { lte: asOf }, journal: { status: "POSTED" } },
     });
 
     const balances = accounts.map((a) => {
