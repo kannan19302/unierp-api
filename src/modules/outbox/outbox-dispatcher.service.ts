@@ -90,6 +90,27 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
     return deliveries;
   }
 
+  /**
+   * J18 exit criterion: "A dead-lettered event replays to a correct
+   * outcome."
+   *
+   * jobId used to be the bare delivery id. removeOnFail keeps up to
+   * 5000 failed jobs (outbox.module.ts), so a delivery that reached
+   * DEAD kept its terminal BullMQ job around under that same id far
+   * longer than any realistic replay gap. When replayDeadLetter() reset
+   * the delivery to PENDING and this poller re-claimed it, addBulk was
+   * called with the SAME jobId as the already-failed job — BullMQ does
+   * not schedule a new attempt for a jobId that already exists in a
+   * terminal state, it just returns the existing (already-dead) job.
+   * The database said PENDING/LEASED, but the worker was never actually
+   * invoked again: a "replayed" dead letter silently never replayed.
+   *
+   * Claiming (claimDeliveries, above) already uses `FOR UPDATE SKIP
+   * LOCKED` to guarantee exactly one dispatcher instance claims a given
+   * PENDING row per poll cycle, so BullMQ-level jobId collision
+   * protection was not needed for correctness here — it was only ever
+   * actively harmful to replay. jobId is now unique per enqueue attempt.
+   */
   private async enqueueDeliveries(
     deliveries: Array<{
       id: string;
@@ -107,7 +128,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
         destination: d.destination,
       },
       opts: {
-        jobId: d.id,
+        jobId: `${d.id}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
         attempts: 1,
       },
     }));
