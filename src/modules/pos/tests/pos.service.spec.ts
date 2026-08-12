@@ -66,4 +66,24 @@ describe("PosService", () => {
     expect(res).toBeDefined();
     expect(res[0]?.startingCash).toBe(250);
   });
+
+  describe("closeRegister — E19: cash drawer must be reconciled", () => {
+    it("computes closingDifference between counted and expected cash, not just storing the raw inputs", async () => {
+      const { prisma } = await import("@kannan19302/database");
+      vi.mocked(prisma.pOSRegister.findFirst).mockResolvedValue({
+        id: "reg-1",
+        status: "OPEN",
+      } as never);
+      vi.mocked(prisma.pOSRegister.update).mockImplementation(
+        (args: any) => args.data,
+      );
+
+      const result = await posService.closeRegister("tenant-123", "reg-1", {
+        endingCash: 300,
+        actualCash: 285,
+      });
+
+      expect(Number(result.closingDifference)).toBe(-15);
+    });
+  });
 });

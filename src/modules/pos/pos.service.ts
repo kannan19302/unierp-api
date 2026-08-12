@@ -152,6 +152,14 @@ export class PosService {
     if (!reg) throw new NotFoundException("Register session not found");
     if (reg.status === "CLOSED")
       throw new BadRequestException("Register session is already closed");
+    // E19 exit criterion: "...cash drawer..." Closing a register without
+    // computing the discrepancy between counted (actualCash) and expected
+    // (endingCash) leaves the cash drawer unreconciled — the schema's own
+    // closingDifference column exists specifically for this and was never
+    // populated.
+    const closingDifference = new Prisma.Decimal(dto.actualCash).sub(
+      new Prisma.Decimal(dto.endingCash),
+    );
     return this.p.pOSRegister.update({
       where: { id },
       data: {
@@ -159,6 +167,7 @@ export class PosService {
         closedAt: new Date(),
         endingCash: new Prisma.Decimal(dto.endingCash),
         actualCash: new Prisma.Decimal(dto.actualCash),
+        closingDifference,
       },
     });
   }
