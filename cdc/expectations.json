@@ -15,7 +15,7 @@
         "verifyTypedToken"
       ],
       "namespaceImports": 0,
-      "consumingFiles": 9
+      "consumingFiles": 11
     },
     "@kannan19302/database": {
       "symbols": [
@@ -29,7 +29,7 @@
         "runWithTenantSession"
       ],
       "namespaceImports": 1,
-      "consumingFiles": 854
+      "consumingFiles": 930
     },
     "@kannan19302/extension-api": {
       "symbols": [
@@ -55,9 +55,13 @@
       "consumingFiles": 8
     },
     "@kannan19302/sandbox": {
-      "symbols": ["HostCapabilities", "SandboxInstallation", "SandboxRunner"],
+      "symbols": [
+        "HostCapabilities",
+        "SandboxInstallation",
+        "SandboxRunner"
+      ],
       "namespaceImports": 0,
-      "consumingFiles": 1
+      "consumingFiles": 2
     },
     "@kannan19302/shared": {
       "symbols": [
@@ -72,6 +76,8 @@
         "BuilderFieldInput",
         "BulkActionInput",
         "CONTROL_PLANE_NAMESPACES",
+        "CONTROL_PLANE_ROLE",
+        "CONTROL_PLANE_ROLE_PERMISSIONS",
         "CalculateCommissionsInput",
         "ChangeAction",
         "ClassifyIntentInput",
@@ -220,6 +226,7 @@
         "OutboxService",
         "OutboxTxClient",
         "PERMISSION_REGISTRY",
+        "PolicyEngine",
         "PublishModuleInput",
         "QuarantineBatchInput",
         "ReceiveWithTraceabilityInput",
@@ -325,6 +332,7 @@
         "addAppComponentSchema",
         "addAppDataModelSchema",
         "addAppPageSchema",
+        "bindProvider",
         "builderAiGenerateSchema",
         "builderAnalyticsEventSchema",
         "bulkActionSchema",
@@ -409,6 +417,7 @@
         "installBuilderAppSchema",
         "publishModuleSchema",
         "recordAiModelAccuracySchema",
+        "resolve",
         "restorePageRegistryHistorySchema",
         "rollbackModuleSchema",
         "seedWebCollectionSchema",
@@ -417,6 +426,7 @@
         "submitPublicBidSchema",
         "submitSurveyResponseSchema",
         "typingIndicatorSchema",
+        "unbindProvider",
         "updateAiAgentSchema",
         "updateAiModelSchema",
         "updateAiPromptSchema",
@@ -458,7 +468,7 @@
         "webCheckoutSchema"
       ],
       "namespaceImports": 0,
-      "consumingFiles": 67
+      "consumingFiles": 74
     }
   }
 }
