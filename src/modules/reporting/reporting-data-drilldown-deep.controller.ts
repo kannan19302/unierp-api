@@ -26,7 +26,13 @@ export class ReportingDataDrilldownDeepController {
   @Post("execute")
   async executeDrilldown(
     @Req() req: any,
-    @Body() dto: { dimension: string; filterValue: string; metricKey: string },
+    @Body()
+    dto: {
+      entity: string;
+      dimension: string;
+      filterValue: string;
+      metricKey?: string;
+    },
   ) {
     return this.drilldownService.executeDrilldown(req.user.tenantId, dto);
   }
