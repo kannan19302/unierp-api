@@ -6,9 +6,12 @@ import {
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
+import { DocumentNumberingService } from "@/common/services/document-numbering.service";
 
 @Injectable()
 export class ProjectsService {
+  constructor(private readonly documentNumbering: DocumentNumberingService) {}
+
   async getProjects(tenantId: string) {
     return prisma.project.findMany({
       where: { tenantId, deletedAt: null },
@@ -730,41 +733,53 @@ export class ProjectsService {
     const taxAmount = subtotal * 0.1;
     const totalAmount = subtotal + taxAmount;
 
-    const count = await prisma.invoice.count({ where: { tenantId, orgId } });
-    const invoiceNumber = `INV-PRJ-${String(count + 1).padStart(4, "0")}`;
-
-    const invoice = await prisma.invoice.create({
-      data: {
+    // E44: invoiceNumber must be gapless and monotonic under
+    // concurrency — a `count() + 1` read gives two concurrent calls the
+    // same number (a duplicate), and gives no protection at all against
+    // a failed transaction having "claimed" a number nothing will ever
+    // carry (a gap). The reservation and the insert must be the same
+    // atomic transaction, so a rollback of one rolls back the other.
+    const invoice = await prisma.$transaction(async (tx) => {
+      const invoiceNumber = await this.documentNumbering.getNextNumber(
+        tx,
         tenantId,
-        orgId,
-        customerId,
-        invoiceNumber,
-        projectId: project.id,
-        status: "DRAFT",
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
-        subtotal: new Prisma.Decimal(subtotal),
-        taxAmount: new Prisma.Decimal(taxAmount),
-        discountAmount: new Prisma.Decimal(0),
-        totalAmount: new Prisma.Decimal(totalAmount),
-        paidAmount: new Prisma.Decimal(0),
-        currency: "USD",
-        notes: `Automatically generated billing for Project: ${project.name} (${project.code})`,
-        createdBy: userId,
-        lineItems: {
-          create: lineItemsData.map((li) => ({
-            tenantId,
-            description: li.description,
-            quantity: new Prisma.Decimal(li.quantity),
-            unitPrice: new Prisma.Decimal(li.unitPrice),
-            taxRate: new Prisma.Decimal(10.0),
-            taxAmount: new Prisma.Decimal(li.totalAmount * 0.1),
-            totalAmount: new Prisma.Decimal(li.totalAmount * 1.1),
-          })),
+        "INVOICE_PROJECT",
+        { organizationId: orgId, prefix: "INV-PRJ-", padding: 4 },
+      );
+
+      return tx.invoice.create({
+        data: {
+          tenantId,
+          orgId,
+          customerId,
+          invoiceNumber,
+          projectId: project.id,
+          status: "DRAFT",
+          dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
+          subtotal: new Prisma.Decimal(subtotal),
+          taxAmount: new Prisma.Decimal(taxAmount),
+          discountAmount: new Prisma.Decimal(0),
+          totalAmount: new Prisma.Decimal(totalAmount),
+          paidAmount: new Prisma.Decimal(0),
+          currency: "USD",
+          notes: `Automatically generated billing for Project: ${project.name} (${project.code})`,
+          createdBy: userId,
+          lineItems: {
+            create: lineItemsData.map((li) => ({
+              tenantId,
+              description: li.description,
+              quantity: new Prisma.Decimal(li.quantity),
+              unitPrice: new Prisma.Decimal(li.unitPrice),
+              taxRate: new Prisma.Decimal(10.0),
+              taxAmount: new Prisma.Decimal(li.totalAmount * 0.1),
+              totalAmount: new Prisma.Decimal(li.totalAmount * 1.1),
+            })),
+          },
         },
-      },
-      include: {
-        lineItems: true,
-      },
+        include: {
+          lineItems: true,
+        },
+      });
     });
 
     return invoice;

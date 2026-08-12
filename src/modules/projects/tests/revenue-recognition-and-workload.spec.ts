@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ProjectsService } from "../projects.service";
+import { DocumentNumberingService } from "@/common/services/document-numbering.service";
 
 vi.mock("@prisma/client", () => ({
   Prisma: {
@@ -29,7 +30,7 @@ describe("ProjectsService.getRevenueRecognition", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new ProjectsService();
+    service = new ProjectsService(new DocumentNumberingService());
   });
 
   it("recognizes revenue proportionally to elapsed time for an in-progress project", async () => {
@@ -151,7 +152,7 @@ describe("ProjectsService.getResourceWorkload — date-scoping regression", () =
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new ProjectsService();
+    service = new ProjectsService(new DocumentNumberingService());
     (prisma.employee.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
       {
         id: "emp-1",

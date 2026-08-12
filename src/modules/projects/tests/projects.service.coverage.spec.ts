@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ProjectsService } from "../projects.service";
+import { DocumentNumberingService } from "@/common/services/document-numbering.service";
 
 vi.mock("@prisma/client", () => ({
   Prisma: {
@@ -4386,7 +4387,7 @@ describe("ProjectsService coverage", () => {
   let service: ProjectsService;
 
   beforeEach(() => {
-    service = new ProjectsService();
+    service = new ProjectsService(new DocumentNumberingService());
     vi.clearAllMocks();
   });
 

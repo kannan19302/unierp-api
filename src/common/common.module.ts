@@ -27,6 +27,7 @@ import { TenantPlanService } from "./guards/tenant-plan.service";
 
 import { PrismaService } from "@kannan19302/database";
 import { AppSettingsService } from "./settings/settings.service";
+import { DocumentNumberingService } from "./services/document-numbering.service";
 
 @Global()
 @Module({
@@ -54,6 +55,7 @@ import { AppSettingsService } from "./settings/settings.service";
     ExportV2Service,
     TenantGuard,
     TenantPlanService,
+    DocumentNumberingService,
   ],
   exports: [
     PrismaService,
@@ -71,6 +73,7 @@ import { AppSettingsService } from "./settings/settings.service";
     ExportV2Service,
     TenantGuard,
     TenantPlanService,
+    DocumentNumberingService,
   ],
 })
 export class CommonModule {}

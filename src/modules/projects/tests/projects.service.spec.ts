@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ProjectsService } from "../projects.service";
 
-vi.mock("@kannan19302/database", () => ({
-  prisma: {
+vi.mock("@kannan19302/database", () => {
+  const mockPrisma: any = {
     project: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
@@ -34,17 +34,25 @@ vi.mock("@kannan19302/database", () => ({
     customer: {
       findFirst: vi.fn(),
     },
-  },
-}));
+    documentSequence: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+  };
+  mockPrisma.$transaction = vi.fn((fn: any) => fn(mockPrisma));
+  return { prisma: mockPrisma };
+});
 
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { DocumentNumberingService } from "@/common/services/document-numbering.service";
 
 describe("ProjectsService", () => {
   let service: ProjectsService;
 
   beforeEach(() => {
-    service = new ProjectsService();
+    service = new ProjectsService(new DocumentNumberingService());
     vi.clearAllMocks();
   });
 
@@ -223,7 +231,26 @@ describe("ProjectsService", () => {
         baseProject as never,
       );
       vi.mocked(prisma.invoice.findMany).mockResolvedValue([] as never);
-      vi.mocked(prisma.invoice.count).mockResolvedValue(0);
+      vi.mocked(prisma.documentSequence.findFirst).mockResolvedValue(null as never);
+      vi.mocked(prisma.documentSequence.create).mockResolvedValue({
+        id: "seq-1",
+        tenantId: "tenant-1",
+        series: "INVOICE_PROJECT",
+        organizationId: "org-1",
+        prefix: "INV-PRJ-",
+        suffix: "",
+        padding: 4,
+        nextNumber: 1,
+        format: "{prefix}{number}{suffix}",
+      } as never);
+      vi.mocked(prisma.documentSequence.update).mockResolvedValue({
+        id: "seq-1",
+        prefix: "INV-PRJ-",
+        suffix: "",
+        padding: 4,
+        nextNumber: 2,
+        format: "{prefix}{number}{suffix}",
+      } as never);
       vi.mocked(prisma.invoice.create).mockResolvedValue({
         id: "inv-1",
         lineItems: [],
