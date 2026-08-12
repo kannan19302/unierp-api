@@ -79,7 +79,69 @@ export class DocumentTemplateEngineService {
    * this producing different output — proven in
    * document-template-engine.service.spec.ts.
    */
-  async renderInvoicePdf(tenantId: string, templateId: string, invoiceId: string): Promise<Buffer> {
+  /**
+   * E30 — "an invoice in hi-IN with lakh grouping and a 200-line table
+   * renders correctly across page breaks." Locale-aware, not a raw
+   * `String(number)` — Node's Intl.NumberFormat handles lakh grouping
+   * (1,23,456 not 123,456) and the currency symbol natively.
+   */
+  private formatCurrency(amount: unknown, locale: string, currency: string): string {
+    const n = typeof amount === "number" ? amount : Number(amount);
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(n);
+  }
+
+  /**
+   * Draws a real, multi-page table (not a single text blob): column
+   * headers, one row per line item, and a total row — repeating the
+   * header on every new page a table overflows onto, so a 200-row
+   * invoice remains readable rather than a single unbroken run of text.
+   */
+  private renderLineItemsTable(
+    doc: PDFKit.PDFDocument,
+    lineItems: Array<{ description: string; quantity: unknown; unitPrice: unknown; totalAmount: unknown }>,
+    locale: string,
+    currency: string,
+    total: unknown,
+  ): void {
+    const columns = [
+      { label: "Description", x: 50, width: 250 },
+      { label: "Qty", x: 300, width: 60 },
+      { label: "Unit Price", x: 360, width: 90 },
+      { label: "Amount", x: 450, width: 95 },
+    ] as const;
+    const [descCol, qtyCol, priceCol, amountCol] = columns;
+    const rowHeight = 20;
+    const bottomMargin = doc.page.height - doc.page.margins.bottom;
+
+    const drawHeader = () => {
+      doc.fontSize(10).font("Helvetica-Bold");
+      for (const col of columns) doc.text(col.label, col.x, doc.y, { width: col.width });
+      doc.moveDown(0.5);
+      doc.font("Helvetica").fontSize(9);
+    };
+
+    drawHeader();
+    for (const item of lineItems) {
+      if (doc.y + rowHeight > bottomMargin) {
+        doc.addPage();
+        drawHeader();
+      }
+      const rowY = doc.y;
+      doc.text(item.description, descCol.x, rowY, { width: descCol.width });
+      doc.text(String(item.quantity), qtyCol.x, rowY, { width: qtyCol.width });
+      doc.text(this.formatCurrency(item.unitPrice, locale, currency), priceCol.x, rowY, { width: priceCol.width });
+      doc.text(this.formatCurrency(item.totalAmount, locale, currency), amountCol.x, rowY, { width: amountCol.width });
+      doc.moveDown(0.9);
+    }
+
+    if (doc.y + rowHeight > bottomMargin) doc.addPage();
+    doc.moveDown(1);
+    doc.font("Helvetica-Bold").fontSize(11);
+    doc.text(`Total: ${this.formatCurrency(total, locale, currency)}`, descCol.x, doc.y);
+    doc.font("Helvetica").fontSize(9);
+  }
+
+  async renderInvoicePdf(tenantId: string, templateId: string, invoiceId: string, locale = "en-US"): Promise<Buffer> {
     const template = await prisma.salesDocumentTemplate.findFirst({
       where: { id: templateId, tenantId, category: "INVOICE", isActive: true },
     });
@@ -96,14 +158,25 @@ export class DocumentTemplateEngineService {
     if (!invoice) throw new NotFoundException("Invoice not found");
 
     const { output } = this.renderTemplate(template.content, { invoice });
+    const currency = (invoice as any).currency || "USD";
 
     return new Promise<Buffer>((resolve, reject) => {
-      const doc = new PDFDocument({ margin: 50 });
+      const doc = new PDFDocument({ margin: 50, bufferPages: true });
       const chunks: Buffer[] = [];
       doc.on("data", (chunk: Buffer) => chunks.push(chunk));
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
       doc.fontSize(11).text(output);
+      doc.moveDown(1);
+      const lineItems = ((invoice as any).lineItems || []) as Array<{
+        description: string;
+        quantity: unknown;
+        unitPrice: unknown;
+        totalAmount: unknown;
+      }>;
+      if (lineItems.length > 0) {
+        this.renderLineItemsTable(doc, lineItems, locale, currency, (invoice as any).totalAmount);
+      }
       doc.end();
     });
   }
