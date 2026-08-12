@@ -6,8 +6,26 @@ vi.mock("@prisma/client", () => {
   return {
     Prisma: {
       Decimal: class Decimal {
+        value: number;
         constructor(value: unknown) {
-          return Number(value);
+          this.value = value instanceof Decimal ? value.value : Number(value);
+        }
+        plus(other: any) {
+          return new Decimal(
+            (this.value + Number(other?.value ?? other)).toFixed(4),
+          );
+        }
+        greaterThan(other: any) {
+          return this.value > Number(other?.value ?? other);
+        }
+        equals(other: any) {
+          return this.value === Number(other?.value ?? other);
+        }
+        toString() {
+          return String(this.value);
+        }
+        valueOf() {
+          return this.value;
         }
       },
     },

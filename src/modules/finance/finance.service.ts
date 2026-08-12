@@ -432,23 +432,25 @@ export class FinanceService {
       );
     }
 
-    const currentPaid = Number(invoice.paidAmount);
-    const totalAmount = Number(invoice.totalAmount);
-    const newPaidAmount = currentPaid + dto.amount;
+    const currentPaid = new Prisma.Decimal(invoice.paidAmount);
+    const totalAmount = new Prisma.Decimal(invoice.totalAmount);
+    const paymentAmount = new Prisma.Decimal(dto.amount);
+    const newPaidAmount = currentPaid.plus(paymentAmount);
 
-    if (newPaidAmount > totalAmount) {
+    if (newPaidAmount.greaterThan(totalAmount)) {
       throw new BadRequestException("Payment amount exceeds total due amount");
     }
 
-    const nextStatus =
-      newPaidAmount === totalAmount ? "PAID" : "PARTIALLY_PAID";
+    const nextStatus = newPaidAmount.equals(totalAmount)
+      ? "PAID"
+      : "PARTIALLY_PAID";
 
     return prisma.$transaction(async (tx) => {
       const payment = await tx.payment.create({
         data: {
           tenantId,
           invoiceId: dto.invoiceId,
-          amount: new Prisma.Decimal(dto.amount),
+          amount: paymentAmount,
           method: dto.method,
           reference: dto.reference || null,
           notes: dto.notes || null,
@@ -459,7 +461,7 @@ export class FinanceService {
       await tx.invoice.update({
         where: { id: dto.invoiceId },
         data: {
-          paidAmount: new Prisma.Decimal(newPaidAmount),
+          paidAmount: newPaidAmount,
           status: nextStatus,
           paidAt: nextStatus === "PAID" ? new Date() : null,
         },
