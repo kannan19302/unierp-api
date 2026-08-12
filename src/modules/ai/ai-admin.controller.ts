@@ -22,6 +22,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 const setConfigSchema = z.object({ enabled: z.boolean() });
+const setModelSchema = z.object({ model: z.string().min(1).nullable() });
 
 /**
  * Dedicated AI admin console surface. Distinct from `AiController` (`/ai/*`,
@@ -58,6 +59,28 @@ export class AiAdminController {
     @ZodBody(setConfigSchema) body: { enabled: boolean },
   ) {
     return this.aiConfigService.setEnabled(req.user.tenantId, body.enabled);
+  }
+
+  @ApiOperation({
+    summary:
+      "Pin this tenant to a specific AI model, or pass model: null to revert to the deployment default (E45: deliberate, reversible model upgrades)",
+  })
+  @Permissions("ai.admin.manage")
+  @Post("config/model")
+  async setModel(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(setModelSchema) body: { model: string | null },
+  ) {
+    return this.aiConfigService.setModel(req.user.tenantId, body.model);
+  }
+
+  @ApiOperation({
+    summary: "Get this tenant's AI model pin history (audit trail of upgrades/rollbacks)",
+  })
+  @Permissions("ai.admin.manage")
+  @Get("config/model/history")
+  async getModelPinHistory(@Req() req: AuthenticatedRequest) {
+    return this.aiConfigService.getModelPinHistory(req.user.tenantId);
   }
 
   // Relocated from OperationsController (`admin/operations/ai-engine/*`) — see
