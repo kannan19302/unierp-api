@@ -484,23 +484,48 @@ export class SalesService {
   }
 
   /**
+   * J12 exit criterion: "Every forbidden transition is proven to be
+   * rejected." Before this, the only transition ever actually blocked
+   * was leaving CREDIT_HOLD through this endpoint (D091/E16) — every
+   * OTHER status pair was silently accepted: DELIVERED back to DRAFT,
+   * CANCELLED forward to CONFIRMED, DRAFT straight to DELIVERED
+   * skipping every intermediate stage. This names every allowed edge
+   * explicitly; anything not listed is forbidden and rejected. Terminal
+   * states (DELIVERED, CANCELLED) have no outgoing edges at all.
+   * CREDIT_HOLD keeps zero generic outgoing edges — leaving it must
+   * still go through the dedicated approveCreditHold() path, which
+   * re-validates the hold before releasing it (E16/D091's own reason:
+   * a plain order-update permission must never bypass the credit-limit
+   * gate).
+   */
+  private static readonly ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
+    DRAFT: ["CONFIRMED", "CANCELLED", "CREDIT_HOLD"],
+    CREDIT_HOLD: [],
+    CONFIRMED: ["PROCESSING", "CANCELLED"],
+    PROCESSING: ["PARTIALLY_DELIVERED", "DELIVERED", "CANCELLED"],
+    PARTIALLY_DELIVERED: ["DELIVERED", "CANCELLED"],
+    DELIVERED: [],
+    CANCELLED: [],
+  };
+
+  /**
    * Update sales order status.
    */
   async updateSalesOrderStatus(tenantId: string, id: string, status: string) {
     const so = await prisma.salesOrder.findFirst({ where: { id, tenantId } });
     if (!so) throw new NotFoundException("Sales order not found");
 
-    // E16 exit criterion: "...with credit limits..." A generic status
-    // update must never be able to release an order from CREDIT_HOLD —
-    // that requires the dedicated approveCreditHold() path, which
-    // re-validates that the order is actually on hold before releasing
-    // it. Without this guard, any caller with plain order-update
-    // permission could bypass the credit-limit gate entirely by setting
-    // status: "CONFIRMED" directly.
-    if (so.status === "CREDIT_HOLD" && status !== "CREDIT_HOLD") {
-      throw new BadRequestException(
-        "This order is on credit hold and cannot have its status changed directly. Use the credit-hold approval endpoint.",
-      );
+    if (so.status !== status) {
+      const allowed =
+        SalesService.ORDER_STATUS_TRANSITIONS[so.status] ?? [];
+      if (!allowed.includes(status)) {
+        throw new BadRequestException(
+          `Cannot transition sales order from ${so.status} to ${status}. ` +
+            (so.status === "CREDIT_HOLD"
+              ? "This order is on credit hold and cannot have its status changed directly. Use the credit-hold approval endpoint."
+              : `Allowed transitions from ${so.status}: ${allowed.length ? allowed.join(", ") : "none — this is a terminal state"}.`),
+        );
+      }
     }
 
     const updated = await prisma.salesOrder.update({

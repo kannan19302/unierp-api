@@ -279,6 +279,7 @@ describe("SalesService", () => {
       vi.mocked(prisma.salesOrder.findFirst).mockResolvedValue({
         id: "so-1",
         orderNumber: "SO-001",
+        status: "DRAFT",
       } as never);
       vi.mocked(prisma.salesOrder.update).mockResolvedValue({
         id: "so-1",
@@ -319,6 +320,69 @@ describe("SalesService", () => {
       ).rejects.toThrow(/credit hold/i);
 
       expect(prisma.salesOrder.update).not.toHaveBeenCalled();
+    });
+
+    it("J12: rejects a terminal-state transition (DELIVERED cannot move to DRAFT)", async () => {
+      vi.mocked(prisma.salesOrder.findFirst).mockResolvedValue({
+        id: "so-1",
+        orderNumber: "SO-001",
+        status: "DELIVERED",
+      } as never);
+
+      await expect(
+        service.updateSalesOrderStatus("tenant-1", "so-1", "DRAFT"),
+      ).rejects.toThrow(/Cannot transition sales order from DELIVERED to DRAFT/);
+      expect(prisma.salesOrder.update).not.toHaveBeenCalled();
+    });
+
+    it("J12: rejects a stage-skipping transition (DRAFT cannot jump straight to DELIVERED)", async () => {
+      vi.mocked(prisma.salesOrder.findFirst).mockResolvedValue({
+        id: "so-1",
+        orderNumber: "SO-001",
+        status: "DRAFT",
+      } as never);
+
+      await expect(
+        service.updateSalesOrderStatus("tenant-1", "so-1", "DELIVERED"),
+      ).rejects.toThrow(/Cannot transition sales order from DRAFT to DELIVERED/);
+      expect(prisma.salesOrder.update).not.toHaveBeenCalled();
+    });
+
+    it("J12: rejects reviving a CANCELLED order back to CONFIRMED", async () => {
+      vi.mocked(prisma.salesOrder.findFirst).mockResolvedValue({
+        id: "so-1",
+        orderNumber: "SO-001",
+        status: "CANCELLED",
+      } as never);
+
+      await expect(
+        service.updateSalesOrderStatus("tenant-1", "so-1", "CONFIRMED"),
+      ).rejects.toThrow(/Cannot transition sales order from CANCELLED to CONFIRMED/);
+      expect(prisma.salesOrder.update).not.toHaveBeenCalled();
+    });
+
+    it("J12: allows every explicitly-named forward transition in the lifecycle", async () => {
+      const path: Array<[string, string]> = [
+        ["DRAFT", "CONFIRMED"],
+        ["CONFIRMED", "PROCESSING"],
+        ["PROCESSING", "PARTIALLY_DELIVERED"],
+        ["PARTIALLY_DELIVERED", "DELIVERED"],
+      ];
+      for (const [from, to] of path) {
+        vi.mocked(prisma.salesOrder.findFirst).mockResolvedValue({
+          id: "so-1",
+          orderNumber: "SO-001",
+          status: from,
+        } as never);
+        vi.mocked(prisma.salesOrder.update).mockResolvedValue({
+          id: "so-1",
+          status: to,
+        } as never);
+
+        await expect(
+          service.updateSalesOrderStatus("tenant-1", "so-1", to),
+        ).resolves.toBeDefined();
+      }
     });
   });
 
