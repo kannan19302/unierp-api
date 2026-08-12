@@ -1099,6 +1099,24 @@ export class InventoryService {
         // Adjust inventory levels & create ledger entries
         // 1. Deduct from source warehouse
         if (item.fromWarehouseId) {
+          // E14 exit criterion: "negative-stock policy enforced." Read the
+          // current on-hand quantity BEFORE decrementing — a bare
+          // `decrement` has no floor and will silently drive quantity
+          // negative with no policy check at all.
+          const existing = await tx.inventoryItem.findFirst({
+            where: {
+              tenantId,
+              productId: item.productId,
+              warehouseId: item.fromWarehouseId,
+            },
+          });
+          const available = existing ? Number(existing.quantity) : 0;
+          if (available < Number(item.quantity)) {
+            throw new BadRequestException(
+              `Insufficient stock for product ${item.productId} at warehouse ${item.fromWarehouseId}: available ${available}, requested ${Number(item.quantity)}. Negative stock is not permitted.`,
+            );
+          }
+
           const invItem = await tx.inventoryItem.upsert({
             where: {
               tenantId_productId_warehouseId: {

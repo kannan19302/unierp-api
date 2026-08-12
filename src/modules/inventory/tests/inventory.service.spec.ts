@@ -90,4 +90,46 @@ describe("InventoryService", () => {
       expect((result.data || result)[0]?.sku).toBe("SKU-VIB-001");
     });
   });
+
+  describe("submitStockEntry — E14: negative-stock policy enforced", () => {
+    it("REFUSES to submit a stock entry that would drive on-hand quantity negative", async () => {
+      const { prisma } = await import("@kannan19302/database");
+
+      vi.mocked(prisma.stockEntry.findFirst).mockResolvedValue({
+        id: "se-1",
+        tenantId: "tenant-123",
+        status: "DRAFT",
+        entryNumber: "SE-0001",
+        items: [
+          {
+            productId: "prod-1",
+            fromWarehouseId: "wh-1",
+            toWarehouseId: null,
+            fromBinId: null,
+            toBinId: null,
+            quantity: 50,
+            valuationRate: 10,
+          },
+        ],
+      } as any);
+
+      // Override $transaction for this test to report only 20 units on
+      // hand — less than the 50 requested.
+      vi.mocked(prisma.$transaction).mockImplementationOnce(
+        (cb: any) =>
+          cb({
+            inventoryItem: {
+              findFirst: vi.fn().mockResolvedValue({ quantity: 20 }),
+              upsert: vi.fn().mockResolvedValue({ quantity: -30 }),
+            },
+            stockLedgerEntry: { create: vi.fn() },
+            stockEntry: { update: vi.fn() },
+          }) as any,
+      );
+
+      await expect(
+        inventoryService.submitStockEntry("tenant-123", "se-1", "user-1"),
+      ).rejects.toThrow(/Insufficient stock/i);
+    });
+  });
 });
