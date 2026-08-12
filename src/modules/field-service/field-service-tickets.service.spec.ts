@@ -71,6 +71,48 @@ describe("FieldServiceTicketsService", () => {
       });
       expect(result.status).toBe("CLOSED");
     });
+
+    it("E25: closeTicket marks slaBreached when closed after the SLA deadline has passed", async () => {
+      const pastDeadline = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
+      jest.spyOn(prisma.fieldServiceTicket, "findFirst").mockResolvedValue({
+        id: "t1",
+        tenantId,
+        slaDeadline: pastDeadline,
+        slaBreached: false,
+      } as any);
+      const updateSpy = jest
+        .spyOn(prisma.fieldServiceTicket, "update")
+        .mockResolvedValue({ id: "t1", status: "CLOSED", slaBreached: true } as any);
+
+      await svc.closeTicket(tenantId, "t1", { resolution: "Fixed late" });
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ slaBreached: true }),
+        }),
+      );
+    });
+
+    it("E25: closeTicket does not mark slaBreached when closed before the SLA deadline", async () => {
+      const futureDeadline = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+      jest.spyOn(prisma.fieldServiceTicket, "findFirst").mockResolvedValue({
+        id: "t1",
+        tenantId,
+        slaDeadline: futureDeadline,
+        slaBreached: false,
+      } as any);
+      const updateSpy = jest
+        .spyOn(prisma.fieldServiceTicket, "update")
+        .mockResolvedValue({ id: "t1", status: "CLOSED", slaBreached: false } as any);
+
+      await svc.closeTicket(tenantId, "t1", { resolution: "Fixed on time" });
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ slaBreached: false }),
+        }),
+      );
+    });
   });
 
   describe("SLAs", () => {

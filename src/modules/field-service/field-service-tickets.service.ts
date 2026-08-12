@@ -150,16 +150,28 @@ export class FieldServiceTicketsService {
       where: { tenantId, id },
     });
     if (!existing) throw new NotFoundException("Ticket not found");
+    // E25 exit criterion: "SLA-driven tickets." evaluateTicketSla() can
+    // correctly detect a breach, but nothing calls it automatically —
+    // closing a ticket is the one guaranteed trigger point every ticket
+    // passes through, so SLA compliance must be evaluated here rather
+    // than depending on a caller remembering to hit a separate endpoint.
+    // Without this, a ticket resolved days after its deadline closes
+    // with slaBreached permanently false.
+    const completedDate = new Date();
+    const slaBreached =
+      existing.slaBreached ||
+      (existing.slaDeadline ? completedDate > existing.slaDeadline : false);
     return prisma.fieldServiceTicket.update({
       where: { id },
       data: {
         status: "CLOSED",
-        completedDate: new Date() as any,
+        completedDate: completedDate as any,
         resolution: data.resolution,
         totalCost: data.totalCost || existing.totalCost,
         partsCost: data.partsCost || existing.partsCost,
         laborCost: data.laborCost || existing.laborCost,
         invoiceRef: data.invoiceRef,
+        slaBreached,
       },
     });
   }
