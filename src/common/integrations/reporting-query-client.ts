@@ -10,6 +10,16 @@ export interface ReportingSemanticEntity {
   label: string;
   table: string;
   fields: ReportingSemanticField[];
+  /**
+   * E46: "retrieval is permission-scoped so RAG cannot surface what the
+   * user may not read." An entity carrying sensitive data (HR/payroll,
+   * clinical, etc.) that a normal user could not read directly in the
+   * UI must not become readable indirectly by asking the AI copilot a
+   * natural-language question against it. When set, callers resolving
+   * a query against this entity MUST verify the requesting user holds
+   * this permission before executing it.
+   */
+  requiredPermission?: string;
 }
 
 export interface ReportingQueryOptions {

@@ -113,4 +113,72 @@ describe("AiCopilotService.askData — natural-language-to-report", () => {
     expect(result.data).toEqual([]);
     expect(result.query).toBeNull();
   });
+
+  describe("E46: retrieval is permission-scoped", () => {
+    it("REFUSES to query a permission-gated entity (employees) for a user without hr.employee.read", async () => {
+      chatSpy.mockResolvedValueOnce({
+        content: JSON.stringify({ entity: "employees" }),
+        model: "test-model",
+        usage: { inputTokens: 0, outputTokens: 0 },
+      });
+
+      await expect(
+        service.askData(
+          "t1",
+          "What is the average salary in finance?",
+          ["ai.create"], // lacks hr.employee.read
+        ),
+      ).rejects.toThrow(/permission/i);
+
+      expect(executeQuerySpy).not.toHaveBeenCalled();
+    });
+
+    it("allows querying employees for a user who DOES hold hr.employee.read", async () => {
+      chatSpy
+        .mockResolvedValueOnce({
+          content: JSON.stringify({ entity: "employees" }),
+          model: "test-model",
+          usage: { inputTokens: 0, outputTokens: 0 },
+        })
+        .mockResolvedValueOnce({
+          content: "There are 12 employees.",
+          model: "test-model",
+          usage: { inputTokens: 0, outputTokens: 0 },
+        });
+      executeQuerySpy.mockResolvedValue({ data: [{ count: 12 }] } as never);
+
+      const result = await service.askData(
+        "t1",
+        "How many employees do we have?",
+        ["ai.create", "hr.employee.read"],
+      );
+
+      expect(executeQuerySpy).toHaveBeenCalled();
+      expect(result.data).toEqual([{ count: 12 }]);
+    });
+
+    it("does not require any special permission for a non-gated entity (invoices)", async () => {
+      chatSpy
+        .mockResolvedValueOnce({
+          content: JSON.stringify({ entity: "invoices" }),
+          model: "test-model",
+          usage: { inputTokens: 0, outputTokens: 0 },
+        })
+        .mockResolvedValueOnce({
+          content: "5 overdue invoices.",
+          model: "test-model",
+          usage: { inputTokens: 0, outputTokens: 0 },
+        });
+      executeQuerySpy.mockResolvedValue({ data: [{ count: 5 }] } as never);
+
+      const result = await service.askData(
+        "t1",
+        "How many overdue invoices?",
+        ["ai.create"],
+      );
+
+      expect(executeQuerySpy).toHaveBeenCalled();
+      expect(result.data).toEqual([{ count: 5 }]);
+    });
+  });
 });

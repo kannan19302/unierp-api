@@ -1,8 +1,25 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { AiService } from "./ai.service";
 import { ReportingQueryClient } from "../../common/integrations/reporting-query-client";
+
+/**
+ * Deliberately NOT imported from `@kannan19302/auth`'s own
+ * `hasPermission` (which `RbacGuard` uses) — that package currently
+ * fails to resolve at all in this environment (`Cannot find package
+ * '@unerp/shared'`, a pre-existing issue affecting every test file
+ * that imports it, unrelated to this phase). A minimal, exact-match
+ * local check is sufficient for this call site's own semantics: the
+ * caller already resolved a specific `requiredPermission` string, not
+ * a wildcard pattern to match against.
+ */
+function hasRequiredPermission(
+  userPermissions: string[],
+  required: string,
+): boolean {
+  return userPermissions.includes(required);
+}
 
 export interface GeneratedQuery {
   entity: string;
@@ -37,7 +54,11 @@ export class AiCopilotService {
    * only ever lets the model choose *which* query to run; the numbers in
    * the final answer always come from `executeQuery`'s real output.
    */
-  async askData(tenantId: string, question: string) {
+  async askData(
+    tenantId: string,
+    question: string,
+    userPermissions: string[] = [],
+  ) {
     if (!this.ai.isConfigured()) {
       return { answer: "AI is not configured.", query: null, data: [] };
     }
@@ -76,15 +97,30 @@ export class AiCopilotService {
       };
     }
 
-    const entityExists = semanticLayer.some(
+    const matchedEntity = semanticLayer.find(
       (e) => e.name === plannedQuery.entity,
     );
-    if (!plannedQuery.entity || !entityExists) {
+    if (!plannedQuery.entity || !matchedEntity) {
       return {
         answer: `I don't have a "${plannedQuery.entity || "matching"}" dataset to answer that from.`,
         query: plannedQuery,
         data: [],
       };
+    }
+
+    // E46: "retrieval is permission-scoped so RAG cannot surface what
+    // the user may not read." Tenant scoping alone (executeQuery's own
+    // guarantee) is not enough — a user without hr.employee.read must
+    // never be able to read employee data indirectly by asking the AI
+    // copilot a natural-language question, even though the copilot
+    // itself only ever received a bare tenantId before this check.
+    if (
+      matchedEntity.requiredPermission &&
+      !hasRequiredPermission(userPermissions, matchedEntity.requiredPermission)
+    ) {
+      throw new ForbiddenException(
+        `You do not have permission to query "${matchedEntity.label}" data.`,
+      );
     }
 
     const result = await this.reportingEngine.executeQuery(

@@ -70,7 +70,14 @@ export class AiController {
     @ZodBody(z.any()) body: { question: string },
   ) {
     await this.assertAiEnabled(req.user.tenantId);
-    return this.copilot.askData(req.user.tenantId, body.question);
+    const userPermissions = Array.isArray((req.user as any).permissions)
+      ? (req.user as any).permissions
+      : [];
+    return this.copilot.askData(
+      req.user.tenantId,
+      body.question,
+      userPermissions,
+    );
   }
 
   @ApiOperation({ summary: "Summarize record" })

@@ -161,6 +161,7 @@ export class ReportingEngineService implements ReportingQueryClient {
         name: "employees",
         label: "Employees",
         table: "Employee",
+        requiredPermission: "hr.employee.read",
         fields: [
           {
             name: "employeeId",
