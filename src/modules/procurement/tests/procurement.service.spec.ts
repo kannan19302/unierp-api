@@ -57,6 +57,9 @@ vi.mock("@kannan19302/database", () => ({
     vendor: {
       findFirst: vi.fn(),
     },
+    aPInvoiceCapture: {
+      findMany: vi.fn(),
+    },
     $transaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) =>
       fn({
         purchaseOrder: {
@@ -417,12 +420,13 @@ describe("ProcurementService", () => {
       expect(metrics.onTimeDeliveryRate).toBe(100);
     });
 
-    it("should generate a 3-way match report", async () => {
+    it("should generate a 3-way match report using a real matched AP invoice line, not a fabricated heuristic", async () => {
       vi.mocked(prisma.purchaseOrder.findFirst).mockResolvedValue({
         id: "po-1",
         poNumber: "PO-001",
         lineItems: [
           {
+            id: "poli-1",
             productId: "p-1",
             description: "Steel Sheet",
             quantity: { toString: () => "10" },
@@ -441,10 +445,72 @@ describe("ProcurementService", () => {
           },
         ],
       } as any);
+      vi.mocked(prisma.aPInvoiceCapture.findMany).mockResolvedValue([
+        {
+          id: "cap-1",
+          status: "PROCESSED",
+          lines: [
+            {
+              matchingPOLineId: "poli-1",
+              quantity: { toString: () => "10" },
+              unitPrice: { toString: () => "100" },
+            },
+          ],
+        },
+      ] as any);
 
       const match = await service.getThreeWayMatchReport("tenant-1", "po-1");
       expect(match.poNumber).toBe("PO-001");
+      expect(match.items[0].hasInvoice).toBe(true);
+      expect(match.items[0].invoicedQty).toBe(10);
+      expect(match.items[0].invoicedUnitPrice).toBe(100);
       expect(match.items[0].qtyMatch).toBe(true);
+      expect(prisma.aPInvoiceCapture.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ matchingPurchaseOrderId: "po-1" }),
+        }),
+      );
+    });
+
+    it("REFUSES to report a match when no invoice has actually been captured for the PO — no invoice ID string heuristic", async () => {
+      // E15 exit criterion: "...three-way match..." A PO fully received
+      // but with ZERO real AP invoice captures matched to it must never
+      // report qtyMatch/priceMatch as true - there is no invoice to
+      // match against. The pre-existing code derived a fake
+      // "invoicedQty"/"invoicedUnitPrice" purely from the PO's own
+      // status and id string (`poId.endsWith("d")`), with no invoice
+      // record involved at all.
+      vi.mocked(prisma.purchaseOrder.findFirst).mockResolvedValue({
+        id: "po-2",
+        poNumber: "PO-002",
+        status: "RECEIVED",
+        lineItems: [
+          {
+            id: "poli-2",
+            productId: "p-2",
+            description: "Copper Wire",
+            quantity: { toString: () => "5" },
+            unitPrice: { toString: () => "50" },
+          },
+        ],
+        receipts: [
+          {
+            lineItems: [
+              {
+                productId: "p-2",
+                receivedQty: { toString: () => "5" },
+                acceptedQty: { toString: () => "5" },
+              },
+            ],
+          },
+        ],
+      } as any);
+      vi.mocked(prisma.aPInvoiceCapture.findMany).mockResolvedValue([]);
+
+      const match = await service.getThreeWayMatchReport("tenant-1", "po-2");
+      expect(match.items[0].hasInvoice).toBe(false);
+      expect(match.items[0].qtyMatch).toBe(false);
+      expect(match.overallMatch).toBe(false);
     });
   });
 });

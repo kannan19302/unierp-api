@@ -1344,6 +1344,31 @@ export class ProcurementService {
     });
     if (!po) throw new NotFoundException("Purchase order not found");
 
+    // Real AP invoice-capture lines matched to this PO — not a
+    // heuristic derived from the PO's own id/status. matchingPOLineId is
+    // the join key: each captured invoice line was matched to a specific
+    // PurchaseOrderItem during invoice capture.
+    const invoiceCaptures = await prisma.aPInvoiceCapture.findMany({
+      where: {
+        tenantId,
+        matchingPurchaseOrderId: poId,
+        status: { not: "REJECTED" },
+      },
+      include: { lines: true },
+    });
+    const invoiceLinesByPoLineId = new Map<string, { qty: number; unitPrice: number }[]>();
+    for (const capture of invoiceCaptures) {
+      for (const line of capture.lines) {
+        if (!line.matchingPOLineId) continue;
+        const list = invoiceLinesByPoLineId.get(line.matchingPOLineId) ?? [];
+        list.push({
+          qty: Number(line.quantity),
+          unitPrice: Number(line.unitPrice),
+        });
+        invoiceLinesByPoLineId.set(line.matchingPOLineId, list);
+      }
+    }
+
     const items = po.lineItems.map((poItem: any) => {
       let receivedQty = 0;
       po.receipts.forEach((r: any) => {
@@ -1355,16 +1380,26 @@ export class ProcurementService {
         }
       });
 
-      const invoicedQty =
-        po.status === "RECEIVED" ? Number(poItem.quantity) : receivedQty;
+      const matchedInvoiceLines = invoiceLinesByPoLineId.get(poItem.id) ?? [];
+      const invoicedQty = matchedInvoiceLines.reduce(
+        (sum, l) => sum + l.qty,
+        0,
+      );
       const orderedUnitPrice = Number(poItem.unitPrice);
-      const invoicedUnitPrice = poId.endsWith("d")
-        ? orderedUnitPrice * 1.1
-        : orderedUnitPrice;
+      // Quantity-weighted average of invoiced unit prices, when more
+      // than one invoice line matched this PO line.
+      const invoicedUnitPrice =
+        matchedInvoiceLines.length === 0
+          ? null
+          : matchedInvoiceLines.reduce((sum, l) => sum + l.unitPrice * l.qty, 0) /
+            (invoicedQty || 1);
 
+      const hasInvoice = matchedInvoiceLines.length > 0;
       const qtyMatch =
-        Number(poItem.quantity) === receivedQty && receivedQty === invoicedQty;
-      const priceMatch = orderedUnitPrice === invoicedUnitPrice;
+        hasInvoice &&
+        Number(poItem.quantity) === receivedQty &&
+        receivedQty === invoicedQty;
+      const priceMatch = hasInvoice && orderedUnitPrice === invoicedUnitPrice;
 
       return {
         productId: poItem.productId,
@@ -1375,6 +1410,7 @@ export class ProcurementService {
         orderedUnitPrice,
         receivedUnitPrice: orderedUnitPrice,
         invoicedUnitPrice,
+        hasInvoice,
         qtyMatch,
         priceMatch,
       };
@@ -1385,7 +1421,7 @@ export class ProcurementService {
     );
     const status = overallMatch
       ? "MATCHED"
-      : items.some((i: any) => i.receivedQty > 0)
+      : items.some((i: any) => i.receivedQty > 0 || i.hasInvoice)
         ? "DISCREPANCY"
         : "PENDING";
 
