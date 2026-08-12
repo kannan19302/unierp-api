@@ -68,9 +68,12 @@ export default defineConfig({
         maxForks: 2,
       },
     },
-    exclude: process.env.CI
-      ? ["**/node_modules/**", "**/dist/**", "**/*.coverage.spec.ts"]
-      : ["**/node_modules/**", "**/dist/**"],
+    // L13 — this list must be identical whether process.env.CI is set or
+    // not: CI previously excluded *.coverage.spec.ts (the D016/L11/L12
+    // always-passing padding files), which meant a test that only ever
+    // ran locally could rot for months with nobody noticing, since CI
+    // never executed it at all. The whole suite runs everywhere it runs.
+    exclude: ["**/node_modules/**", "**/dist/**"],
     coverage: {
       provider: "v8",
       // `json` emits coverage/coverage-final.json for tooling that consumes
