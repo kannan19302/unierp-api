@@ -6,10 +6,45 @@ import {
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { EventEmitter2 } from "@nestjs/event-emitter";
+import { createHash } from "crypto";
 
 @Injectable()
 export class SignatureWorkflowService {
   constructor(private eventEmitter: EventEmitter2) {}
+
+  /**
+   * A deterministic SHA-256 digest of the current state of every
+   * signature on a document, sorted by signature id so field/row
+   * ordering never affects the hash. This is the mechanism behind the
+   * tamper-evident completion certificate: computed once at completion
+   * and stored, then recomputed on demand — any later change to a
+   * signature row (signedAt, ipAddress, signatureData, status) changes
+   * the digest and is detected.
+   */
+  private computeCompletionHash(
+    documentId: string,
+    signatures: Array<{
+      id: string;
+      signerEmail: string;
+      status: string;
+      signedAt: Date | null;
+      ipAddress: string | null;
+      signatureData: string | null;
+    }>,
+  ): string {
+    const canonical = [...signatures]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((s) => ({
+        id: s.id,
+        signerEmail: s.signerEmail,
+        status: s.status,
+        signedAt: s.signedAt ? s.signedAt.toISOString() : null,
+        ipAddress: s.ipAddress,
+        signatureData: s.signatureData,
+      }));
+    const payload = JSON.stringify({ documentId, signatures: canonical });
+    return createHash("sha256").update(payload).digest("hex");
+  }
 
   async createSignatureRequest(
     tenantId: string,
@@ -92,6 +127,33 @@ export class SignatureWorkflowService {
         data: { signatureStatus: "COMPLETED" },
       });
 
+      // E31 exit criterion: "A signed document's integrity is verifiable
+      // after the fact, and the trail is admissible." Completion alone
+      // (a status flag) proves nothing was tampered with afterward —
+      // the tamper-evident certificate is this hash, computed once here
+      // over every signature's state and stored so it can be recomputed
+      // and compared on demand.
+      const allSignatures = await prisma.signature.findMany({
+        where: { tenantId, documentId: signature.documentId },
+      });
+      const certificateHash = this.computeCompletionHash(
+        signature.documentId,
+        allSignatures,
+      );
+      await prisma.documentAuditLog.create({
+        data: {
+          tenantId,
+          documentId: signature.documentId,
+          action: "SIGNATURE_COMPLETION_CERTIFICATE",
+          actorId: "system",
+          details: {
+            algorithm: "sha256",
+            hash: certificateHash,
+            signatureIds: allSignatures.map((s) => s.id).sort(),
+          },
+        },
+      });
+
       this.eventEmitter.emit("notification.send", {
         tenantId,
         userId: "system",
@@ -101,6 +163,44 @@ export class SignatureWorkflowService {
     }
 
     return { signatureId, status: "SIGNED", remainingSignatures: remaining };
+  }
+
+  /**
+   * Recomputes the current signature-state hash and compares it to the
+   * certificate stored at completion time — the actual "verifiable
+   * after the fact" mechanism. If any signature row has been altered
+   * since completion, verified is false and the mismatch is explicit,
+   * not silently assumed.
+   */
+  async verifyDocumentIntegrity(tenantId: string, documentId: string) {
+    const certificate = await prisma.documentAuditLog.findFirst({
+      where: {
+        tenantId,
+        documentId,
+        action: "SIGNATURE_COMPLETION_CERTIFICATE",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!certificate) {
+      throw new NotFoundException(
+        "No completion certificate exists for this document — it has not completed signing.",
+      );
+    }
+    const currentSignatures = await prisma.signature.findMany({
+      where: { tenantId, documentId },
+    });
+    const currentHash = this.computeCompletionHash(
+      documentId,
+      currentSignatures,
+    );
+    const certifiedHash = (certificate.details as any)?.hash;
+    return {
+      documentId,
+      verified: currentHash === certifiedHash,
+      certifiedHash,
+      currentHash,
+      certifiedAt: certificate.createdAt,
+    };
   }
 
   async getDocumentSignatures(tenantId: string, documentId: string) {
