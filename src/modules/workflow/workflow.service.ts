@@ -362,6 +362,19 @@ export class WorkflowService {
             where: { slaRuleId: sla.id },
           });
           for (const esc of escalations) {
+            // E28 rubric row 4 (Approvals — delegation/escalation): an
+            // "ESCALATED" audit entry that never reassigns the task is a
+            // record of an escalation that didn't happen — the original
+            // assignee still owns it, unaware they were meant to be
+            // replaced. The escalation must actually move ownership, not
+            // just claim to.
+            await prisma.workflowTask.update({
+              where: { id: task.id },
+              data: {
+                assigneeRole: esc.escalateToRole,
+                assigneeId: esc.escalateToUser || null,
+              },
+            });
             await this.logAudit(
               tenantId,
               task.instanceId,

@@ -111,4 +111,38 @@ describe("WorkflowService", () => {
     const result = await service.getSlaRules("t1");
     expect(result).toEqual(mockRules);
   });
+
+  describe("checkSlaBreaches — E28: escalation must actually reassign the task, not just log it", () => {
+    it("reassigns a breached task's assigneeRole/assigneeId to the escalation target, not merely audit-logging the escalation", async () => {
+      const breachedTask = {
+        id: "task-1",
+        tenantId: "t1",
+        instanceId: "inst-1",
+        nodeId: "node-1",
+        status: "PENDING",
+        createdAt: new Date(Date.now() - 48 * 3600 * 1000), // 48h ago
+      };
+      (prisma.workflowTask.findMany as any).mockResolvedValue([breachedTask]);
+      (prisma.workflowSlaRule.findMany as any).mockResolvedValue([
+        { id: "sla-1", nodeId: "node-1", slaLimitHours: 24, severity: "HIGH" },
+      ]);
+      (prisma.workflowEscalationRule.findMany as any).mockResolvedValue([
+        {
+          id: "esc-1",
+          slaRuleId: "sla-1",
+          escalateToRole: "MANAGER",
+          escalateToUser: "user-mgr-1",
+        },
+      ]);
+      (prisma.workflowAuditLog.create as any).mockResolvedValue({});
+      (prisma.workflowTask.update as any).mockResolvedValue({});
+
+      await service.checkSlaBreaches("t1");
+
+      expect(prisma.workflowTask.update).toHaveBeenCalledWith({
+        where: { id: "task-1" },
+        data: { assigneeRole: "MANAGER", assigneeId: "user-mgr-1" },
+      });
+    });
+  });
 });
