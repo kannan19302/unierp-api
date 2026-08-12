@@ -668,7 +668,31 @@ export class ProjectsService {
       totalAmount: number;
     }[] = [];
 
-    const completedMilestones = project.milestones.filter((m) => m.isCompleted);
+    // E24 exit criterion: "...milestone and progress billing..."
+    // Milestone has no `isBilled` flag in the schema, so re-running this
+    // generator would otherwise re-bill every already-invoiced completed
+    // milestone on every call — a real double-billing risk, not a
+    // hypothetical one, since nothing here is idempotent. Derive
+    // "already billed" from existing non-void invoices' own line-item
+    // descriptions (the exact prefix this function itself writes),
+    // since that is the only record of which milestones have already
+    // been billed that exists without a schema change.
+    const priorInvoices = await prisma.invoice.findMany({
+      where: { tenantId, projectId: project.id, status: { not: "VOID" } },
+      include: { lineItems: true },
+    });
+    const alreadyBilledMilestoneNames = new Set(
+      priorInvoices.flatMap((inv) =>
+        inv.lineItems
+          .map((li) => li.description)
+          .filter((d): d is string => !!d?.startsWith("Project Milestone Completed: "))
+          .map((d) => d.replace("Project Milestone Completed: ", "")),
+      ),
+    );
+
+    const completedMilestones = project.milestones.filter(
+      (m) => m.isCompleted && !alreadyBilledMilestoneNames.has(m.name),
+    );
     completedMilestones.forEach((m) => {
       lineItemsData.push({
         description: `Project Milestone Completed: ${m.name}`,

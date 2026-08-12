@@ -29,6 +29,10 @@ vi.mock("@kannan19302/database", () => ({
     invoice: {
       count: vi.fn(),
       create: vi.fn(),
+      findMany: vi.fn(),
+    },
+    customer: {
+      findFirst: vi.fn(),
     },
   },
 }));
@@ -176,6 +180,63 @@ describe("ProjectsService", () => {
       expect(result.billedAmount).toBe(1500);
       expect(result.overUnderBilling).toBe(1000); // Underbilled (Asset)
       expect(result.billingStatus).toBe("UNDERBILLED");
+    });
+  });
+
+  describe("generateProjectInvoice — E24: milestone billing must not double-bill", () => {
+    const baseProject = {
+      id: "p-1",
+      orgId: "org-1",
+      code: "PRJ-1",
+      name: "Test Project",
+      customerId: "cust-1",
+      tasks: [],
+      milestones: [
+        { id: "m-1", name: "Design Phase", isCompleted: true },
+      ],
+    };
+
+    it("REFUSES to re-bill a milestone that was already invoiced in a prior, non-void invoice", async () => {
+      vi.mocked(prisma.project.findFirst).mockResolvedValue(
+        baseProject as never,
+      );
+      vi.mocked(prisma.invoice.findMany).mockResolvedValue([
+        {
+          id: "inv-existing",
+          lineItems: [
+            {
+              description: "Project Milestone Completed: Design Phase",
+            },
+          ],
+        },
+      ] as never);
+
+      await expect(
+        service.generateProjectInvoice("tenant-1", "p-1", "user-1"),
+      ).rejects.toThrow(/No completed milestones or timesheet hours/i);
+
+      expect(prisma.invoice.create).not.toHaveBeenCalled();
+    });
+
+    it("bills a completed milestone that has never been invoiced before", async () => {
+      vi.mocked(prisma.project.findFirst).mockResolvedValue(
+        baseProject as never,
+      );
+      vi.mocked(prisma.invoice.findMany).mockResolvedValue([] as never);
+      vi.mocked(prisma.invoice.count).mockResolvedValue(0);
+      vi.mocked(prisma.invoice.create).mockResolvedValue({
+        id: "inv-1",
+        lineItems: [],
+      } as never);
+
+      const result = await service.generateProjectInvoice(
+        "tenant-1",
+        "p-1",
+        "user-1",
+      );
+
+      expect(result).toBeDefined();
+      expect(prisma.invoice.create).toHaveBeenCalled();
     });
   });
 });
