@@ -72,20 +72,99 @@ export class TaxEngineDeepService {
     id: string,
     dto: Partial<{
       name: string;
-      rate: number;
       effectiveTo: string;
       isActive: boolean;
       description: string;
     }>,
   ) {
     await this.getJurisdiction(tenantId, id);
+    // Explicit whitelist, not a spread of `dto` — `rate` must never reach
+    // this update even if a caller bypasses the type system at a runtime
+    // boundary (e.g. an untyped controller). Rate changes go through
+    // changeRate() only, per G-15.
     return prisma.taxJurisdiction.update({
       where: { id },
       data: {
-        ...dto,
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
         ...(dto.effectiveTo ? { effectiveTo: new Date(dto.effectiveTo) } : {}),
       },
     });
+  }
+
+  /**
+   * G-15: rate changes are versioned by effective date, never retroactive.
+   * A rate change never mutates the existing row (which would silently
+   * rewrite the rate for every past date that row already covered).
+   * Instead it closes the current version's effectiveTo the day before
+   * the new rate takes effect, and inserts a new row starting on
+   * newEffectiveFrom — so `getRateAsOf` can always recover exactly which
+   * rate applied on any historical date.
+   */
+  async changeRate(
+    tenantId: string,
+    id: string,
+    newRate: number,
+    newEffectiveFrom: string,
+  ) {
+    const current = await this.getJurisdiction(tenantId, id);
+    const effectiveFromDate = new Date(newEffectiveFrom);
+    if (effectiveFromDate <= new Date(current.effectiveFrom)) {
+      throw new BadRequestException(
+        "New rate's effective date must be after the current version's effective date.",
+      );
+    }
+    const dayBefore = new Date(effectiveFromDate);
+    dayBefore.setDate(dayBefore.getDate() - 1);
+
+    return prisma.$transaction(async (tx) => {
+      await tx.taxJurisdiction.update({
+        where: { id },
+        data: { effectiveTo: dayBefore },
+      });
+      return tx.taxJurisdiction.create({
+        data: {
+          tenantId,
+          name: current.name,
+          code: current.code,
+          country: current.country,
+          state: current.state,
+          county: current.county,
+          taxType: current.taxType,
+          rate: newRate,
+          effectiveFrom: effectiveFromDate,
+          effectiveTo: null,
+          description: current.description,
+          isActive: true,
+        },
+      });
+    });
+  }
+
+  /**
+   * The rate that was actually in effect for `code` on `asOfDate` —
+   * never the current/latest rate unless asOfDate is in the current
+   * version's window. This is what invoice/PO tax calculation must use,
+   * not a bare "get the jurisdiction" lookup.
+   */
+  async getRateAsOf(tenantId: string, code: string, asOfDate: Date) {
+    const version = await prisma.taxJurisdiction.findFirst({
+      where: {
+        tenantId,
+        code,
+        effectiveFrom: { lte: asOfDate },
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: asOfDate } }],
+      },
+      orderBy: { effectiveFrom: "desc" },
+    });
+    if (!version)
+      throw new NotFoundException(
+        `No tax jurisdiction version for code ${code} effective on ${asOfDate.toISOString()}`,
+      );
+    return version;
   }
 
   async deleteJurisdiction(tenantId: string, id: string) {

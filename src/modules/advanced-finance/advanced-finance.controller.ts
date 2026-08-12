@@ -572,10 +572,14 @@ const requestLimitIncreaseSchema = z.object({
 
 const updateTaxJurisdictionSchema = z.object({
   name: z.string().optional(),
-  rate: z.number().optional(),
   effectiveTo: z.string().optional(),
   isActive: z.boolean().optional(),
   description: z.string().optional(),
+});
+
+const changeJurisdictionRateSchema = z.object({
+  rate: z.number(),
+  effectiveFrom: z.string(),
 });
 
 const createExemptionCertificateSchema = z.object({
@@ -5254,6 +5258,28 @@ export class AdvancedFinanceController {
       req.user.tenantId,
       id,
       dto as never,
+    );
+  }
+
+  @ApiOperation({
+    summary:
+      "Change a tax jurisdiction's rate (G-15: versioned by effective date, never retroactive)",
+  })
+  @Post("tax/jurisdictions/:id/change-rate")
+  @Permissions("finance.tax.update")
+  @UseInterceptors(ChangeHistoryInterceptor)
+  @TrackChanges("TaxJurisdiction", "id")
+  async changeJurisdictionRate(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @ZodBody(changeJurisdictionRateSchema)
+    dto: z.infer<typeof changeJurisdictionRateSchema>,
+  ) {
+    return this.taxDeepService.changeRate(
+      req.user.tenantId,
+      id,
+      dto.rate,
+      dto.effectiveFrom,
     );
   }
 
