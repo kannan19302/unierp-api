@@ -432,14 +432,24 @@ export class ManufacturingService {
                     },
                   });
 
+                  // E17 exit criterion: "MRP suggestions traceable to
+                  // their inputs." This component requirement exists
+                  // ONLY because it was exploded from the finished
+                  // item's BOM inside the loop over confirmed sales
+                  // order lines above — it is dependent demand from
+                  // `order`, never a safety-stock replenishment
+                  // trigger. Labeling it SAFETY_STOCK and pointing
+                  // demandSourceId at the BOM (not the order that
+                  // actually created the demand) breaks traceability
+                  // back to the real originating input.
                   await prisma.mRPPlannedItem.create({
                     data: {
                       tenantId,
                       mrpRunId: run.id,
                       productId: comp.productId,
                       bomId: subBom ? subBom.id : null,
-                      demandSource: "SAFETY_STOCK",
-                      demandSourceId: bom.id,
+                      demandSource: "SALES_ORDER",
+                      demandSourceId: order.id,
                       quantityNeeded: new Prisma.Decimal(compDemanded),
                       quantityInStock: new Prisma.Decimal(compStockQty),
                       netQuantityRequired: new Prisma.Decimal(compNetReq),

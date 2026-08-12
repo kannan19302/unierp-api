@@ -451,4 +451,44 @@ describe("ManufacturingService", () => {
       expect(oeeMetrics.oee).toBe(71); // 95 * 83.33 * 90 / 10000 = 71%
     });
   });
+
+  describe("runMRP — E17: suggestions traceable to their inputs", () => {
+    it("traces a BOM component requirement back to the real originating sales order, not a fabricated SAFETY_STOCK label pointing at the BOM", async () => {
+      vi.mocked(prisma.mRPRun.create).mockResolvedValue({ id: "run-1" } as any);
+      vi.mocked(prisma.mRPRun.update).mockResolvedValue({ id: "run-1", status: "COMPLETED" } as any);
+
+      vi.mocked(prisma.salesOrder.findMany).mockResolvedValue([
+        {
+          id: "so-1",
+          lineItems: [{ productId: "finished-1", quantity: new Prisma.Decimal(20) }],
+        },
+      ] as any);
+
+      // No finished-goods stock — forces a net requirement.
+      vi.mocked(prisma.inventoryItem.findMany)
+        .mockResolvedValueOnce([]) // finished item stock check
+        .mockResolvedValueOnce([]); // component stock check
+
+      vi.mocked(prisma.bOM.findFirst)
+        .mockResolvedValueOnce({
+          id: "bom-finished-1",
+          productId: "finished-1",
+          items: [
+            { type: "COMPONENT", productId: "component-1", quantity: new Prisma.Decimal(2) },
+          ],
+        } as any)
+        .mockResolvedValueOnce(null); // component has no sub-BOM
+
+      await service.runMRP("tenant-1", "user-1");
+
+      const componentCreateCall = vi
+        .mocked(prisma.mRPPlannedItem.create)
+        .mock.calls.find((c: any) => c[0].data.productId === "component-1");
+
+      expect(componentCreateCall).toBeDefined();
+      const data = (componentCreateCall as any)[0].data;
+      expect(data.demandSource).toBe("SALES_ORDER");
+      expect(data.demandSourceId).toBe("so-1");
+    });
+  });
 });
