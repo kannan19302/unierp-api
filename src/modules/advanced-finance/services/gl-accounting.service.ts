@@ -794,11 +794,24 @@ export class GlAccountingService {
     });
     if (!book) throw new NotFoundException("Accounting book not found");
 
-    const totalDebit = dto.entries.reduce((s, l) => s + (l.debit || 0), 0);
-    const totalCredit = dto.entries.reduce((s, l) => s + (l.credit || 0), 0);
-    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+    // E09 — was `Math.abs(totalDebit - totalCredit) > 0.01` on floating-
+    // point numbers: an epsilon-TOLERANT check that silently accepted any
+    // imbalance up to a full cent as "close enough," and was vulnerable to
+    // float drift in either direction. Double-entry requires debits to
+    // equal credits EXACTLY, to the last minor unit — Decimal.equals(),
+    // matching the correct pattern already used elsewhere in this same
+    // file (the parallel-book balance check).
+    const totalDebit = dto.entries.reduce(
+      (s, l) => s.plus(new Prisma.Decimal(l.debit || 0)),
+      new Prisma.Decimal(0),
+    );
+    const totalCredit = dto.entries.reduce(
+      (s, l) => s.plus(new Prisma.Decimal(l.credit || 0)),
+      new Prisma.Decimal(0),
+    );
+    if (!totalDebit.equals(totalCredit)) {
       throw new BadRequestException(
-        "Journal is not balanced (debits ≠ credits)",
+        `Journal is not balanced (debits ${totalDebit} ≠ credits ${totalCredit})`,
       );
     }
 
