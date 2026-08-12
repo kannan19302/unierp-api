@@ -300,6 +300,26 @@ describe("SalesService", () => {
         service.updateSalesOrderStatus("tenant-1", "nonexistent", "CONFIRMED"),
       ).rejects.toThrow("Sales order not found");
     });
+
+    it("E16: REFUSES to release an order from CREDIT_HOLD via the generic status endpoint — must go through approveCreditHold()", async () => {
+      // Both PATCH /orders/:id/status and PATCH /orders/:id/approve-credit
+      // require the same "sales.order.update" permission. Without this
+      // guard, any caller with that permission could bypass the
+      // credit-limit gate entirely by calling the generic status
+      // endpoint with { status: "CONFIRMED" } directly, skipping
+      // approveCreditHold()'s own re-validation.
+      vi.mocked(prisma.salesOrder.findFirst).mockResolvedValue({
+        id: "so-1",
+        orderNumber: "SO-001",
+        status: "CREDIT_HOLD",
+      } as never);
+
+      await expect(
+        service.updateSalesOrderStatus("tenant-1", "so-1", "CONFIRMED"),
+      ).rejects.toThrow(/credit hold/i);
+
+      expect(prisma.salesOrder.update).not.toHaveBeenCalled();
+    });
   });
 
   describe("b2b credit limit validation", () => {

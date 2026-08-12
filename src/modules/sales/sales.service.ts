@@ -490,6 +490,19 @@ export class SalesService {
     const so = await prisma.salesOrder.findFirst({ where: { id, tenantId } });
     if (!so) throw new NotFoundException("Sales order not found");
 
+    // E16 exit criterion: "...with credit limits..." A generic status
+    // update must never be able to release an order from CREDIT_HOLD —
+    // that requires the dedicated approveCreditHold() path, which
+    // re-validates that the order is actually on hold before releasing
+    // it. Without this guard, any caller with plain order-update
+    // permission could bypass the credit-limit gate entirely by setting
+    // status: "CONFIRMED" directly.
+    if (so.status === "CREDIT_HOLD" && status !== "CREDIT_HOLD") {
+      throw new BadRequestException(
+        "This order is on credit hold and cannot have its status changed directly. Use the credit-hold approval endpoint.",
+      );
+    }
+
     const updated = await prisma.salesOrder.update({
       where: { id },
       data: { status },
