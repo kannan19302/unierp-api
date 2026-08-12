@@ -83,10 +83,43 @@ const noCauseLossRethrowRule = {
   },
 };
 
+// L04 — CODE_STANDARDS § 7: "A TODO without an issue number is a lie
+// about intent." Required format: `TODO(#123): ...` — a bare `TODO:`
+// (or `TODO` with no parenthesized issue reference at all) is rejected.
+// Syntax-only (scans comments directly), no type information needed.
+const noBareTodoRule = {
+  meta: {
+    type: "problem",
+    docs: { description: "A TODO comment must carry an issue reference: TODO(#123): ... — CODE_STANDARDS § 7" },
+    schema: [],
+  },
+  create(context) {
+    return {
+      Program() {
+        const sourceCode = context.sourceCode ?? context.getSourceCode();
+        for (const comment of sourceCode.getAllComments()) {
+          const text = comment.value;
+          const todoMatch = text.match(/\bTODO\b(\([^)]*\))?/);
+          if (!todoMatch) continue;
+          const parenGroup = todoMatch[1];
+          const hasIssueRef = parenGroup && /#\d+/.test(parenGroup);
+          if (!hasIssueRef) {
+            context.report({
+              loc: comment.loc,
+              message: `bare TODO with no issue reference — required format is "TODO(#123): ..." (CODE_STANDARDS § 7). Either file an issue and reference it, or fix/delete the TODO.`,
+            });
+          }
+        }
+      },
+    };
+  },
+};
+
 const codeStandardsPlugin = {
   rules: {
     "no-swallowed-catch": noSwallowedCatchRule,
     "no-cause-loss-rethrow": noCauseLossRethrowRule,
+    "no-bare-todo": noBareTodoRule,
   },
 };
 
@@ -121,6 +154,7 @@ export default tseslint.config(
       "no-empty": ["warn", { allowEmptyCatch: false }],
       "code-standards/no-swallowed-catch": "warn",
       "code-standards/no-cause-loss-rethrow": "warn",
+      "code-standards/no-bare-todo": "warn",
     },
   },
   {
