@@ -1,4 +1,5 @@
 import { Controller, Get, Post, UseGuards, Req, Param } from "@nestjs/common";
+import { prisma } from "@kannan19302/database";
 import { z } from "zod";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
 import { Request } from "express";
@@ -98,29 +99,28 @@ export class ComplianceController {
     };
   }
 
+  /**
+   * K04 exit criterion: "An auditor's evidence request is satisfiable
+   * from generated artefacts. Nothing is assembled by hand the week
+   * before." This endpoint used to return a hardcoded literal array
+   * claiming "SOC 2 Type II: certified, certifiedAt: 2024-01-01" and
+   * "GDPR: compliant" — the same fabricated-certification pattern K03
+   * (D118) already found and removed from the public marketing site,
+   * but here served through an AUTHENTICATED API as if it were real
+   * evidence, with a fake historical date identical for every tenant.
+   * This platform holds no third-party certification of any kind
+   * (K03's own scope decision: SOC 2/ISO 27001 out of scope, no dated
+   * target). Returns the real, honest state instead.
+   */
   @ApiOperation({ summary: "List certifications" })
   @Permissions("saas.audit.read")
   @Get("certifications")
   async listCertifications(@Req() _req: AuthReq) {
     return [
-      {
-        standard: "SOC 2 Type II",
-        status: "certified",
-        certifiedAt: "2024-01-01",
-        expiresAt: "2025-01-01",
-      },
-      {
-        standard: "GDPR",
-        status: "compliant",
-        certifiedAt: "2024-02-01",
-        expiresAt: null,
-      },
-      {
-        standard: "HIPAA",
-        status: "in_progress",
-        certifiedAt: null,
-        expiresAt: null,
-      },
+      { standard: "SOC 2 Type II", status: "not_certified", certifiedAt: null, expiresAt: null },
+      { standard: "ISO 27001", status: "not_certified", certifiedAt: null, expiresAt: null },
+      { standard: "HIPAA", status: "not_certified", certifiedAt: null, expiresAt: null },
+      { standard: "FERPA", status: "not_certified", certifiedAt: null, expiresAt: null },
     ];
   }
 
@@ -167,25 +167,37 @@ export class ComplianceController {
   @Permissions("saas.audit.read")
   @Get("hipaa")
   async getHipaaStatus(@Req() _req: AuthReq) {
+    // K04/D125: no HIPAA controls are tracked or assessed anywhere in
+    // this platform (K03's own scope decision: out of scope, no BAA
+    // process, no PHI-specific controls). Was hardcoded
+    // `compliant: true, controls: 120, passed: 118` for every tenant.
     return {
-      compliant: true,
-      lastAssessment: "2024-03-01",
-      nextAssessment: "2024-09-01",
-      controls: 120,
-      passed: 118,
+      compliant: false,
+      lastAssessment: null,
+      nextAssessment: null,
+      controls: 0,
+      passed: 0,
     };
   }
 
   @ApiOperation({ summary: "Get GDPR status" })
   @Permissions("saas.audit.read")
   @Get("gdpr")
-  async getGdprStatus(@Req() _req: AuthReq) {
+  async getGdprStatus(@Req() req: AuthReq) {
+    // K04/D125: dataExports/erasureRequests were hardcoded (3, 1) for
+    // every tenant regardless of reality. Real counts, tenant-scoped.
+    const [dataExports, erasureRequests] = await Promise.all([
+      prisma.dataExportJob.count({ where: { tenantId: req.user.tenantId } }),
+      prisma.dataErasureRequest
+        .count({ where: { tenantId: req.user.tenantId } })
+        .catch(() => 0),
+    ]);
     return {
-      compliant: true,
+      compliant: false,
       dpaSigned: false,
-      dataExports: 3,
-      erasureRequests: 1,
-      dataProcessor: "AWS (Frankfurt)",
+      dataExports,
+      erasureRequests,
+      dataProcessor: null,
     };
   }
 
@@ -230,14 +242,15 @@ export class ComplianceController {
       .catch(() => ({ items: [], total: 0 }));
   }
 
+  /** K04/D125: was hardcoded "SOC 2 Type II: certified" for every tenant. */
   @ApiOperation({ summary: "List compliance standards" })
   @Permissions("saas.audit.read")
   @Get("standards")
   async listComplianceStandards(@Req() _req: AuthReq) {
     return [
-      { id: "soc2", name: "SOC 2 Type II", status: "certified" },
-      { id: "hipaa", name: "HIPAA", status: "in_progress" },
-      { id: "gdpr", name: "GDPR", status: "compliant" },
+      { id: "soc2", name: "SOC 2 Type II", status: "not_started" },
+      { id: "hipaa", name: "HIPAA", status: "not_started" },
+      { id: "gdpr", name: "GDPR", status: "in_progress" },
       { id: "iso27001", name: "ISO 27001", status: "not_started" },
       { id: "pci", name: "PCI DSS", status: "not_applicable" },
     ];
