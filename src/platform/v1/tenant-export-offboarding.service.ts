@@ -61,8 +61,27 @@ export class TenantExportOffboardingService {
   }
 
   /**
-   * Issues a cryptographically signed Deletion Certificate.
-   * The certificate proves the deletion occurred, for regulatory compliance.
+   * K15 exit criterion (G-4): "A tenant exits fully unaided and receives
+   * a deletion certificate. Verified by rehearsal, not by clause."
+   *
+   * This method previously issued a cryptographically signed artefact
+   * TYPED "DELETION_CERTIFICATE" with a `deletedAt` timestamp — but
+   * never deleted any tenant data anywhere. It set `tenant.status =
+   * 'OFFBOARDED'`, cancelled subscriptions, and queued a (never-
+   * automatically-processed) export job — a signed, tamper-evident-
+   * looking legal artefact asserting a fact (deletion occurred) that
+   * was simply false. Confirmed by grep: no cron/worker/cascading-
+   * delete job anywhere in this codebase reacts to the OFFBOARDED
+   * status; nothing was ever actually deleted after this ran.
+   *
+   * A full cascading purge across this platform's ~1000+ tenant-scoped
+   * tables is out of scope for a single pass — the honest fix here is
+   * to stop the certificate from claiming something unverified. Issues
+   * an OFFBOARDING_RECEIPT instead: accurately describes what WAS done
+   * (status change, subscription cancellation, export queued) and
+   * explicitly states `dataDeleted: false` with the real reason, so no
+   * signed artefact makes a claim this platform cannot back up "by
+   * rehearsal."
    */
   async offboardTenant(tenantId: string, reason: string, actorId: string) {
     if (!reason || reason.length < 10) {
@@ -95,32 +114,43 @@ export class TenantExportOffboardingService {
         data: { status: 'CANCELLED', cancelledAt: new Date() },
       });
 
-      // Generate cryptographic deletion certificate
-      const certPayload = JSON.stringify({
+      // Sign an OFFBOARDING RECEIPT — not a deletion certificate. This
+      // asserts only what actually happened in this transaction: the
+      // tenant status changed, subscriptions were cancelled, and an
+      // export was queued. It does NOT claim data was deleted, because
+      // it was not.
+      const receiptPayload = JSON.stringify({
         tenantId,
         tenantName: tenant.name,
         tenantSlug: tenant.slug,
         reason,
-        deletedBy: actorId,
-        deletedAt: new Date().toISOString(),
+        offboardedBy: actorId,
+        offboardedAt: new Date().toISOString(),
         exportJobId: exportJob.id,
+        dataDeleted: false,
         version: '1.0',
       });
 
       const signature = crypto
         .createHmac('sha256', process.env.DELETION_CERT_SECRET ?? 'platform-deletion-key')
-        .update(certPayload)
+        .update(receiptPayload)
         .digest('hex');
 
-      const certificate = {
-        type: 'DELETION_CERTIFICATE',
+      const receipt = {
+        type: 'OFFBOARDING_RECEIPT',
         version: '1.0',
         tenantId,
         tenantName: tenant.name,
         reason,
-        deletedBy: actorId,
-        deletedAt: new Date().toISOString(),
+        offboardedBy: actorId,
+        offboardedAt: new Date().toISOString(),
         exportJobId: exportJob.id,
+        dataDeleted: false,
+        dataRetentionNote:
+          'Tenant data has not been deleted. This receipt confirms the tenant was marked ' +
+          'OFFBOARDED and its subscriptions cancelled, and that a full export was queued. ' +
+          'A deletion certificate is issued only once tenant data deletion has actually ' +
+          'occurred and been verified.',
         signature,
       };
 
@@ -130,7 +160,7 @@ export class TenantExportOffboardingService {
           actorRole: 'SUPER_ADMIN',
           action: 'tenant.offboard',
           targetId: tenantId,
-          details: { reason, certificate: { signature, exportJobId: exportJob.id } },
+          details: { reason, receipt: { signature, exportJobId: exportJob.id, dataDeleted: false } },
         },
         tx as any,
       );
@@ -139,7 +169,7 @@ export class TenantExportOffboardingService {
         tenantId,
         status: 'OFFBOARDED',
         exportJobId: exportJob.id,
-        deletionCertificate: certificate,
+        offboardingReceipt: receipt,
       };
     });
   }
