@@ -181,7 +181,20 @@ export class ReportingBulkController {
   @Delete("reports/:id")
   @Permissions("reporting.delete")
   @ApiOperation({ summary: "Delete report" })
-  async deleteReport(@Param("id") id: string) {
-    return this.service.deleteReport(id);
+  async deleteReport(@Req() req: AuthReq, @Param("id") id: string) {
+    return this.service.deleteReport(req.user.tenantId, id);
+  }
+
+  @Get("reports/:id/run")
+  @Permissions("reporting.read")
+  @ApiOperation({
+    summary:
+      "Run a saved report, respecting the VIEWER's permissions (E35: not the author's)",
+  })
+  async runReport(@Req() req: AuthReq, @Param("id") id: string) {
+    const viewerPermissions = Array.isArray((req.user as any).permissions)
+      ? (req.user as any).permissions
+      : [];
+    return this.service.runReport(req.user.tenantId, id, viewerPermissions);
   }
 }
