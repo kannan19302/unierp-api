@@ -29,6 +29,7 @@ import { CrmIntelligenceController } from "./crm-intelligence.controller";
 import { CrmContractsService } from "./crm-contracts.service";
 import { CrmContractsController } from "./crm-contracts.controller";
 import { CrmMailboxService } from "./crm-mailbox.service";
+import { CrmMailboxProviderClientService } from "./crm-mailbox-provider-client.service";
 import { CrmMailboxController } from "./crm-mailbox.controller";
 import { CrmExpansionController } from "./crm-expansion.controller";
 import { CustomerPortalService } from "./customer-portal.service";
@@ -222,6 +223,7 @@ const CRM_SERVICES = [
   CrmSlaService,
   CrmContractsService,
   CrmMailboxService,
+  CrmMailboxProviderClientService,
   CrmForecastingService,
   CrmAccountManagementService,
   CrmCampaignManagementService,

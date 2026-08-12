@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { CrmMailboxService } from "../crm-mailbox.service";
+import { CrmMailboxProviderClientService } from "../crm-mailbox-provider-client.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
@@ -50,7 +51,7 @@ describe("CrmMailboxService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new CrmMailboxService({ emit } as any);
+    service = new CrmMailboxService({ emit } as any, new CrmMailboxProviderClientService());
     process.env.GOOGLE_OAUTH_CLIENT_ID = "gid";
     process.env.GOOGLE_OAUTH_CLIENT_SECRET = "gsecret";
     process.env.MICROSOFT_OAUTH_CLIENT_ID = "mid";
