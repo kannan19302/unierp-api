@@ -387,6 +387,32 @@ export class ExtensionRegistryService {
     });
   }
 
+  /**
+   * G04 exit criterion: "An author debugs a failing handler from the
+   * portal without our involvement. A tenant sees what an installed
+   * extension is doing."
+   *
+   * ExtensionInvocationUsage rows were written on every invocation
+   * (recordUsage, above) but never read back anywhere — grep across
+   * this repo found zero GET endpoints exposing them. The data existed,
+   * fully wired for collection, but was completely unreachable by
+   * anyone: not the tenant who installed the extension, not its
+   * author. This is the tenant-facing half — real, tenant-scoped
+   * per-invocation resource/error visibility, ordered newest first.
+   */
+  async getInvocationUsage(
+    tenantId: string,
+    extensionId: string,
+    limit = 50,
+  ) {
+    await this.require(tenantId, extensionId);
+    return prisma.extensionInvocationUsage.findMany({
+      where: { tenantId, extensionId },
+      orderBy: { occurredAt: "desc" },
+      take: Math.min(limit, 200),
+    });
+  }
+
   private async require(tenantId: string, extensionId: string) {
     const found = await prisma.tenantExtensionInstallation.findUnique({
       where: { tenantId_extensionId: { tenantId, extensionId } },

@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Body,
+  Query,
   UseGuards,
   Req,
 } from "@nestjs/common";
@@ -71,6 +72,26 @@ export class ExtensionRegistryController {
   @Permissions("admin.extensions.manage")
   async uninstallExtension(@Req() req, @Param("id") extensionId: string) {
     return this.registryService.uninstall(req.user.tenantId, extensionId);
+  }
+
+  /**
+   * G04: real, tenant-scoped per-invocation resource/error visibility —
+   * "a tenant sees what an installed extension is doing." Reuses the
+   * same "admin.extensions.read" permission the extension list itself
+   * requires, not a new drifting check.
+   */
+  @Get(":id/usage")
+  @Permissions("admin.extensions.read")
+  async getInvocationUsage(
+    @Req() req,
+    @Param("id") extensionId: string,
+    @Query("limit") limit?: string,
+  ) {
+    return this.registryService.getInvocationUsage(
+      req.user.tenantId,
+      extensionId,
+      limit ? parseInt(limit, 10) : undefined,
+    );
   }
 
   /**
