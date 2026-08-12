@@ -356,9 +356,20 @@ export class GlAccountingService {
     },
   ) {
     const resolvedOrgId = await this.resolveOrgId(tenantId, orgId);
-    const debits = dto.entries.reduce((sum, e) => sum + e.debit, 0);
-    const credits = dto.entries.reduce((sum, e) => sum + e.credit, 0);
-    if (Math.abs(debits - credits) > 0.01) {
+    // J10 (property-tested edge case, D122): `Math.abs(debits - credits) > 0.01`
+    // accepted ANY imbalance up to a full cent as "close enough" — real,
+    // wrong money at Decimal(19,4) precision, the same class of bug
+    // already fixed in the sibling postJournalToBook() (E09). Exact
+    // Decimal arithmetic, matching that fix.
+    const debits = dto.entries.reduce(
+      (sum, e) => sum.add(new Prisma.Decimal(e.debit)),
+      new Prisma.Decimal(0),
+    );
+    const credits = dto.entries.reduce(
+      (sum, e) => sum.add(new Prisma.Decimal(e.credit)),
+      new Prisma.Decimal(0),
+    );
+    if (!debits.equals(credits)) {
       throw new BadRequestException(
         "Journal entries do not balance. Total debits must equal total credits.",
       );

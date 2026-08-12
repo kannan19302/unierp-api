@@ -51,11 +51,21 @@ vi.mock("@kannan19302/database", () => ({
           if (!j) return null;
           return { ...j, entries: journalEntries.filter((e) => e.journalId === j.id) };
         }),
+        findUnique: vi.fn(({ where }: any) => {
+          const j = journals.find((x) => x.id === where.id);
+          if (!j) return null;
+          return { ...j, entries: journalEntries.filter((e) => e.journalId === j.id) };
+        }),
       },
       journalEntry: {
         createMany: vi.fn(({ data }: any) => {
           for (const d of data) journalEntries.push({ id: `je-${journalEntries.length + 1}`, ...d });
           return { count: data.length };
+        }),
+        create: vi.fn(({ data }: any) => {
+          const row = { id: `je-${journalEntries.length + 1}`, ...data };
+          journalEntries.push(row);
+          return row;
         }),
       },
     })),
@@ -102,6 +112,49 @@ describe("E09 · GlAccountingService.postJournalToBook() balance check is exact,
     const result = await service.postJournalToBook("t1", "org1", "book-1", {
       entryNumber: "JE-2",
       date: "2026-01-01",
+      entries: [
+        { accountId: "acc-1", debit: 0.1, credit: 0 },
+        { accountId: "acc-2", debit: 0.2, credit: 0 },
+        { accountId: "acc-3", debit: 0, credit: 0.3 },
+      ],
+    });
+    expect(result).toBeTruthy();
+    expect(journals.length).toBe(1);
+  });
+});
+
+describe("J10/D122 · GlAccountingService.createJournal() balance check is exact, not float-tolerant", () => {
+  let service: GlAccountingService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    books = [{ id: "book-1", tenantId: "t1", isActive: true }];
+    journals = [];
+    journalEntries = [];
+    service = new GlAccountingService();
+  });
+
+  it("REFUSES the exact edge case a property test found: unbalanced by a tenth of a cent, silently accepted by the old epsilon check", async () => {
+    // createJournal() used `Math.abs(debits - credits) > 0.01` — any
+    // imbalance up to a full cent was accepted as "close enough." This is
+    // the fast-check-found edge case from
+    // gl-accounting-create-journal-balance.property.spec.ts, run directly
+    // against the real service and its transaction.
+    await expect(
+      service.createJournal("t1", "org1", {
+        entryNumber: "JE-3",
+        entries: [
+          { accountId: "acc-1", debit: 1, credit: 0 },
+          { accountId: "acc-2", debit: 0, credit: 0.9999 },
+        ],
+      }),
+    ).rejects.toThrow(/do not balance/i);
+    expect(journals.length).toBe(0);
+  });
+
+  it("ALLOWS a genuinely balanced journal", async () => {
+    const result = await service.createJournal("t1", "org1", {
+      entryNumber: "JE-4",
       entries: [
         { accountId: "acc-1", debit: 0.1, credit: 0 },
         { accountId: "acc-2", debit: 0.2, credit: 0 },

@@ -17,14 +17,26 @@ import {
 } from "../services";
 
 vi.mock("@prisma/client", () => {
+  class Decimal {
+    value: number;
+    constructor(value: unknown) {
+      this.value = Number(value);
+    }
+    add(other: Decimal | number) {
+      return new Decimal(this.value + Number(other));
+    }
+    equals(other: Decimal | number) {
+      return this.value === Number(other);
+    }
+    toString() {
+      return String(this.value);
+    }
+    valueOf() {
+      return this.value;
+    }
+  }
   return {
-    Prisma: {
-      Decimal: class Decimal {
-        constructor(value: unknown) {
-          return Number(value);
-        }
-      },
-    },
+    Prisma: { Decimal },
   };
 });
 

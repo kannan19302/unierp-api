@@ -18,6 +18,12 @@ vi.mock("@prisma/client", () => ({
       constructor(v: unknown) { this.value = Number(v); }
       toString() { return String(this.value); }
       valueOf() { return this.value; }
+      add(other: Decimal | number) {
+        return new Decimal(this.value + Number(other));
+      }
+      equals(other: Decimal | number) {
+        return this.value === Number(other);
+      }
     },
   },
 }));
