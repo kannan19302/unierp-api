@@ -117,15 +117,39 @@ export class AdvancedHrService {
   ) {
     const start = new Date(dto.periodStart);
     const end = new Date(dto.periodEnd);
+    // E21 exit criterion: "Statutory-correct payroll..." A payroll run
+    // that has already been PAID for this exact period must never be
+    // run again — without this check, calling runPayroll() twice for
+    // the same period silently double-pays every employee (a second,
+    // independent PayrollRun with its own PayrollSlips, no relation to
+    // or awareness of the first).
+    const existingRun = await prisma.payrollRun.findFirst({
+      where: {
+        tenantId,
+        periodStart: start,
+        periodEnd: end,
+        status: "PAID",
+      },
+    });
+    if (existingRun) {
+      throw new BadRequestException(
+        `Payroll has already been run and paid for this period (${dto.periodStart} to ${dto.periodEnd}).`,
+      );
+    }
     const structures = await prisma.salaryStructure.findMany({
       where: { tenantId },
     });
     if (structures.length === 0)
       throw new BadRequestException("No salary structures configured.");
     return prisma.$transaction(async (tx) => {
-      let totalGross = 0,
-        totalDeductions = 0,
-        totalNet = 0;
+      // Money is summed as Prisma.Decimal, not plain number — defensive
+      // hardening matching CODE_STANDARDS (D084/D085/D086), even though
+      // this function's specific multiply/subtract/sum pattern was
+      // verified not to produce a business-observable reconciliation
+      // failure at realistic payroll sizes.
+      let totalGross = new Prisma.Decimal(0);
+      let totalDeductions = new Prisma.Decimal(0);
+      let totalNet = new Prisma.Decimal(0);
       const run = await tx.payrollRun.create({
         data: {
           tenantId,
@@ -138,7 +162,7 @@ export class AdvancedHrService {
         },
       });
       for (const struct of structures) {
-        const gross = Number(struct.baseSalary);
+        const gross = new Prisma.Decimal(struct.baseSalary);
 
         // Fetch employee to check country for tax calculation
         const emp = await tx.employee.findUnique({
@@ -153,42 +177,43 @@ export class AdvancedHrService {
         const taxBrackets = await tx.taxTable.findMany({
           where: { tenantId, country },
         });
-        let taxRate = 10; // Fallback 10%
+        let taxRate = new Prisma.Decimal(10); // Fallback 10%
         if (taxBrackets.length > 0) {
+          const grossNum = Number(gross);
           const matchingBracket = taxBrackets.find((b) => {
             const min = Number(b.incomeBracketMin);
             const max = b.incomeBracketMax
               ? Number(b.incomeBracketMax)
               : Infinity;
-            return gross >= min && gross <= max;
+            return grossNum >= min && grossNum <= max;
           });
           if (matchingBracket) {
-            taxRate = Number(matchingBracket.taxRate);
+            taxRate = new Prisma.Decimal(matchingBracket.taxRate);
           }
         }
 
-        const deductionSum = gross * (taxRate / 100);
-        const net = gross - deductionSum;
-        totalGross += gross;
-        totalDeductions += deductionSum;
-        totalNet += net;
+        const deductionSum = gross.mul(taxRate).div(100);
+        const net = gross.sub(deductionSum);
+        totalGross = totalGross.plus(gross);
+        totalDeductions = totalDeductions.plus(deductionSum);
+        totalNet = totalNet.plus(net);
         await tx.payrollSlip.create({
           data: {
             tenantId,
             payrollRunId: run.id,
             employeeId: struct.employeeId,
-            grossSalary: new Prisma.Decimal(gross),
-            deductions: new Prisma.Decimal(deductionSum),
-            netSalary: new Prisma.Decimal(net),
+            grossSalary: gross,
+            deductions: deductionSum,
+            netSalary: net,
           },
         });
       }
       return tx.payrollRun.update({
         where: { id: run.id },
         data: {
-          totalGross: new Prisma.Decimal(totalGross),
-          totalDeductions: new Prisma.Decimal(totalDeductions),
-          totalNet: new Prisma.Decimal(totalNet),
+          totalGross,
+          totalDeductions,
+          totalNet,
           status: "PAID",
         },
         include: { slips: true },
