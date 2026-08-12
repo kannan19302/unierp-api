@@ -104,12 +104,43 @@ export class SaasPortalGdprComplianceService {
     const prismaKey = this.prismaModelMap[modelName];
     if (!prismaKey) return 0;
     const model = (prisma as unknown as Record<string, unknown>)[prismaKey] as {
+      findMany?: (args: {
+        where: { tenantId: string; email: string };
+        select: { id: true };
+      }) => Promise<{ id: string }[]>;
       deleteMany?: (args: {
         where: { tenantId: string; email: string };
       }) => Promise<{ count: number }>;
     };
     if (!model?.deleteMany) return 0;
+
+    // E32 exit criterion: "A GDPR erasure removes attachments too."
+    // A User's identity record can be deleted while their uploaded
+    // files/documents (createdBy = their user id) survive untouched —
+    // those files are exactly the kind of personal data (uploaded
+    // photos, ID scans, signed contracts) a subject-erasure request is
+    // meant to reach. Capture the ids before deleting the User rows so
+    // their attachments can be erased too, in the same call.
+    let userIds: string[] = [];
+    if (modelName === "User" && model.findMany) {
+      const users = await model.findMany({
+        where: { tenantId, email },
+        select: { id: true },
+      });
+      userIds = users.map((u) => u.id);
+    }
+
     const { count } = await model.deleteMany({ where: { tenantId, email } });
+
+    if (userIds.length > 0) {
+      await prisma.storedFile.deleteMany({
+        where: { tenantId, createdBy: { in: userIds } },
+      });
+      await prisma.document.deleteMany({
+        where: { tenantId, createdBy: { in: userIds } },
+      });
+    }
+
     return count;
   }
 

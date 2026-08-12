@@ -1,0 +1,60 @@
+{
+  "comment": "E32/GDPR: registry of which Prisma models hold personal data subject to a right-to-erasure request, and what treatment applies. Read by SaasPortalGdprComplianceService.loadPiiRegistry(). Every model here must exist in that service's prismaModelMap. 'erase' hard-deletes matching rows; 'anonymize' overwrites the fields listed in that service's piiAnonymizeFields with redacted placeholders instead of deleting the row (used where the row itself must survive for referential/financial-record reasons); 'retain-legal-hold' is logged and skipped.",
+  "models": {
+    "User": {
+      "treatment": "anonymize",
+      "rationale": "User rows are referenced by createdBy/updatedBy/assignee fields across most business records; hard-deleting would break referential history. Anonymizing the identifying fields satisfies erasure while preserving the audit trail's structural integrity.",
+      "reviewed": "2026-08-12"
+    },
+    "Organization": {
+      "treatment": "anonymize",
+      "rationale": "An Organization can be the tenant's own customer/vendor entity referenced by many financial records; anonymize rather than delete to preserve those records.",
+      "reviewed": "2026-08-12"
+    },
+    "Employee": {
+      "treatment": "erase",
+      "rationale": "Employee records are subject-specific HR data with no cross-tenant referential requirement once the employment relationship ends and any statutory retention period has passed.",
+      "reviewed": "2026-08-12"
+    },
+    "Customer": {
+      "treatment": "anonymize",
+      "rationale": "Customer rows are referenced by Invoice/Order/Payment records that must be retained for statutory financial record-keeping; anonymize the PII fields rather than deleting the row.",
+      "reviewed": "2026-08-12"
+    },
+    "Vendor": {
+      "treatment": "anonymize",
+      "rationale": "Vendor rows are referenced by PurchaseOrder/Payment records that must be retained for statutory financial record-keeping; anonymize the PII fields rather than deleting the row.",
+      "reviewed": "2026-08-12"
+    },
+    "Contact": {
+      "treatment": "erase",
+      "rationale": "CRM contact records have no independent statutory retention requirement once erasure is requested.",
+      "reviewed": "2026-08-12"
+    },
+    "Lead": {
+      "treatment": "erase",
+      "rationale": "Sales lead records have no independent statutory retention requirement once erasure is requested.",
+      "reviewed": "2026-08-12"
+    },
+    "POSLoyaltyMember": {
+      "treatment": "erase",
+      "rationale": "Loyalty program membership records have no independent statutory retention requirement once erasure is requested.",
+      "reviewed": "2026-08-12"
+    },
+    "Applicant": {
+      "treatment": "erase",
+      "rationale": "Recruiting applicant records have no independent statutory retention requirement once erasure is requested (subject to any jurisdiction-specific hiring-record minimums, tracked separately via DataRetentionPolicy).",
+      "reviewed": "2026-08-12"
+    },
+    "CustomerPortalUser": {
+      "treatment": "erase",
+      "rationale": "Portal login accounts have no independent statutory retention requirement once erasure is requested.",
+      "reviewed": "2026-08-12"
+    },
+    "VendorPortalUser": {
+      "treatment": "erase",
+      "rationale": "Portal login accounts have no independent statutory retention requirement once erasure is requested.",
+      "reviewed": "2026-08-12"
+    }
+  }
+}
