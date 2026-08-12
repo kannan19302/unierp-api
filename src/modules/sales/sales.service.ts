@@ -38,6 +38,38 @@ export type CreateOnlineOrderInput = Omit<
   paymentMethod?: string;
 };
 
+/**
+ * J12 exit criterion: "Every forbidden transition is proven to be
+ * rejected. A new state added without tests fails CI." Before this, the
+ * only transition ever actually blocked was leaving CREDIT_HOLD through
+ * the generic status endpoint (D091/E16) — every OTHER status pair was
+ * silently accepted: DELIVERED back to DRAFT, CANCELLED forward to
+ * CONFIRMED, DRAFT straight to DELIVERED skipping every intermediate
+ * stage. This names every allowed edge explicitly; anything not listed
+ * is forbidden and rejected. Terminal states (DELIVERED, CANCELLED)
+ * have no outgoing edges at all. CREDIT_HOLD keeps zero generic
+ * outgoing edges — leaving it must still go through the dedicated
+ * approveCreditHold() path, which re-validates the hold before
+ * releasing it (E16/D091's own reason: a plain order-update permission
+ * must never bypass the credit-limit gate).
+ *
+ * Exported (not private-to-the-class) so
+ * tests/sales-order-transitions-schema-sync.spec.ts can assert every
+ * status value declared in @kannan19302/shared's
+ * updateSalesOrderStatusSchema enum has a corresponding key here — a
+ * new state added to the schema without a matching entry fails that
+ * test, satisfying the exit criterion's second sentence.
+ */
+export const ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
+  DRAFT: ["CONFIRMED", "CANCELLED", "CREDIT_HOLD"],
+  CREDIT_HOLD: [],
+  CONFIRMED: ["PROCESSING", "CANCELLED"],
+  PROCESSING: ["PARTIALLY_DELIVERED", "DELIVERED", "CANCELLED"],
+  PARTIALLY_DELIVERED: ["DELIVERED", "CANCELLED"],
+  DELIVERED: [],
+  CANCELLED: [],
+};
+
 @Injectable()
 export class SalesService {
   constructor(private readonly eventEmitter?: EventEmitter2) {}
@@ -484,31 +516,6 @@ export class SalesService {
   }
 
   /**
-   * J12 exit criterion: "Every forbidden transition is proven to be
-   * rejected." Before this, the only transition ever actually blocked
-   * was leaving CREDIT_HOLD through this endpoint (D091/E16) — every
-   * OTHER status pair was silently accepted: DELIVERED back to DRAFT,
-   * CANCELLED forward to CONFIRMED, DRAFT straight to DELIVERED
-   * skipping every intermediate stage. This names every allowed edge
-   * explicitly; anything not listed is forbidden and rejected. Terminal
-   * states (DELIVERED, CANCELLED) have no outgoing edges at all.
-   * CREDIT_HOLD keeps zero generic outgoing edges — leaving it must
-   * still go through the dedicated approveCreditHold() path, which
-   * re-validates the hold before releasing it (E16/D091's own reason:
-   * a plain order-update permission must never bypass the credit-limit
-   * gate).
-   */
-  private static readonly ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
-    DRAFT: ["CONFIRMED", "CANCELLED", "CREDIT_HOLD"],
-    CREDIT_HOLD: [],
-    CONFIRMED: ["PROCESSING", "CANCELLED"],
-    PROCESSING: ["PARTIALLY_DELIVERED", "DELIVERED", "CANCELLED"],
-    PARTIALLY_DELIVERED: ["DELIVERED", "CANCELLED"],
-    DELIVERED: [],
-    CANCELLED: [],
-  };
-
-  /**
    * Update sales order status.
    */
   async updateSalesOrderStatus(tenantId: string, id: string, status: string) {
@@ -517,7 +524,7 @@ export class SalesService {
 
     if (so.status !== status) {
       const allowed =
-        SalesService.ORDER_STATUS_TRANSITIONS[so.status] ?? [];
+        ORDER_STATUS_TRANSITIONS[so.status] ?? [];
       if (!allowed.includes(status)) {
         throw new BadRequestException(
           `Cannot transition sales order from ${so.status} to ${status}. ` +
