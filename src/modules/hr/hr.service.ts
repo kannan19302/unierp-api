@@ -811,6 +811,22 @@ export class HrService {
     if (!item) throw new NotFoundException("Leave request not found");
     if (item.status !== "PENDING")
       throw new BadRequestException("Leave request is not pending");
+
+    if (item.policyId) {
+      const policy = await prisma.leavePolicy.findFirst({ where: { id: item.policyId, tenantId } });
+      if (policy) {
+        const balances = await this.getLeaveBalances(tenantId, item.employeeId);
+        const balance = balances.find((b) => b.leaveTypeId === item.policyId);
+        const requestedDays = this.requestDays(item.startDate, item.endDate);
+        if (balance && requestedDays > balance.remaining) {
+          throw new BadRequestException(
+            `Cannot approve: this request needs ${requestedDays} day(s) but only ${balance.remaining} day(s) remain of the ` +
+              `${balance.totalDays}-day "${balance.leaveTypeName}" allocation.`,
+          );
+        }
+      }
+    }
+
     const updated = await prisma.leaveRequest.update({
       where: { id },
       data: { status: "APPROVED", approvedBy: userId, approvedAt: new Date() },
@@ -886,9 +902,22 @@ export class HrService {
 
   // ── Leave Balances ──
 
+  /**
+   * E22 — leave balance must be counted in DAYS actually taken, not the
+   * number of approved request ROWS. A single 10-day approved request
+   * previously counted as "1 used" — an employee could exhaust an entire
+   * annual allocation in one request and still show 9 days "remaining."
+   * requestDays() is the single, shared day-count so getLeaveBalances()
+   * and approveLeaveRequest()'s pre-approval check can never disagree.
+   */
+  private requestDays(startDate: Date, endDate: Date): number {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffMs = end.getTime() - start.getTime();
+    return Math.floor(diffMs / (24 * 60 * 60 * 1000)) + 1; // inclusive of both endpoints
+  }
+
   async getLeaveBalances(tenantId: string, employeeId?: string) {
-    const where: any = { tenantId };
-    if (employeeId) where.employeeId = employeeId;
     const leaveTypes = await prisma.leavePolicy.findMany({
       where: { tenantId },
     });
@@ -901,22 +930,21 @@ export class HrService {
     const balances: any[] = [];
     for (const emp of employees) {
       for (const lt of leaveTypes) {
-        const used = await prisma.leaveRequest.count({
-          where: {
-            tenantId,
-            employeeId: emp.id,
-            policyId: lt.id,
-            status: "APPROVED",
-          },
+        const approvedRequests = await prisma.leaveRequest.findMany({
+          where: { tenantId, employeeId: emp.id, policyId: lt.id, status: "APPROVED" },
         });
+        const usedDays = approvedRequests.reduce(
+          (sum: number, r: any) => sum + this.requestDays(r.startDate, r.endDate),
+          0,
+        );
         balances.push({
           employeeId: emp.id,
           leaveTypeId: lt.id,
           leaveTypeName: lt.name,
           totalDays: lt.annualAllocation,
-          usedDays: used,
+          usedDays,
           pendingDays: 0,
-          remaining: lt.annualAllocation - used,
+          remaining: lt.annualAllocation - usedDays,
         });
       }
     }
