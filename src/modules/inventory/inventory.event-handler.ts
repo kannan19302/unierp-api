@@ -150,64 +150,77 @@ export class InventoryEventHandler {
     }
 
     try {
-      // 1. Consume raw materials (decrement stock)
-      for (const item of event.items) {
-        await prisma.inventoryItem.upsert({
+      // Raw-material consumption and finished-goods production must be
+      // atomic — E18 exit criterion: "WIP valuation... scrap and yield."
+      // The old code performed both as separate, unwrapped upserts: if
+      // production of the finished-goods increment failed after some (but
+      // not all) raw-material decrements had already committed, the
+      // warehouse was left with materials silently vanished and no
+      // finished goods to show for them, with the failure only logged —
+      // a permanent, silent WIP integrity gap with no rollback.
+      await prisma.$transaction(async (tx) => {
+        // 1. Consume raw materials (decrement stock)
+        for (const item of event.items) {
+          await tx.inventoryItem.upsert({
+            where: {
+              tenantId_productId_warehouseId: {
+                tenantId: event.tenantId,
+                productId: item.productId,
+                warehouseId: event.warehouseId as string,
+              },
+            },
+            update: {
+              quantity: {
+                decrement: new Prisma.Decimal(item.quantity),
+              },
+            },
+            create: {
+              tenantId: event.tenantId,
+              productId: item.productId,
+              warehouseId: event.warehouseId as string,
+              quantity: new Prisma.Decimal(-item.quantity),
+            },
+          });
+          this.logger.log(
+            `Consumed stock for product ${item.productId} in warehouse ${event.warehouseId} by ${item.quantity}`,
+          );
+        }
+
+        // 2. Produce finished goods (increment stock)
+        await tx.inventoryItem.upsert({
           where: {
             tenantId_productId_warehouseId: {
               tenantId: event.tenantId,
-              productId: item.productId,
-              warehouseId: event.warehouseId,
+              productId: event.productId,
+              warehouseId: event.warehouseId as string,
             },
           },
           update: {
             quantity: {
-              decrement: new Prisma.Decimal(item.quantity),
+              increment: new Prisma.Decimal(event.quantity),
             },
           },
           create: {
             tenantId: event.tenantId,
-            productId: item.productId,
-            warehouseId: event.warehouseId,
-            quantity: new Prisma.Decimal(-item.quantity),
+            productId: event.productId,
+            warehouseId: event.warehouseId as string,
+            quantity: new Prisma.Decimal(event.quantity),
           },
         });
         this.logger.log(
-          `Consumed stock for product ${item.productId} in warehouse ${event.warehouseId} by ${item.quantity}`,
+          `Produced stock for finished product ${event.productId} in warehouse ${event.warehouseId} by ${event.quantity}`,
         );
+      });
 
-        // Check reorder threshold
+      // Reorder-threshold checks are best-effort (may create a new PO) and
+      // are intentionally outside the atomic WIP transaction above.
+      for (const item of event.items) {
         await this.checkReorderThreshold(
           event.tenantId,
           item.productId,
           event.warehouseId,
         );
       }
-
-      // 2. Produce finished goods (increment stock)
-      await prisma.inventoryItem.upsert({
-        where: {
-          tenantId_productId_warehouseId: {
-            tenantId: event.tenantId,
-            productId: event.productId,
-            warehouseId: event.warehouseId,
-          },
-        },
-        update: {
-          quantity: {
-            increment: new Prisma.Decimal(event.quantity),
-          },
-        },
-        create: {
-          tenantId: event.tenantId,
-          productId: event.productId,
-          warehouseId: event.warehouseId,
-          quantity: new Prisma.Decimal(event.quantity),
-        },
-      });
-      this.logger.log(
-        `Produced stock for finished product ${event.productId} in warehouse ${event.warehouseId} by ${event.quantity}`,
-      );
     } catch (err) {
       this.logger.error(
         `Failed to execute inventory transactions for workorder ${event.workOrderId}: ${err instanceof Error ? err.message : String(err)}`,
