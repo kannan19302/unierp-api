@@ -10,6 +10,26 @@ import { createHash } from "crypto";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { GlAccountingService } from "./gl-accounting.service";
 
+/**
+ * E42/G-statutory: filing types this system can actually produce and
+ * validate against a real jurisdiction specification. Adding a market
+ * means adding a real, named entry here with the fields that market's
+ * authority requires on the filing — not just accepting any string.
+ */
+const SUPPORTED_FILING_SPECS: Record<
+  string,
+  { jurisdiction: string; requiredFields: string[] }
+> = {
+  "GSTR-1": {
+    jurisdiction: "IN",
+    requiredFields: ["outputTax", "invoiceCount"],
+  },
+  "US-SALES-TAX": {
+    jurisdiction: "US",
+    requiredFields: ["outputTax", "inputTax", "netTaxPayable"],
+  },
+};
+
 @Injectable()
 export class TaxEngineService {
   constructor(
@@ -95,6 +115,15 @@ export class TaxEngineService {
     periodStart: string,
     periodEnd: string,
   ) {
+    const spec = SUPPORTED_FILING_SPECS[filingType];
+    if (!spec) {
+      throw new BadRequestException(
+        `Filing type "${filingType}" is not a supported statutory filing. ` +
+          `Supported: ${Object.keys(SUPPORTED_FILING_SPECS).join(", ")}. ` +
+          `This market's filing is not implemented — it is not silently computed as a generic return.`,
+      );
+    }
+
     const resolvedOrgId = await this.glService.resolveOrgId(tenantId, orgId);
     const start = new Date(periodStart);
     const end = new Date(periodEnd);
@@ -124,6 +153,26 @@ export class TaxEngineService {
     );
     const netTaxPayable = outputTax - inputTax;
 
+    const computed: Record<string, number> = {
+      outputTax,
+      inputTax,
+      netTaxPayable,
+      invoiceCount: invoices.length,
+      purchaseCount: purchaseOrders.length,
+    };
+
+    // The filing spec names the fields that jurisdiction's authority
+    // actually requires — validate against the spec, not just against
+    // whatever this generic aggregation happened to produce.
+    for (const field of spec.requiredFields) {
+      if (!Number.isFinite(computed[field])) {
+        throw new BadRequestException(
+          `Filing type "${filingType}" (${spec.jurisdiction}) requires a valid "${field}" value, ` +
+            `but computation produced ${computed[field]}. Refusing to file an invalid statutory return.`,
+        );
+      }
+    }
+
     const filing = await prisma.taxFiling.create({
       data: {
         tenantId,
@@ -133,11 +182,8 @@ export class TaxEngineService {
         periodEnd: end,
         status: "DRAFT",
         payload: {
-          outputTax,
-          inputTax,
-          netTaxPayable,
-          invoiceCount: invoices.length,
-          purchaseCount: purchaseOrders.length,
+          ...computed,
+          jurisdiction: spec.jurisdiction,
         } as never,
       },
     });
@@ -145,6 +191,7 @@ export class TaxEngineService {
     return {
       filingId: filing.id,
       filingType,
+      jurisdiction: spec.jurisdiction,
       periodStart,
       periodEnd,
       outputTax,
