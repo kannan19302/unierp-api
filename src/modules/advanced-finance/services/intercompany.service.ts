@@ -83,8 +83,9 @@ export class InterCompanyService {
     for (const inv of unpaidInvoices) {
       const matchedSchedule = unpaidSchedules.find((sched) => {
         if (!inv.dueDate || !sched.dueDate) return false;
-        const amtMatch =
-          Math.abs(Number(inv.totalAmount) - Number(sched.amount)) < 0.01;
+        const amtMatch = new Prisma.Decimal(inv.totalAmount).equals(
+          new Prisma.Decimal(sched.amount),
+        );
         const orgMismatch = inv.orgId !== sched.orgId;
         const dateDiff =
           Math.abs(inv.dueDate.getTime() - sched.dueDate.getTime()) <=

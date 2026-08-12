@@ -22,6 +22,9 @@ vi.mock("@prisma/client", () => {
         toFixed(decimals: number) {
           return this.value.toFixed(decimals);
         }
+        equals(other: any) {
+          return this.value === Number(other?.value ?? other?.valueOf?.() ?? other);
+        }
       },
     },
   };
@@ -115,6 +118,44 @@ describe("InterCompanyService", () => {
 
       expect(prisma.interCompanyTransaction.create).toHaveBeenCalled();
       expect(result.matchCount).toBe(1);
+    });
+
+    it("REFUSES to auto-match an invoice and schedule that differ by half a cent — genuinely different money, not float noise", async () => {
+      // E11 exit criterion: "...intercompany... each reconciling to the GL."
+      // autoMatchTransactions() used `Math.abs(a - b) < 0.01` — an
+      // epsilon-TOLERANT float comparison. Two real, different dollar
+      // amounts 0.005 apart (5000.00 vs 4999.995) are NOT the same
+      // transaction and must never be auto-matched as if they were;
+      // intercompany reconciliation requires exact equality, same as
+      // double-entry balance (D084) and payment completion (D085).
+      const now = new Date();
+      vi.mocked(prisma.invoice.findMany).mockResolvedValue([
+        {
+          id: "inv-1",
+          tenantId: "tenant-1",
+          orgId: "org-A",
+          totalAmount: new Prisma.Decimal(5000),
+          dueDate: now,
+          currency: "USD",
+        },
+      ] as any);
+      vi.mocked(prisma.paymentSchedule.findMany).mockResolvedValue([
+        {
+          id: "sched-1",
+          tenantId: "tenant-1",
+          orgId: "org-B",
+          amount: new Prisma.Decimal(4999.995),
+          dueDate: now,
+        },
+      ] as any);
+      vi.mocked(prisma.interCompanyTransaction.findFirst).mockResolvedValue(
+        null,
+      );
+
+      const result = await service.autoMatchTransactions("tenant-1");
+
+      expect(prisma.interCompanyTransaction.create).not.toHaveBeenCalled();
+      expect(result.matchCount).toBe(0);
     });
 
     it("should skip creating matched logs if invoice has already been auto matched", async () => {
