@@ -104,6 +104,22 @@ export class StorageService {
       });
       if (!folder) throw new NotFoundException("Folder not found");
     }
+
+    // E27 — "quota" was a settable, displayed number (updateQuota/getQuota)
+    // that registerFile() never actually consulted: a tenant's
+    // storageLimit meant nothing, since every upload was registered and
+    // storageUsed incremented unconditionally. This is the enforcement
+    // point: refuse BEFORE creating the file row if it would push usage
+    // past the tenant's configured limit.
+    await this.ensureQuota(tenantId);
+    const quota = await prisma.storageQuota.findUnique({ where: { tenantId } });
+    if (quota && quota.storageUsed + BigInt(dto.size) > quota.storageLimit) {
+      throw new BadRequestException(
+        `Uploading "${dto.name}" (${dto.size} bytes) would exceed the tenant's storage quota: ` +
+          `${quota.storageUsed} used + ${dto.size} > ${quota.storageLimit} byte limit.`,
+      );
+    }
+
     const file = await prisma.storedFile.create({
       data: {
         tenantId,
@@ -116,7 +132,6 @@ export class StorageService {
         createdBy: userId,
       },
     });
-    await this.ensureQuota(tenantId);
     await prisma.storageQuota.update({
       where: { tenantId },
       data: {
