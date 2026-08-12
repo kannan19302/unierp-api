@@ -403,56 +403,62 @@ export class FixedAssetsService {
       : new Prisma.Decimal(0);
     const newAccumulated = oldAccumulated.plus(amount);
 
+    // E13 exit criterion: "every event posting to the GL." Depreciation
+    // must never reduce an asset's book value without a corresponding GL
+    // journal — silently proceeding when GL accounts aren't mapped would
+    // create a permanent, undetectable gap between the fixed-asset
+    // register and the ledger.
+    const assetAcc = asset.accountId || category?.assetAccountId;
+    const accumAcc =
+      asset.accumDepAccountId || category?.depreciationAccountId;
+    const expenseAcc = category?.expenseAccountId;
+
+    if (!assetAcc || !accumAcc || !expenseAcc) {
+      throw new BadRequestException(
+        `Cannot post depreciation for asset "${asset.name}": GL account mapping is incomplete (asset, accumulated-depreciation, and expense accounts must all be configured on the asset or its category). Depreciation must always post to the GL.`,
+      );
+    }
+
     return prisma.$transaction(async (tx) => {
-      let journalId: string | null = null;
+      const entryNumber = `JV-DEP-${asset.assetCode}-${periodName}-${Date.now().toString().slice(-4)}`;
 
-      // GL Journal posting (only if cost, accumulated dep, and expense accounts are mapped)
-      const assetAcc = asset.accountId || category?.assetAccountId;
-      const accumAcc =
-        asset.accumDepAccountId || category?.depreciationAccountId;
-      const expenseAcc = category?.expenseAccountId;
+      const journal = await tx.journal.create({
+        data: {
+          tenantId,
+          orgId,
+          entryNumber,
+          date: new Date(),
+          status: "POSTED",
+          notes: `Depreciation run for ${asset.name} (${asset.assetCode}) for period ${periodName}`,
+          createdBy: userId,
+        },
+      });
 
-      if (assetAcc && accumAcc && expenseAcc) {
-        const entryNumber = `JV-DEP-${asset.assetCode}-${periodName}-${Date.now().toString().slice(-4)}`;
+      const journalId = journal.id;
 
-        const journal = await tx.journal.create({
-          data: {
-            tenantId,
-            orgId,
-            entryNumber,
-            date: new Date(),
-            status: "POSTED",
-            notes: `Depreciation run for ${asset.name} (${asset.assetCode}) for period ${periodName}`,
-            createdBy: userId,
-          },
-        });
+      // Debit Depreciation Expense
+      await tx.journalEntry.create({
+        data: {
+          tenantId,
+          journalId: journal.id,
+          accountId: expenseAcc,
+          debit: amount,
+          credit: 0,
+          description: `Depreciation Expense - ${asset.name}`,
+        },
+      });
 
-        journalId = journal.id;
-
-        // Debit Depreciation Expense
-        await tx.journalEntry.create({
-          data: {
-            tenantId,
-            journalId: journal.id,
-            accountId: expenseAcc,
-            debit: amount,
-            credit: 0,
-            description: `Depreciation Expense - ${asset.name}`,
-          },
-        });
-
-        // Credit Accumulated Depreciation
-        await tx.journalEntry.create({
-          data: {
-            tenantId,
-            journalId: journal.id,
-            accountId: accumAcc,
-            debit: 0,
-            credit: amount,
-            description: `Accumulated Depreciation Contra-Asset - ${asset.name}`,
-          },
-        });
-      }
+      // Credit Accumulated Depreciation
+      await tx.journalEntry.create({
+        data: {
+          tenantId,
+          journalId: journal.id,
+          accountId: accumAcc,
+          debit: 0,
+          credit: amount,
+          description: `Accumulated Depreciation Contra-Asset - ${asset.name}`,
+        },
+      });
 
       // Record Depreciation Run
       const depRecord = await tx.assetDepreciation.create({

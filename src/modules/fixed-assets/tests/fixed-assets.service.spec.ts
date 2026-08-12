@@ -161,4 +161,70 @@ describe("FixedAssetsService", () => {
     expect(result.activeAssets).toBe(8);
     expect(result.disposedAssets).toBe(1);
   });
+
+  describe("postDepreciation — E13: every event must post to the GL", () => {
+    const baseAsset = {
+      id: "asset-1",
+      tenantId: "t1",
+      name: "Delivery Van",
+      assetCode: "FA-001",
+      purchaseValue: 12000,
+      salvageValue: 2000,
+      currentValue: 12000,
+      usefulLifeYears: 5,
+      depreciationMethod: "SLM",
+      depreciationRate: null,
+      accountId: null,
+      accumDepAccountId: null,
+      categoryId: "cat-1",
+      category: null,
+    };
+
+    it("REFUSES to post depreciation when GL account mapping is incomplete — never silently reduces book value without a GL journal", async () => {
+      // The asset and its category map NO GL accounts at all. The old
+      // code would still create the assetDepreciation record and reduce
+      // fixedAsset.currentValue, with journalId left null — a
+      // depreciation event with real financial effect but no GL
+      // journal, directly violating E13's "every event posting to the
+      // GL" exit criterion.
+      (prisma.fixedAsset.findFirst as any).mockResolvedValue({
+        ...baseAsset,
+        category: { id: "cat-1", expenseAccountId: null, depreciationAccountId: null, assetAccountId: null },
+      });
+      (prisma.assetDepreciation.findFirst as any).mockResolvedValue(null);
+
+      await expect(
+        service.postDepreciation("t1", "org1", "user1", "asset-1", "2026-08"),
+      ).rejects.toThrow(/GL account mapping is incomplete/i);
+
+      expect(prisma.fixedAsset.update).not.toHaveBeenCalled();
+      expect(prisma.assetDepreciation.create).not.toHaveBeenCalled();
+    });
+
+    it("posts a balanced GL journal and reduces book value when accounts are fully mapped", async () => {
+      (prisma.fixedAsset.findFirst as any).mockResolvedValue({
+        ...baseAsset,
+        category: {
+          id: "cat-1",
+          expenseAccountId: "acc-exp",
+          depreciationAccountId: "acc-accum",
+          assetAccountId: "acc-asset",
+        },
+      });
+      (prisma.assetDepreciation.findFirst as any).mockResolvedValue(null);
+      (prisma.assetDepreciation.aggregate as any).mockResolvedValue({
+        _sum: { amount: null },
+      });
+
+      const result = await service.postDepreciation(
+        "t1",
+        "org1",
+        "user1",
+        "asset-1",
+        "2026-08",
+      );
+
+      expect(result).toEqual({ id: "dep-1" });
+    });
+  });
 });
