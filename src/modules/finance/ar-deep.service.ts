@@ -85,7 +85,22 @@ export class ArDeepService {
               : "90+";
       agingBuckets[key] = (agingBuckets[key] || 0) + bal;
     });
-    const totalOutstanding = invoices.reduce(
+    // E33: "every metric has one definition." totalOutstanding is the
+    // AR-balance figure this stats endpoint reports as the headline
+    // receivable position — it must use the same real-receivable
+    // population as `overdue` above (excluding DRAFT invoices, which
+    // were never sent and are not yet a receivable, and VOID/CANCELLED
+    // invoices, which will never be collected), not the unfiltered
+    // invoice list. Summing every invoice regardless of status
+    // silently inflates reported AR by the full amount of every draft,
+    // void, and cancelled invoice.
+    const receivableInvoices = invoices.filter(
+      (i: any) =>
+        i.status !== "DRAFT" &&
+        i.status !== "VOID" &&
+        i.status !== "CANCELLED",
+    );
+    const totalOutstanding = receivableInvoices.reduce(
       (s: number, i: any) =>
         s + Number(i.totalAmount) - Number(i.paidAmount || 0),
       0,

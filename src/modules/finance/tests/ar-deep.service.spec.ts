@@ -73,6 +73,46 @@ describe("ArDeepService", () => {
       expect(result).toHaveProperty("overdueCount");
       expect(result).toHaveProperty("agingBuckets");
     });
+
+    it("E33: totalOutstanding excludes DRAFT, VOID, and CANCELLED invoices — a cancelled invoice must not inflate the reported AR balance", async () => {
+      (prisma.invoice.findMany as any).mockResolvedValue([
+        {
+          id: "1",
+          totalAmount: 1000,
+          paidAmount: 0,
+          status: "SENT",
+          dueDate: new Date("2026-06-01"),
+        },
+        {
+          id: "2",
+          totalAmount: 5000,
+          paidAmount: 0,
+          status: "CANCELLED",
+          dueDate: new Date("2026-06-01"),
+        },
+        {
+          id: "3",
+          totalAmount: 3000,
+          paidAmount: 0,
+          status: "VOID",
+          dueDate: new Date("2026-06-01"),
+        },
+        {
+          id: "4",
+          totalAmount: 2000,
+          paidAmount: 0,
+          status: "DRAFT",
+          dueDate: new Date("2026-06-01"),
+        },
+      ]);
+
+      const result = await service.getCollectionsStats("tenant-1");
+
+      // Only the real SENT invoice (id 1) is a genuine receivable — the
+      // cancelled/void/draft invoices must not contribute to the AR
+      // balance this endpoint reports.
+      expect(result.totalOutstanding).toBe(1000);
+    });
   });
 
   describe("setCreditLimit", () => {
