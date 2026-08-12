@@ -142,6 +142,7 @@ export class SearchController {
           ? (parseInt(page, 10) - 1) * (limit ? parseInt(limit, 10) : 20)
           : 0,
       },
+      req.user.userId,
     );
     this.service.logSearchQuery(req.user.tenantId, req.user.userId, {
       query: parsed.data,

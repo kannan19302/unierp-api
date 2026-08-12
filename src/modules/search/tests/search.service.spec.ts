@@ -163,5 +163,57 @@ describe("SearchService", () => {
       expect(result.items).toHaveLength(1);
       expect(result.total).toBe(1);
     });
+
+    it("E39/G-6: excludes permission-gated entity types the user cannot read from both results and the count", async () => {
+      jest.spyOn(idpPrisma.userRole, "findMany").mockResolvedValue([
+        {
+          id: "ur-1",
+          userId: "u1",
+          roleId: "r1",
+          role: { id: "r1", permissions: JSON.stringify(["crm.contact.read"]) },
+        },
+      ] as any);
+      const findManySpy = jest
+        .spyOn(prisma.searchIndex, "findMany")
+        .mockResolvedValue([]);
+      const countSpy = jest.spyOn(prisma.searchIndex, "count").mockResolvedValue(0);
+
+      // User holds crm.contact.read but NOT hr.employee.read.
+      await service.fulltextSearch("t1", "salary", {}, "u1");
+
+      const whereArg = findManySpy.mock.calls[0]?.[0]?.where;
+      expect(whereArg.entityType).toEqual({ notIn: ["lead", "product", "employee"] });
+      expect(countSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            entityType: { notIn: ["lead", "product", "employee"] },
+          }),
+        }),
+      );
+    });
+
+    it("E39/G-6: refuses an explicit request for a gated entityType the user cannot read, without leaking a count", async () => {
+      jest.spyOn(idpPrisma.userRole, "findMany").mockResolvedValue([
+        {
+          id: "ur-1",
+          userId: "u1",
+          roleId: "r1",
+          role: { id: "r1", permissions: JSON.stringify([]) },
+        },
+      ] as any);
+      const findManySpy = jest.spyOn(prisma.searchIndex, "findMany");
+      const countSpy = jest.spyOn(prisma.searchIndex, "count");
+
+      const result = await service.fulltextSearch(
+        "t1",
+        "smith",
+        { entityType: "employee" },
+        "u1",
+      );
+
+      expect(result).toEqual({ items: [], total: 0, limit: 20, offset: 0 });
+      expect(findManySpy).not.toHaveBeenCalled();
+      expect(countSpy).not.toHaveBeenCalled();
+    });
   });
 });

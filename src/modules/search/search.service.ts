@@ -16,6 +16,22 @@ export interface SearchHit {
 
 const MAX_PER_ENTITY = 10;
 
+/**
+ * E39 exit criterion (G-6): "Searching a term returns only records the
+ * user may see — and result counts do not leak the existence of
+ * others." Governs which permission gates each indexed entityType in
+ * fulltextSearch()'s unified `SearchIndex` table — kept in one place,
+ * matching the codes globalSearch() already enforces per entity, so
+ * the two search paths cannot drift into checking different things
+ * for the same entity type.
+ */
+const ENTITY_TYPE_PERMISSIONS: Record<string, string> = {
+  customer: "crm.contact.read",
+  lead: "crm.lead.read",
+  product: "inventory.product.read",
+  employee: "hr.employee.read",
+};
+
 @Injectable()
 export class SearchService {
   constructor(private readonly eventEmitter: EventEmitter2) {}
@@ -330,9 +346,35 @@ export class SearchService {
       limit?: number;
       offset?: number;
     },
+    userId?: string,
   ) {
     const limit = filters?.limit ?? 20;
     const offset = filters?.offset ?? 0;
+
+    // G-6: this is the SAME unified index globalSearch() reads from
+    // per-entity with real permission checks — fulltextSearch() must
+    // apply the same gate, not just tenant/status/module filters, or
+    // it becomes a second, unguarded path to records a user cannot
+    // read directly. If a specific entityType was requested and it's
+    // gated, refuse outright rather than silently returning an empty
+    // page — an empty page with total: 0 vs. a page of real hits both
+    // leak nothing extra either way, but refusing is the honest
+    // behavior for an explicitly-scoped-but-unauthorized request.
+    const permissions = userId ? await this.resolvePermissions(userId) : [];
+    const gatedEntityTypes = Object.keys(ENTITY_TYPE_PERMISSIONS);
+
+    if (filters?.entityType && gatedEntityTypes.includes(filters.entityType)) {
+      const required = ENTITY_TYPE_PERMISSIONS[filters.entityType];
+      if (required && !permissions.includes(required)) {
+        return { items: [], total: 0, limit, offset };
+      }
+    }
+
+    const disallowedEntityTypes = gatedEntityTypes.filter((et) => {
+      const required = ENTITY_TYPE_PERMISSIONS[et];
+      return required && !permissions.includes(required);
+    });
+
     const where: any = {
       tenantId,
       status: "ACTIVE",
@@ -342,7 +384,11 @@ export class SearchService {
       ],
     };
     if (filters?.module) where.module = filters.module;
-    if (filters?.entityType) where.entityType = filters.entityType;
+    if (filters?.entityType) {
+      where.entityType = filters.entityType;
+    } else if (disallowedEntityTypes.length > 0) {
+      where.entityType = { notIn: disallowedEntityTypes };
+    }
 
     const [items, total] = await Promise.all([
       prisma.searchIndex.findMany({
