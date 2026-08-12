@@ -2240,12 +2240,19 @@ export class FinanceOperationsService {
     const equityAccounts = await prisma.account.findMany({
       where: { tenantId, type: "EQUITY", isActive: true },
     });
+    // E34: "reconciles to its source data." A balance sheet must only
+    // reflect POSTED journal entries — a DRAFT journal is, by
+    // definition, not yet a finalized accounting fact. Without this
+    // filter, every unposted, unapproved journal entry silently
+    // appeared on the balance sheet as if it were real, meaning this
+    // report could never actually reconcile to the posted ledger.
     const [assetEntries, liabilityEntries, equityEntries] = await Promise.all([
       prisma.journalEntry.findMany({
         where: {
           tenantId,
           createdAt: { lte: asOf },
           account: { type: "ASSET" },
+          journal: { status: "POSTED" },
         },
       }),
       prisma.journalEntry.findMany({
@@ -2253,6 +2260,7 @@ export class FinanceOperationsService {
           tenantId,
           createdAt: { lte: asOf },
           account: { type: "LIABILITY" },
+          journal: { status: "POSTED" },
         },
       }),
       prisma.journalEntry.findMany({
@@ -2260,6 +2268,7 @@ export class FinanceOperationsService {
           tenantId,
           createdAt: { lte: asOf },
           account: { type: "EQUITY" },
+          journal: { status: "POSTED" },
         },
       }),
     ]);
