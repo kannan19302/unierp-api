@@ -44,6 +44,9 @@ import { AbTestingController } from "./controllers/ab-testing.controller";
 import { BuilderDeepExpansionController } from "./controllers/builder-deep-expansion.controller";
 import { BuilderDeepExpansionService } from "./services/builder-deep-expansion.service";
 import { BuilderEnterpriseModule } from "./builder-enterprise.module";
+import { DataObjectsController } from "./controllers/data-objects.controller";
+import { BuilderDataObjectsService } from "./services/builder-data-objects.service";
+import { CustomObjectSchemaService } from "./services/custom-object-schema.service";
 
 @Module({
   imports: [AiClientModule, BuilderEnterpriseModule],
@@ -62,6 +65,7 @@ import { BuilderEnterpriseModule } from "./builder-enterprise.module";
     MobileBuilderController,
     ThemeManagerController,
     AbTestingController,
+    DataObjectsController,
   ],
   providers: [
     BuilderDeepExpansionService,
@@ -86,6 +90,8 @@ import { BuilderEnterpriseModule } from "./builder-enterprise.module";
     BuilderMobileService,
     BuilderThemeService,
     BuilderAbTestingService,
+    BuilderDataObjectsService,
+    CustomObjectSchemaService,
   ],
   exports: [
     BuilderDeepExpansionService,
