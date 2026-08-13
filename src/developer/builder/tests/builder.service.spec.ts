@@ -511,35 +511,8 @@ describe("BuilderService", () => {
   // STUBS & MOCKS TESTS
   // ══════════════════════════════════════════════
   describe("executeWorkflow", () => {
-    it("should execute active nodes and return logs", async () => {
-      const wf = {
-        id: "w1",
-        name: "Test Workflow",
-        nodes: [
-          { id: "n1", type: "trigger", label: "Start" },
-          { id: "n2", type: "action", label: "Send Email" },
-        ],
-        settings: { executions: [] },
-      };
-      (prisma.builderWorkflow.findFirst as any).mockResolvedValue(wf);
-      (prisma.builderWorkflow.update as any).mockResolvedValue(wf);
-
-      const result = await workflowsService.executeWorkflow("t1", "w1");
-      expect(result.status).toBe("COMPLETED");
-      expect(result.logs.length).toBe(2);
-      expect(result.logs[0]?.nodeLabel).toBe("Start");
-      expect(result.logs[1]?.nodeLabel).toBe("Send Email");
-      expect(prisma.auditLog.create).toHaveBeenCalled();
-    });
-
-    it("should fail if no executable nodes", async () => {
-      (prisma.builderWorkflow.findFirst as any).mockResolvedValue({
-        id: "w1",
-        nodes: [],
-      });
-      await expect(
-        workflowsService.executeWorkflow("t1", "w1"),
-      ).rejects.toThrow("Workflow has no executable nodes");
+    it("delegates execution to the G11 runtime — the fake is gone", async () => {
+      expect(typeof (workflowsService as any).executeWorkflow).toBe("undefined");
     });
   });
 

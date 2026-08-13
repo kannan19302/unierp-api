@@ -92,6 +92,7 @@ describe("TwoPersonControlGuard (C04 Exit Criterion)", () => {
       id: "token-123",
       status: "APPROVED",
       requestedBy: "operator-1",
+      approvedBy: "operator-2", // a genuinely different second person (M49 / D049)
       expiresAt: new Date(Date.now() + 10000), // future
     });
 

@@ -29,6 +29,12 @@ import {
   updateSchemaRegistrySchema,
   createBuilderWorkflowSchema,
   updateBuilderWorkflowSchema,
+  executeBuilderWorkflowRunSchema,
+  resumeBuilderWorkflowRunSchema,
+  approveBuilderWorkflowRunStepSchema,
+  type ExecuteBuilderWorkflowRunInput,
+  type ResumeBuilderWorkflowRunInput,
+  type ApproveBuilderWorkflowRunStepInput,
   createBuilderDashboardSchema,
   updateBuilderDashboardSchema,
   createBuilderModuleSchema,
@@ -93,6 +99,7 @@ import { WebCollectionsService } from "./web-collections.service";
 import { BuilderAiService } from "./builder-ai.service";
 import { BuilderFormsService } from "./builder-forms.service";
 import { BuilderWorkflowsService } from "./builder-workflows.service";
+import { BuilderWorkflowRuntimeService } from "./builder-workflow-runtime.service";
 import { BuilderStatsService } from "./builder-stats.service";
 import { BuilderDashboardsService } from "./builder-dashboards.service";
 import { BuilderDevOpsService } from "./builder-devops.service";
@@ -120,6 +127,7 @@ export class BuilderController {
     private readonly builderAiService: BuilderAiService,
     private readonly builderFormsService: BuilderFormsService,
     private readonly builderWorkflowsService: BuilderWorkflowsService,
+    private readonly builderWorkflowRuntime: BuilderWorkflowRuntimeService,
     private readonly builderStatsService: BuilderStatsService,
     private readonly builderDashboardsService: BuilderDashboardsService,
     private readonly builderDevOpsService: BuilderDevOpsService,
@@ -269,8 +277,74 @@ export class BuilderController {
   async executeWorkflow(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
+    @Body(new ZodValidationPipe(executeBuilderWorkflowRunSchema))
+    dto: ExecuteBuilderWorkflowRunInput,
   ) {
-    return this.builderWorkflowsService.executeWorkflow(req.user.tenantId, id);
+    return this.builderWorkflowRuntime.executeWorkflow(req.user.tenantId, id, dto);
+  }
+
+  @ApiOperation({ summary: "List workflow runs" })
+  @Get("workflows/:id/runs")
+  @Permissions("builder.workflow.read")
+  async getWorkflowRuns(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.builderWorkflowRuntime.getRuns(req.user.tenantId, id);
+  }
+
+  @ApiOperation({ summary: "Get a workflow run with its steps" })
+  @Get("workflows/:id/runs/:runId")
+  @Permissions("builder.workflow.read")
+  async getWorkflowRun(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Param("runId") runId: string,
+  ) {
+    return this.builderWorkflowRuntime.getRunById(req.user.tenantId, runId);
+  }
+
+  @ApiOperation({ summary: "Get a run's steps step by step" })
+  @Get("workflows/:id/runs/:runId/steps")
+  @Permissions("builder.workflow.read")
+  async getWorkflowRunSteps(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Param("runId") runId: string,
+  ) {
+    return this.builderWorkflowRuntime.getRunSteps(req.user.tenantId, runId);
+  }
+
+  @ApiOperation({ summary: "Resume a failed workflow run from its failing step" })
+  @Post("workflows/:id/runs/:runId/resume")
+  @Permissions("builder.workflow.update")
+  async resumeWorkflowRun(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Param("runId") runId: string,
+    @Body(new ZodValidationPipe(resumeBuilderWorkflowRunSchema))
+    dto: ResumeBuilderWorkflowRunInput,
+  ) {
+    return this.builderWorkflowRuntime.resumeWorkflow(req.user.tenantId, runId);
+  }
+
+  @ApiOperation({ summary: "Approve or reject a waiting approval step" })
+  @Post("workflows/:id/runs/:runId/steps/:stepId/approve")
+  @Permissions("builder.workflow.update")
+  async approveWorkflowRunStep(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Param("runId") runId: string,
+    @Param("stepId") stepId: string,
+    @Body(new ZodValidationPipe(approveBuilderWorkflowRunStepSchema))
+    dto: ApproveBuilderWorkflowRunStepInput,
+  ) {
+    return this.builderWorkflowRuntime.approveStep(
+      req.user.tenantId,
+      runId,
+      stepId,
+      dto,
+    );
   }
 
   @ApiOperation({ summary: "Get workflow executions" })
@@ -280,10 +354,7 @@ export class BuilderController {
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
   ) {
-    return this.builderWorkflowsService.getWorkflowExecutions(
-      req.user.tenantId,
-      id,
-    );
+    return this.builderWorkflowRuntime.getRuns(req.user.tenantId, id);
   }
 
   // ─── Dashboards ─────────────────────────────────

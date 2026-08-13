@@ -14,6 +14,7 @@ import { AiClientModule } from "../../common/integrations/ai-client.module";
 // Decomposed Sub-services
 import { BuilderFormsService } from "./builder-forms.service";
 import { BuilderWorkflowsService } from "./builder-workflows.service";
+import { BuilderWorkflowRuntimeService } from "./builder-workflow-runtime.service";
 import { BuilderStatsService } from "./builder-stats.service";
 import { BuilderDashboardsService } from "./builder-dashboards.service";
 import { BuilderDevOpsService } from "./builder-devops.service";
@@ -77,6 +78,7 @@ import { CustomObjectSchemaService } from "./services/custom-object-schema.servi
     BuilderAiService,
     BuilderFormsService,
     BuilderWorkflowsService,
+    BuilderWorkflowRuntimeService,
     BuilderStatsService,
     BuilderDashboardsService,
     BuilderDevOpsService,

@@ -11922,24 +11922,12 @@ describe("BuilderService coverage", () => {
     }
   });
 
-  it("executeWorkflow", async () => {
-    try {
-      const result = await service.executeWorkflow("t1", "t1");
-      expect(result).toBeDefined();
-    } catch (e) {
-      // Method exercised for coverage even if it throws due to incomplete mocks
-      expect(e).toBeDefined();
-    }
+  it("executeWorkflow is delegated to the G11 runtime, not the removed fake", async () => {
+    expect(typeof (service as any).executeWorkflow).toBe("undefined");
   });
 
-  it("getWorkflowExecutions", async () => {
-    try {
-      const result = await service.getWorkflowExecutions("t1", "t1");
-      expect(result).toBeDefined();
-    } catch (e) {
-      // Method exercised for coverage even if it throws due to incomplete mocks
-      expect(e).toBeDefined();
-    }
+  it("getWorkflowExecutions is delegated to the G11 runtime, not the removed fake", async () => {
+    expect(typeof (service as any).getWorkflowExecutions).toBe("undefined");
   });
 
   it("getGlobalPerformanceStats", async () => {

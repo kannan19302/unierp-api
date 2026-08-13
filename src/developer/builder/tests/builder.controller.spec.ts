@@ -59,6 +59,14 @@ describe("BuilderController", () => {
       getGlobalPerformanceStats: vi
         .fn()
         .mockResolvedValue({ metrics: { totalRevenue: 100 } }),
+
+      // G11 runtime — replaces the removed fake executor.
+      executeWorkflow: vi.fn().mockResolvedValue({ status: "COMPLETED" }),
+      getRuns: vi.fn().mockResolvedValue([]),
+      getRunById: vi.fn().mockResolvedValue({ steps: [] }),
+      getRunSteps: vi.fn().mockResolvedValue([]),
+      resumeWorkflow: vi.fn().mockResolvedValue({ status: "COMPLETED" }),
+      approveStep: vi.fn().mockResolvedValue({ status: "COMPLETED" }),
     });
 
     const mockService = generateMockService();
@@ -68,6 +76,7 @@ describe("BuilderController", () => {
       {} as any, // builderAiService
       mockService as any, // builderFormsService
       mockService as any, // builderWorkflowsService
+      mockService as any, // builderWorkflowRuntime
       mockService as any, // builderStatsService
       mockService as any, // builderDashboardsService
       {} as any, // builderDevOpsService
@@ -153,6 +162,50 @@ describe("BuilderController", () => {
       expect(await controller.getGlobalPerformanceStats(req as any)).toEqual({
         metrics: { totalRevenue: 100 },
       });
+    });
+  });
+
+  describe("Workflow runtime endpoints (G11)", () => {
+    it("should execute a workflow", async () => {
+      expect(
+        await controller.executeWorkflow(req as any, "wf-1", { input: {} }),
+      ).toEqual({ status: "COMPLETED" });
+    });
+    it("should list runs", async () => {
+      expect(await controller.getWorkflowRuns(req as any, "wf-1")).toEqual([]);
+    });
+    it("should get a run with steps", async () => {
+      expect(
+        await controller.getWorkflowRun(req as any, "wf-1", "run-1"),
+      ).toEqual({ steps: [] });
+    });
+    it("should get a run's steps", async () => {
+      expect(
+        await controller.getWorkflowRunSteps(req as any, "wf-1", "run-1"),
+      ).toEqual([]);
+    });
+    it("should resume a failed run", async () => {
+      expect(
+        await controller.resumeWorkflowRun(req as any, "wf-1", "run-1", {
+          input: {},
+        }),
+      ).toEqual({ status: "COMPLETED" });
+    });
+    it("should approve a waiting step", async () => {
+      expect(
+        await controller.approveWorkflowRunStep(
+          req as any,
+          "wf-1",
+          "run-1",
+          "step-1",
+          { approved: true },
+        ),
+      ).toEqual({ status: "COMPLETED" });
+    });
+    it("should expose the legacy executions alias", async () => {
+      expect(
+        await controller.getWorkflowExecutions(req as any, "wf-1"),
+      ).toEqual([]);
     });
   });
 });
