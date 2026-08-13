@@ -157,6 +157,8 @@ export class BuilderFormsService {
         icon: dto.icon || null,
         module: dto.module || "Sales",
         fields: (dto.fields || []) as any,
+        pages: (dto.pages || []) as any,
+        conditions: (dto.conditions || []) as any,
         settings: (dto.settings || {}) as any,
       },
     });
@@ -177,6 +179,8 @@ export class BuilderFormsService {
         ...(dto.module !== undefined && { module: dto.module }),
         ...(dto.status !== undefined && { status: dto.status }),
         ...(dto.fields !== undefined && { fields: dto.fields as any }),
+        ...(dto.pages !== undefined && { pages: dto.pages as any }),
+        ...(dto.conditions !== undefined && { conditions: dto.conditions as any }),
         ...(dto.settings !== undefined && { settings: dto.settings as any }),
       },
     });
@@ -223,6 +227,13 @@ export class BuilderFormsService {
       });
     }
 
+    const layout = {
+      fields: form.fields || [],
+      pages: form.pages || [],
+      conditions: form.conditions || [],
+      settings: form.settings || {},
+    };
+
     let page = await prisma.pageRegistry.findFirst({
       where: { tenantId, slug: form.slug },
     });
@@ -235,7 +246,7 @@ export class BuilderFormsService {
           slug: form.slug,
           title: form.name,
           type: "FORM",
-          layout: { fields: form.fields || [], settings: form.settings || {} },
+          layout,
           status: "PUBLISHED",
         },
       });
@@ -245,7 +256,7 @@ export class BuilderFormsService {
         data: {
           schemaId: schema.id,
           module: form.module || "custom",
-          layout: { fields: form.fields || [], settings: form.settings || {} },
+          layout,
           status: "PUBLISHED",
         },
       });
