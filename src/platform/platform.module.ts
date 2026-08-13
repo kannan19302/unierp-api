@@ -111,6 +111,8 @@ import { IndustrySuiteCatalogueService } from "./v1/industry-suite-catalogue.ser
 import { IndustrySuiteCatalogueController } from "./v1/industry-suite-catalogue.controller";
 import { RunbookService } from "./v1/runbook.service";
 import { RunbookController } from "./v1/runbook.controller";
+import { ComplianceControlService } from "./v1/compliance-control.service";
+import { ComplianceControlController } from "./v1/compliance-control.controller";
 
 @Module({
   imports: [],
@@ -161,6 +163,7 @@ import { RunbookController } from "./v1/runbook.controller";
     WebhookIntegrationController,
     IndustrySuiteCatalogueController,
     RunbookController,
+    ComplianceControlController,
   ],
   providers: [
     ConsoleGateway,
@@ -229,6 +232,7 @@ import { RunbookController } from "./v1/runbook.controller";
     NotificationRoutingService,
     IndustrySuiteCatalogueService,
     RunbookService,
+    ComplianceControlService,
   ],
   exports: [
     ControlPlaneAuditService,
