@@ -113,6 +113,9 @@ import { RunbookService } from "./v1/runbook.service";
 import { RunbookController } from "./v1/runbook.controller";
 import { ComplianceControlService } from "./v1/compliance-control.service";
 import { ComplianceControlController } from "./v1/compliance-control.controller";
+import { AiGatewayService } from "./v1/ai-gateway.service";
+import { AiGovernanceService } from "./v1/ai-governance.service";
+import { AiGovernanceController } from "./v1/ai-governance.controller";
 
 @Module({
   imports: [],
@@ -164,6 +167,7 @@ import { ComplianceControlController } from "./v1/compliance-control.controller"
     IndustrySuiteCatalogueController,
     RunbookController,
     ComplianceControlController,
+    AiGovernanceController,
   ],
   providers: [
     ConsoleGateway,
@@ -233,6 +237,8 @@ import { ComplianceControlController } from "./v1/compliance-control.controller"
     IndustrySuiteCatalogueService,
     RunbookService,
     ComplianceControlService,
+    AiGatewayService,
+    AiGovernanceService,
   ],
   exports: [
     ControlPlaneAuditService,

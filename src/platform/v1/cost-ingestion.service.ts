@@ -69,6 +69,32 @@ function centsToDecimalString(cents: bigint): string {
   return `${negative ? "-" : ""}${wholePart}.${centPart.toString().padStart(2, "0")}00`;
 }
 
+/** Formats ten-thousandths as a Decimal(19,4) string, e.g. 200000n → "20.0000". */
+function tenThousandthsToDecimalString(units: bigint): string {
+  const negative = units < 0n;
+  const abs = negative ? -units : units;
+  const wholePart = abs / 10000n;
+  const fracPart = abs % 10000n;
+  return `${negative ? "-" : ""}${wholePart}.${fracPart.toString().padStart(4, "0")}`;
+}
+
+/**
+ * M39 — pure money arithmetic for the AI gateway. cost = tokensUsed ×
+ * pricePerUnit, done entirely in integer ten-thousandths; a Float never
+ * touches the result. Exported so the gateway's per-call AI spend (which
+ * flows into M27 allocation "like any other cost") uses the SAME exact
+ * arithmetic the ingestion/reconciliation path does.
+ */
+export function multiplyDecimalByInteger(decimalString: string, integer: number): string {
+  const units = toTenThousandths(decimalString) * BigInt(Math.trunc(integer));
+  return tenThousandthsToDecimalString(units);
+}
+
+/** Pure string addition of two Decimal(19,4) amounts, also in integer units. */
+export function addDecimalStrings(a: string, b: string): string {
+  return tenThousandthsToDecimalString(toTenThousandths(a) + toTenThousandths(b));
+}
+
 @Injectable()
 export class CostIngestionService {
   /**
@@ -156,5 +182,73 @@ export class CostIngestionService {
       where: { providerId_period: { providerId, period } },
       include: { lineItems: true },
     });
+  }
+
+  /**
+   * M39 — the append path for METERED spend (AI tokens, per-call usage)
+   * that is computed in-process rather than billed by a provider. Unlike
+   * `ingestBillingExport` (a provider's own invoice, replace-on-reingest),
+   * a metered cost APPENDS a line item to the provider's batch for the
+   * period and is keyed by `sourceLineId` so replaying the same call never
+   * double-counts. The batch's `invoiceTotal` is maintained as the running
+   * sum of its metered line items, so `allocateBatch` sees a batch that is
+   * internally consistent ("AI spend appears in M27 allocation like any
+   * other cost").
+   */
+  async recordMeteredCost(input: {
+    providerId: string;
+    period: string;
+    currency: string;
+    lineItem: BillingLineItem;
+  }): Promise<{ batchId: string; lineItemCount: number }> {
+    // Validates the amount is a well-formed Decimal(19,4) string.
+    toTenThousandths(input.lineItem.amount);
+
+    const existing = await (prisma as any).costIngestionBatch.findUnique({
+      where: { providerId_period: { providerId: input.providerId, period: input.period } },
+    });
+
+    const duplicate = existing
+      ? await (prisma as any).costLineItem.findFirst({
+          where: { batchId: existing.id, sourceLineId: input.lineItem.sourceLineId },
+        })
+      : null;
+    if (duplicate) {
+      return { batchId: existing.id, lineItemCount: existing.lineItemCount };
+    }
+
+    let batch;
+    if (existing) {
+      batch = await (prisma as any).costIngestionBatch.update({
+        where: { id: existing.id },
+        data: {
+          invoiceTotal: addDecimalStrings(existing.invoiceTotal.toString(), input.lineItem.amount),
+          lineItemCount: { increment: 1 },
+        },
+      });
+    } else {
+      batch = await (prisma as any).costIngestionBatch.create({
+        data: {
+          providerId: input.providerId,
+          period: input.period,
+          currency: input.currency,
+          invoiceTotal: input.lineItem.amount,
+          lineItemCount: 1,
+        },
+      });
+    }
+
+    await (prisma as any).costLineItem.create({
+      data: {
+        batchId: batch.id,
+        sourceLineId: input.lineItem.sourceLineId,
+        description: input.lineItem.description,
+        amount: input.lineItem.amount,
+        resourceId: input.lineItem.resourceId ?? null,
+        sharedResourceIds: input.lineItem.sharedResourceIds ?? null,
+      },
+    });
+
+    return { batchId: batch.id, lineItemCount: batch.lineItemCount };
   }
 }
