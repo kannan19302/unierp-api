@@ -121,11 +121,22 @@ export class DataExportService {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - retentionDays);
 
-    const result = await prisma.dataExportJob.deleteMany({
+    // Canonical retention workflow: query completed/failed export jobs past retention threshold
+    const jobs = await prisma.dataExportJob.findMany({
       where: {
         createdAt: { lt: cutoff },
         status: { in: ["COMPLETE", "FAILED"] },
       },
+      select: { id: true, tenantId: true },
+    });
+
+    if (jobs.length === 0) {
+      return { deletedCount: 0, retentionDays, cutoff };
+    }
+
+    const idsToDelete = jobs.map((j) => j.id);
+    const result = await prisma.dataExportJob.deleteMany({
+      where: { id: { in: idsToDelete } },
     });
 
     return { deletedCount: result.count, retentionDays, cutoff };

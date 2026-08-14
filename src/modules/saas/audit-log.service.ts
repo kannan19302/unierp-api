@@ -140,8 +140,19 @@ export class AuditLogService {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - retentionDays);
 
-    const result = await prisma.tenantAuditLog.deleteMany({
+    // Canonical retention workflow: query records eligible for retention evaluation
+    const records = await prisma.tenantAuditLog.findMany({
       where: { createdAt: { lt: cutoff } },
+      select: { id: true, tenantId: true },
+    });
+
+    if (records.length === 0) {
+      return { deletedCount: 0, retentionDays, cutoff };
+    }
+
+    const idsToDelete = records.map((r) => r.id);
+    const result = await prisma.tenantAuditLog.deleteMany({
+      where: { id: { in: idsToDelete } },
     });
 
     return { deletedCount: result.count, retentionDays, cutoff };
