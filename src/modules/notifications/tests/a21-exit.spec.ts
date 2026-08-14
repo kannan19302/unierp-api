@@ -154,13 +154,13 @@ describe("A21 exit criterion — unified notification & delivery engine", () => 
       vi.mocked(prisma.user.findFirst).mockImplementation((({ where }) => ({
         email: where?.id === "u-a" ? "a@x.io" : "b@x.io",
       })) as never);
-      vi.mocked(prisma.notificationPreference.findMany).mockImplementation((({ where }) =>
+      vi.mocked(prisma.notificationPreference.findMany).mockImplementation((({ where }) => (
         Promise.resolve(
           where?.userId === "u-a"
             ? [{ channelName: "EMAIL", eventType: "CHAT", isEnabled: false }]
             : [],
-        ),
-      ) as never);
+        )
+      )) as never);
 
       await service.handleNotification({
         tenantId: "t1",

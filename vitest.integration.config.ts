@@ -6,7 +6,7 @@ export default defineConfig({
     env: {
       NEXTAUTH_SECRET: "itest_secret",
       DATABASE_URL:
-        "postgresql://unerp:unerp_password@localhost:5432/unerp_dev?schema=public",
+        "postgresql://unerp:unerp_password@localhost:5432/unerp_test?schema=public",
     },
     testTimeout: 30000,
     hookTimeout: 30000,

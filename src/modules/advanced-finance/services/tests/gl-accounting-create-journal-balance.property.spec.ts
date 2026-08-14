@@ -105,7 +105,7 @@ describe("J10 · ledger-balances invariant — GlAccountingService.createJournal
 
     // Record the found edge case for J10's exit criterion ("has found at
     // least one real edge case, recorded").
-    // eslint-disable-next-line no-console
+     
     console.log(
       "J10/D122 edge case found: the ORIGINAL createJournal() float-epsilon " +
         "balance check accepted this genuinely unbalanced [debit, credit] " +

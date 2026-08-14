@@ -29,7 +29,7 @@
         "runWithTenantSession"
       ],
       "namespaceImports": 1,
-      "consumingFiles": 930
+      "consumingFiles": 940
     },
     "@kannan19302/extension-api": {
       "symbols": [
@@ -40,6 +40,7 @@
         "ExtensionManifestV1Schema",
         "ExtensionSchema",
         "ExtensionSchemaSchema",
+        "FieldType",
         "IDENTIFIER",
         "PG_TYPE",
         "PublisherKey",
@@ -52,7 +53,7 @@
         "validateFields"
       ],
       "namespaceImports": 0,
-      "consumingFiles": 8
+      "consumingFiles": 9
     },
     "@kannan19302/sandbox": {
       "symbols": [
@@ -68,8 +69,10 @@
         "AddAppComponentInput",
         "AddAppDataModelInput",
         "AddAppPageInput",
+        "AddCustomObjectFieldInput",
         "AddLicensePlateItemInput",
         "AddTeamMemberInput",
+        "ApproveBuilderWorkflowRunStepInput",
         "AssembleKitInput",
         "BuilderAiGenerateInput",
         "BuilderAnalyticsEventInput",
@@ -116,6 +119,7 @@
         "CreateCrmNoteInput",
         "CreateCrmWorkflowRuleInput",
         "CreateCustomFieldInput",
+        "CreateCustomObjectInput",
         "CreateCustomerInput",
         "CreateCustomerTagInput",
         "CreateCycleCountInput",
@@ -217,6 +221,7 @@
         "DlqBatchActionSchema",
         "EnrollSequenceInput",
         "ErrorEnvelope",
+        "ExecuteBuilderWorkflowRunInput",
         "ExecuteDataImportInput",
         "FieldChange",
         "InstallBuilderAppInput",
@@ -238,6 +243,7 @@
         "RequeueDlqDto",
         "RequeueDlqSchema",
         "RestorePageRegistryHistoryInput",
+        "ResumeBuilderWorkflowRunInput",
         "RollbackModuleInput",
         "SeedWebCollectionInput",
         "SendAiMessageInput",
@@ -332,6 +338,8 @@
         "addAppComponentSchema",
         "addAppDataModelSchema",
         "addAppPageSchema",
+        "addCustomObjectFieldSchema",
+        "approveBuilderWorkflowRunStepSchema",
         "bindProvider",
         "builderAiGenerateSchema",
         "builderAnalyticsEventSchema",
@@ -363,6 +371,7 @@
         "createCompensationBenchmarkSchema",
         "createCompensationReviewSchema",
         "createContactSchema",
+        "createCustomObjectSchema",
         "createCustomerSchema",
         "createCustomerTagSchema",
         "createDataImportSchema",
@@ -412,6 +421,7 @@
         "customRecordDataSchema",
         "customerBulkStatusSchema",
         "customerNoteSchema",
+        "executeBuilderWorkflowRunSchema",
         "executeDataImportSchema",
         "hasPermission",
         "installBuilderAppSchema",
@@ -419,6 +429,7 @@
         "recordAiModelAccuracySchema",
         "resolve",
         "restorePageRegistryHistorySchema",
+        "resumeBuilderWorkflowRunSchema",
         "rollbackModuleSchema",
         "seedWebCollectionSchema",
         "sendAiMessageSchema",
@@ -468,7 +479,7 @@
         "webCheckoutSchema"
       ],
       "namespaceImports": 0,
-      "consumingFiles": 74
+      "consumingFiles": 76
     }
   }
 }

@@ -15,6 +15,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:integration:setup": "tsx test/integration-setup.ts setup",
+    "test:integration:teardown": "tsx test/integration-setup.ts teardown",
+    "test:integration:run": "tsx test/integration-setup.ts run",
+    "test:integration": "tsx test/integration-setup.ts all",
     "architecture:check": "node scripts/check-module-boundaries.mjs && pnpm exec depcruise --config .dependency-cruiser.cjs src --output-type err",
     "clean": "rimraf dist"
   },
@@ -50,6 +54,7 @@
     "cookie-parser": "^1.4.7",
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
+    "fast-xml-parser": "5.10.1",
     "helmet": "^8.0.0",
     "ioredis": "^5.10.1",
     "nodemailer": "^9.0.3",
@@ -85,6 +90,7 @@
     "eslint": "^9.39.5",
     "fast-check": "^4.9.0",
     "rimraf": "^6.0.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.67.0",
     "vitest": "^2.1.0"
