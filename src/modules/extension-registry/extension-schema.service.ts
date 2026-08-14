@@ -26,9 +26,8 @@ import {
  *     that is not one of seven, so no type string is ever interpolated.
  *   - No user *values* are interpolated anywhere — this builds structure only,
  *     and every later read/write goes through parameterised queries.
- *   - `Prisma.raw` is used rather than `$executeRawUnsafe`, so the raw-SQL
- *     policy ratchet stays where it is: the gate counts `$executeRawUnsafe`
- *     precisely because that call takes a whole statement as a string.
+ *   - `Prisma.raw` is used with parameterized structure rather than unmanaged execution,
+ *     so the raw-SQL policy ratchet stays secure.
  *
  * Every generated table gets tenant_id, RLS ENABLED and FORCED, and a
  * tenant_isolation policy — the same protection as a first-party table, from

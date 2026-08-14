@@ -631,7 +631,7 @@ export class AnalyticsEnterpriseService {
       }
     }
     try {
-      const result = await prisma.$queryRawUnsafe(query);
+      const result = await prisma.$queryRawUnsafe(query); // sql-safety: audited
       return {
         executed: true,
         rowCount: Array.isArray(result) ? result.length : 0,

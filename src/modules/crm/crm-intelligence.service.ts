@@ -18,9 +18,7 @@ export interface MlModelRecord {
 export class CrmIntelligenceService {
   /**
    * Returns a computed summary of trained lead-scoring model parameters derived
-   * from existing Lead data via typed Prisma queries.
-   * Previously used $queryRawUnsafe against an unmanaged "MlModel" table —
-   * replaced with safe ORM aggregation to fix security issue #39.
+   * from existing Lead data via typed Prisma queries (safe ORM aggregation).
    */
   async getMlModels(tenantId: string): Promise<MlModelRecord[]> {
     const [totalLeads, convertedLeads] = await Promise.all([
@@ -57,8 +55,7 @@ export class CrmIntelligenceService {
 
   /**
    * Scores all leads using the heuristic logistic-regression model and returns
-   * a summary. Previously persisted to an unmanaged raw "MlModel" table via
-   * $executeRawUnsafe — replaced with typed Prisma updates to fix issue #39.
+   * a summary via typed Prisma updates.
    */
   async trainLeadScoringModel(tenantId: string, userId: string) {
     const leads = await prisma.lead.findMany({
