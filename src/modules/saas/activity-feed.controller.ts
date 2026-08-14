@@ -7,6 +7,7 @@ import {
   Req,
   Param,
   Query,
+  ForbiddenException,
 } from "@nestjs/common";
 import { z } from "zod";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
@@ -121,14 +122,11 @@ export class ActivityFeedController {
     );
   }
 
-  @ApiOperation({ summary: "Clear all activity logs" })
+  @ApiOperation({ summary: "Clear all activity logs (disallowed: audit trail is append-only)" })
   @Permissions("saas.audit.create")
   @Delete("clear")
-  async clearActivityLog(@Req() req: AuthReq) {
-    const result = await this.auditLogService.db.tenantAuditLog.deleteMany({
-      where: { tenantId: req.user.tenantId },
-    });
-    return { deletedCount: result.count, clearedAt: new Date() };
+  async clearActivityLog(@Req() _req: AuthReq) {
+    throw new ForbiddenException("Audit trail records are append-only and immutable. Deletion is forbidden by platform compliance policy.");
   }
 
   @ApiOperation({ summary: "Get activity summary grouped by action type" })

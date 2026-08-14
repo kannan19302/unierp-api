@@ -136,25 +136,12 @@ export class AuditLogService {
     };
   }
 
-  async cleanupOldLogs(retentionDays: number) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - retentionDays);
-
-    // Canonical retention workflow: query records eligible for retention evaluation
-    const records = await prisma.tenantAuditLog.findMany({
-      where: { createdAt: { lt: cutoff } },
-      select: { id: true, tenantId: true },
-    });
-
-    if (records.length === 0) {
-      return { deletedCount: 0, retentionDays, cutoff };
-    }
-
-    const idsToDelete = records.map((r) => r.id);
-    const result = await prisma.tenantAuditLog.deleteMany({
-      where: { id: { in: idsToDelete } },
-    });
-
-    return { deletedCount: result.count, retentionDays, cutoff };
+  async cleanupOldLogs(_retentionDays: number) {
+    // Audit logs are append-only and immutable. Deletion is forbidden by statutory compliance policy.
+    return {
+      deletedCount: 0,
+      status: "IMMUTABLE_AUDIT_TRAIL_PRESERVED",
+      message: "Audit records are append-only and cannot be deleted.",
+    };
   }
 }

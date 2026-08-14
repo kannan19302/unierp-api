@@ -286,9 +286,13 @@ export class ImportService {
           ? "PARTIAL"
           : "FAILED";
 
-    await prisma.auditLog.update({
-      where: { id: result.importId },
+    await prisma.auditLog.create({
       data: {
+        tenantId,
+        userId,
+        action: "IMPORT_COMPLETED",
+        entityType: modelName,
+        entityId: result.importId,
         changes: {
           total: result.total,
           succeeded: result.succeeded,
