@@ -128,4 +128,46 @@ export class BpmnController {
   ) {
     return this.service.escalateProcess(req.user.tenantId, id, dto);
   }
+
+  @Post("bpmn/processes/import")
+  @Permissions("builder.bpmn.create")
+  async importBpmnXml(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: { xml: string; name?: string; key?: string },
+  ) {
+    return this.service.importBpmnXml(req.user.tenantId, dto.xml, {
+      name: dto.name,
+      key: dto.key,
+    });
+  }
+
+  @Get("bpmn/processes/:id/export")
+  @Permissions("builder.bpmn.read")
+  async exportBpmnXml(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    const xml = await this.service.exportBpmnXml(req.user.tenantId, id);
+    return { xml };
+  }
+
+  @Post("bpmn/processes/:id/execute-bpmn")
+  @Permissions("builder.bpmn.create")
+  async executeBpmnProcess(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Body() dto: { variables?: Record<string, any>; startedBy?: string },
+  ) {
+    return this.service.executeBpmnProcess(req.user.tenantId, id, dto.variables || {}, dto.startedBy);
+  }
+
+  @Post("bpmn/instances/:id/advance")
+  @Permissions("builder.bpmn.update")
+  async advanceBpmnInstance(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Body() dto: { completedElementId: string; outcome: string; variables?: Record<string, any> },
+  ) {
+    return this.service.advanceBpmnInstance(req.user.tenantId, id, dto.completedElementId, dto.outcome, dto.variables || {});
+  }
 }
