@@ -20,6 +20,7 @@
     "test:integration:run": "tsx test/integration-setup.ts run",
     "test:integration": "tsx test/integration-setup.ts all",
     "architecture:check": "node scripts/check-module-boundaries.mjs && pnpm exec depcruise --config .dependency-cruiser.cjs src --output-type err",
+    "test:mutation": "npx stryker run",
     "clean": "rimraf dist"
   },
   "dependencies": {
@@ -76,6 +77,10 @@
     "@kannan19302/config": "^1.0.2",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/html-reporter": "^3.1.0",
+    "@stryker-mutator/typescript-checker": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",

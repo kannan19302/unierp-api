@@ -1,0 +1,36 @@
+{
+  "$schema": "https://stryker-mutator.io/schema/stryker-schema.json",
+  "mutate": [
+    "src/modules/finance/finance.service.ts",
+    "src/modules/advanced-finance/services/tax-engine.service.ts",
+    "src/modules/advanced-finance/services/tax-engine-deep.service.ts",
+    "src/modules/advanced-finance/services/fx-revaluation.service.ts",
+    "src/modules/advanced-finance/services/revenue-recognition.service.ts",
+    "src/modules/advanced-finance/services/gl-accounting.service.ts",
+    "src/modules/advanced-hr/payroll-tax.service.ts",
+    "src/modules/hr-advanced/hr-global-payroll-deep.service.ts",
+    "src/modules/inventory/stock-valuation.service.ts",
+    "src/common/guards/rbac.guard.ts",
+    "src/common/guards/tenant.guard.ts"
+  ],
+  "testRunner": "vitest",
+  "coverageAnalysis": "perTest",
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "htmlReporter": { "fileName": "mutation-report/report.html" },
+  "jsonReporter": { "fileName": "mutation-report/report.json" },
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 6
+  },
+  "thresholds_comment": "Baseline 2026-08-15: 6.68% (J09). Target per track spec: 60%. Raise break incrementally as test quality improves — never lower it.",
+  "timeoutMS": 120000,
+  "timeoutFactor": 2,
+  "concurrency": 1,
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.config.ts"
+  }
+}
