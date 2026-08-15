@@ -1,3 +1,4 @@
+import { CreateScorecardInput } from "@kannan19302/shared";
 import {
   Controller,
   Get,
@@ -23,7 +24,6 @@ import {
   updateRubricSchema,
   UpdateRubricInput,
   createScorecardSchema,
-  CreateScorecardInput,
   createLibraryItemSchema,
   CreateLibraryItemInput,
 } from "./crm-coaching.service";

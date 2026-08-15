@@ -1,3 +1,4 @@
+import { ReconciliationEntry } from "@kannan19302/shared";
 /**
  * D10 — complete tenant export, proven end-to-end: export → import into
  * a clean instance → reconcile record-for-record. Covers the same
@@ -18,12 +19,7 @@ export interface TenantExportSnapshot {
   entities: Record<string, Record<string, unknown>[]>;
 }
 
-export interface ReconciliationEntry {
-  model: string;
-  recordId: string;
-  status: "MATCH" | "MISSING" | "MISMATCH";
-  differingFields?: string[];
-}
+
 
 export interface ReconciliationReport {
   totalRecords: number;

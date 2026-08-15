@@ -1,28 +1,13 @@
+export type { CreateCategoryInput, UpdateCategoryInput } from "@kannan19302/shared";
 // ─────────────────────────────────────────────────
 // Inventory Module Input Types
 // Used by both frontend (forms) and backend (DTOs)
 // ─────────────────────────────────────────────────
 
 // ── Product Categories ──
-export interface CreateCategoryInput {
-  name: string;
-  slug?: string;
-  description?: string | null;
-  parentId?: string | null;
-  imageUrl?: string | null;
-  sortOrder?: number;
-  isActive?: boolean;
-}
 
-export interface UpdateCategoryInput {
-  name?: string;
-  slug?: string;
-  description?: string | null;
-  parentId?: string | null;
-  imageUrl?: string | null;
-  sortOrder?: number;
-  isActive?: boolean;
-}
+
+
 
 // ── Product Variants ──
 export interface CreateVariantInput {

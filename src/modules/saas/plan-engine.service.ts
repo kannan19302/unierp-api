@@ -1,4 +1,4 @@
-import { PlanHelpers } from "@/common/utils/billing-shared";
+import { PlanHelpers } from "@/modules/saas/shared/billing-shared";
 import {
   Injectable,
   NotFoundException,

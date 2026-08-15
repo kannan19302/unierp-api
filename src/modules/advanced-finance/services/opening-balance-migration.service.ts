@@ -1,3 +1,4 @@
+import { ReconciliationEntry } from "@kannan19302/shared";
 /**
  * D09 — migration templates for common sources: opening balances from a
  * mapped template (chart of accounts + debit/credit per account) import
@@ -20,14 +21,7 @@ export interface OpeningBalanceRow {
   credit: number;
 }
 
-export interface ReconciliationEntry {
-  accountCode: string;
-  sourceDebit: number;
-  sourceCredit: number;
-  trialBalanceDebit: number;
-  trialBalanceCredit: number;
-  reconciled: boolean;
-}
+
 
 export interface ReconciliationStatement {
   asOfDate: string;

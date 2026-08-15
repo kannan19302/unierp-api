@@ -1,3 +1,4 @@
+import { CreateForecastDto } from "@kannan19302/shared";
 import {
   Injectable,
   NotFoundException,
@@ -89,7 +90,7 @@ export const runForecastEngineSchema = z.object({
   lookbackDays: z.number().int().min(7).default(90),
 });
 
-export type CreateForecastDto = z.infer<typeof createForecastSchema>;
+
 export type CalculateReorderPointDto = z.infer<
   typeof calculateReorderPointSchema
 >;

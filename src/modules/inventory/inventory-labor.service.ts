@@ -1,3 +1,4 @@
+import { CompleteTaskInput } from "@kannan19302/shared";
 import {
   Injectable,
   NotFoundException,
@@ -46,7 +47,7 @@ export const completeTaskSchema = z.object({
   completedAt: z.string().datetime(),
   notes: z.string().optional(),
 });
-export type CompleteTaskInput = z.infer<typeof completeTaskSchema>;
+
 
 export const createShiftTemplateSchema = z.object({
   warehouseId: z.string().min(1),

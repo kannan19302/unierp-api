@@ -1,3 +1,4 @@
+import { CreateScorecardInput } from "@kannan19302/shared";
 import {
   Injectable,
   NotFoundException,
@@ -23,7 +24,7 @@ export const createScorecardSchema = z.object({
   totalUnitsReceived: z.number().int().min(0).default(0),
   notes: z.string().optional(),
 });
-export type CreateScorecardInput = z.infer<typeof createScorecardSchema>;
+
 
 export const createNcrSchema = z.object({
   vendorId: z.string().min(1),

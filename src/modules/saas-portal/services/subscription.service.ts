@@ -1,4 +1,4 @@
-import { SubscriptionHelpers, InvoiceHelpers } from "@/common/utils/billing-shared";
+import { SubscriptionHelpers, InvoiceHelpers } from "@/modules/saas/shared/billing-shared";
 import {
   Injectable,
   NotFoundException,

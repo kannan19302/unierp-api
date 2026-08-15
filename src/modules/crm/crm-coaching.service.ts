@@ -1,3 +1,4 @@
+import { CreateScorecardInput } from "@kannan19302/shared";
 import {
   Injectable,
   NotFoundException,
@@ -43,7 +44,7 @@ export const createScorecardSchema = z.object({
   nextStepsSet: z.boolean().optional(),
   managerNotes: z.string().max(2000).optional(),
 });
-export type CreateScorecardInput = z.infer<typeof createScorecardSchema>;
+
 
 export const createLibraryItemSchema = z.object({
   title: z.string().min(1).max(200),

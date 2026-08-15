@@ -1,3 +1,4 @@
+import { CreateForecastDto } from "@kannan19302/shared";
 import { z } from "zod";
 
 /**
@@ -178,7 +179,7 @@ export const createForecastSchema = z.object({
   confidence: z.number().min(0).max(100).optional(),
   notes: z.string().max(2000).optional(),
 });
-export type CreateForecastDto = z.infer<typeof createForecastSchema>;
+
 
 // ─── Subscription DTOs ──────────────────────────
 

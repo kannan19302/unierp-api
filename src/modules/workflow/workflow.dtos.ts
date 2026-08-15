@@ -1,3 +1,4 @@
+import { CompleteTaskInput } from "@kannan19302/shared";
 import { z } from "zod";
 
 export const createDefinitionSchema = z.object({
@@ -112,7 +113,4 @@ export interface CreateStepInput {
   config?: any;
   sortOrder?: number;
 }
-export interface CompleteTaskInput {
-  status: "COMPLETED" | "SKIPPED" | "FAILED";
-  comments?: string;
-}
+
