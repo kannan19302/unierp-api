@@ -48,3 +48,7 @@ storybook-static/
 
 # Runtime state (marketplace bundle store, tenant app extractions)
 var/
+
+.stryker-tmp/
+mutation-report/
+mutation-report-proof/
