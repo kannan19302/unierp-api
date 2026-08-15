@@ -19,55 +19,8 @@ import { Permissions } from "../../common/decorators/permissions.decorator";
 import { InventoryService } from "./inventory.service";
 import { InventoryWarehousesService } from "./inventory-warehouses.service";
 import { InventoryQaService } from "./inventory-qa.service";
-import {
-  CreateProductInput,
-  UpdateProductInput,
-  CreateWarehouseInput,
-  UpdateWarehouseInput,
-  CreateCategoryInput,
-  UpdateCategoryInput,
-  CreateVariantInput,
-  CreateBinLocationInput,
-  CreateSerialNumberInput,
-  UpdateSerialNumberInput,
-  CreateBatchInput,
-  UpdateBatchInput,
-  CreateCycleCountInput,
-  SubmitCycleCountInput,
-  CreateCycleCountScheduleInput,
-  UpdateCycleCountScheduleInput,
-  CreateLicensePlateInput,
-  AddLicensePlateItemInput,
-  MoveLicensePlateInput,
-  CreatePutawayTaskInput,
-  CompletePutawayTaskInput,
-  QuarantineBatchInput,
-  ReleaseBatchQuarantineInput,
-  CreateStockReservationInput,
-  AssembleKitInput,
-  DisassembleKitInput,
-  CreateTransferApprovalRuleInput,
-  UpdateTransferApprovalRuleInput,
-  RejectTransferInput,
-  CreateDockAppointmentInput,
-  UpdateDockAppointmentInput,
-  CreatePickWaveInput,
-  RecordPickInput,
-  CreateConsignmentStockInput,
-  RecordConsignmentConsumptionInput,
-  ReceiveWithTraceabilityInput,
-  CreateQAInspectionTemplateInput,
-  UpdateQAInspectionTemplateInput,
-  CreateRequisitionFromReorderRuleInput,
-  CreateKitVersionInput,
-  CreateQAInspectionInput,
-  SubmitQAInspectionInput,
-  CreateReorderRuleInput,
-  CreateKitInput,
-  CreateStockEntryInput,
-  TransferStockInput,
-  BulkActionInput,
-} from "@kannan19302/shared";
+import { CreateProductInput, UpdateProductInput, CreateWarehouseInput, UpdateWarehouseInput, BulkActionInput } from '@kannan19302/shared';
+import { CreateCategoryInput, UpdateCategoryInput, CreateVariantInput, CreateBinLocationInput, CreateSerialNumberInput, UpdateSerialNumberInput, CreateBatchInput, UpdateBatchInput, CreateCycleCountInput, SubmitCycleCountInput, CreateCycleCountScheduleInput, UpdateCycleCountScheduleInput, CreateLicensePlateInput, AddLicensePlateItemInput, MoveLicensePlateInput, CreatePutawayTaskInput, CompletePutawayTaskInput, QuarantineBatchInput, ReleaseBatchQuarantineInput, CreateStockReservationInput, AssembleKitInput, DisassembleKitInput, CreateTransferApprovalRuleInput, UpdateTransferApprovalRuleInput, RejectTransferInput, CreateDockAppointmentInput, UpdateDockAppointmentInput, CreatePickWaveInput, RecordPickInput, CreateConsignmentStockInput, RecordConsignmentConsumptionInput, ReceiveWithTraceabilityInput, CreateQAInspectionTemplateInput, UpdateQAInspectionTemplateInput, CreateRequisitionFromReorderRuleInput, CreateKitVersionInput, CreateQAInspectionInput, SubmitQAInspectionInput, CreateReorderRuleInput, CreateKitInput, CreateStockEntryInput, TransferStockInput } from './shared';;
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 interface AuthenticatedRequest extends Request {

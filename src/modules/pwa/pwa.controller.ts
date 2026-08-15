@@ -18,15 +18,7 @@ import { Permissions } from "../../common/decorators/permissions.decorator";
 import { PwaService } from "./pwa.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
-import {
-  UpdateManifestSchema,
-  UpdateServiceWorkerSchema,
-  CreateCacheRuleSchema,
-  UpdateCacheRuleSchema,
-  UpdateInstallPromptSchema,
-  CreateSyncQueueSchema,
-  CreatePushSubscriptionSchema,
-} from "@kannan19302/shared";
+import { UpdateManifestSchema, UpdateServiceWorkerSchema, CreateCacheRuleSchema, UpdateCacheRuleSchema, UpdateInstallPromptSchema, CreateSyncQueueSchema, CreatePushSubscriptionSchema } from './shared';;
 
 interface AuthReq extends Request {
   user: { tenantId: string; userId: string; email: string; roles: string[] };

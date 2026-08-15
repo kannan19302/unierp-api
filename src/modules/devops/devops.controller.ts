@@ -16,16 +16,7 @@ import { Permissions } from "../../common/decorators/permissions.decorator";
 import { DevopsService } from "./devops.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
-import {
-  CreateDeploymentSchema,
-  UpdateDeploymentSchema,
-  CreateEnvironmentSchema,
-  UpdateEnvironmentSchema,
-  CreateEnvironmentConfigSchema,
-  CreateReleaseSchema,
-  UpdateReleaseSchema,
-  CreateBuildLogSchema,
-} from "@kannan19302/shared";
+import { CreateDeploymentSchema, UpdateDeploymentSchema, CreateEnvironmentSchema, UpdateEnvironmentSchema, CreateEnvironmentConfigSchema, CreateReleaseSchema, UpdateReleaseSchema, CreateBuildLogSchema } from './shared';;
 
 interface AuthReq extends Request {
   user: { tenantId: string; userId: string; email: string; roles: string[] };

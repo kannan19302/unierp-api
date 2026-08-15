@@ -6,52 +6,8 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import {
-  CreateProductInput,
-  UpdateProductInput,
-  CreateCategoryInput,
-  UpdateCategoryInput,
-  CreateVariantInput,
-  CreateBinLocationInput,
-  CreateSerialNumberInput,
-  UpdateSerialNumberInput,
-  CreateBatchInput,
-  UpdateBatchInput,
-  CreateCycleCountInput,
-  SubmitCycleCountInput,
-  CreateCycleCountScheduleInput,
-  UpdateCycleCountScheduleInput,
-  CreateLicensePlateInput,
-  AddLicensePlateItemInput,
-  MoveLicensePlateInput,
-  CreatePutawayTaskInput,
-  CompletePutawayTaskInput,
-  QuarantineBatchInput,
-  ReleaseBatchQuarantineInput,
-  CreateStockReservationInput,
-  AssembleKitInput,
-  DisassembleKitInput,
-  CreateTransferApprovalRuleInput,
-  UpdateTransferApprovalRuleInput,
-  RejectTransferInput,
-  CreateDockAppointmentInput,
-  UpdateDockAppointmentInput,
-  CreatePickWaveInput,
-  RecordPickInput,
-  CreateConsignmentStockInput,
-  RecordConsignmentConsumptionInput,
-  ReceiveWithTraceabilityInput,
-  CreateQAInspectionTemplateInput,
-  UpdateQAInspectionTemplateInput,
-  CreateRequisitionFromReorderRuleInput,
-  CreateKitVersionInput,
-  CreateQAInspectionInput,
-  SubmitQAInspectionInput,
-  CreateReorderRuleInput,
-  CreateKitInput,
-  CreateStockEntryInput,
-  TransferStockInput,
-} from "@kannan19302/shared";
+import { CreateProductInput, UpdateProductInput } from '@kannan19302/shared';
+import { CreateCategoryInput, UpdateCategoryInput, CreateVariantInput, CreateBinLocationInput, CreateSerialNumberInput, UpdateSerialNumberInput, CreateBatchInput, UpdateBatchInput, CreateCycleCountInput, SubmitCycleCountInput, CreateCycleCountScheduleInput, UpdateCycleCountScheduleInput, CreateLicensePlateInput, AddLicensePlateItemInput, MoveLicensePlateInput, CreatePutawayTaskInput, CompletePutawayTaskInput, QuarantineBatchInput, ReleaseBatchQuarantineInput, CreateStockReservationInput, AssembleKitInput, DisassembleKitInput, CreateTransferApprovalRuleInput, UpdateTransferApprovalRuleInput, RejectTransferInput, CreateDockAppointmentInput, UpdateDockAppointmentInput, CreatePickWaveInput, RecordPickInput, CreateConsignmentStockInput, RecordConsignmentConsumptionInput, ReceiveWithTraceabilityInput, CreateQAInspectionTemplateInput, UpdateQAInspectionTemplateInput, CreateRequisitionFromReorderRuleInput, CreateKitVersionInput, CreateQAInspectionInput, SubmitQAInspectionInput, CreateReorderRuleInput, CreateKitInput, CreateStockEntryInput, TransferStockInput } from './shared';;
 import { Prisma } from "@prisma/client";
 
 import {

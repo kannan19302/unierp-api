@@ -15,16 +15,7 @@ import { Permissions } from "../../common/decorators/permissions.decorator";
 import { ExtGatewayDeepService } from "./ext-gateway-deep.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
-import {
-  CreateConnectionSchema,
-  UpdateConnectionSchema,
-  CreateWebhookConfigSchema,
-  UpdateWebhookConfigSchema,
-  CreateRateLimitConfigSchema,
-  UpdateRateLimitConfigSchema,
-  CreateIntegrationTemplateSchema,
-  UpdateIntegrationTemplateSchema,
-} from "@kannan19302/shared";
+import { CreateConnectionSchema, UpdateConnectionSchema, CreateWebhookConfigSchema, UpdateWebhookConfigSchema, CreateRateLimitConfigSchema, UpdateRateLimitConfigSchema, CreateIntegrationTemplateSchema, UpdateIntegrationTemplateSchema } from './shared';;
 
 interface AuthReq extends Request {
   user: { tenantId: string; userId: string; email: string; roles: string[] };

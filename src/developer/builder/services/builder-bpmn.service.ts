@@ -323,7 +323,9 @@ export class BuilderBpmnService {
               ? props["camunda:property"] || props.property
               : [props["camunda:property"] || props.property].filter(Boolean);
             for (const prop of propArray) {
-              el.config[prop["@_name"]] = prop["@_value"];
+              if (el.config) {
+                el.config[prop["@_name"]] = prop["@_value"];
+              }
             }
           }
         }
@@ -396,8 +398,8 @@ export class BuilderBpmnService {
     });
     if (!proc) throw new NotFoundException("BPMN process not found");
 
-    const elements = (proc.elements as BpmnElement[]) || [];
-    const flows = (proc.flows as BpmnFlow[]) || [];
+    const elements = (proc.elements as unknown as BpmnElement[]) || [];
+    const flows = (proc.flows as unknown as BpmnFlow[]) || [];
 
     const builder = new XMLBuilder({
       ignoreAttributes: false,
@@ -463,7 +465,10 @@ export class BuilderBpmnService {
           "@_id": proc.key,
           "@_isExecutable": "true",
           "@_name": proc.name,
-          ...Object.fromEntries(processElements.map((e, i) => [Object.keys(e)[0], e[Object.keys(e)[0]]])),
+          ...Object.fromEntries(processElements.map(e => {
+            const k = Object.keys(e)[0];
+            return k ? [k, (e as any)[k]] : null;
+          }).filter(Boolean) as [string, any][]),
         },
         "bpmndi:BPMNDiagram": {
           "@_id": "BPMNDiagram_1",
@@ -502,8 +507,8 @@ export class BuilderBpmnService {
     });
     if (!proc) throw new NotFoundException("BPMN process not found");
 
-    const elements = (proc.elements as BpmnElement[]) || [];
-    const flows = (proc.flows as BpmnFlow[]) || [];
+    const elements = (proc.elements as unknown as BpmnElement[]) || [];
+    const flows = (proc.flows as unknown as BpmnFlow[]) || [];
 
     const instance = await prisma.bpmnProcessInstance.create({
       data: {
@@ -550,8 +555,8 @@ export class BuilderBpmnService {
     });
     if (!instance) throw new NotFoundException("Process instance not found");
 
-    const elements = (instance.definition.elements as BpmnElement[]) || [];
-    const flows = (instance.definition.flows as BpmnFlow[]) || [];
+    const elements = (instance.definition.elements as unknown as BpmnElement[]) || [];
+    const flows = (instance.definition.flows as unknown as BpmnFlow[]) || [];
 
     const completedActivity = await prisma.bpmnActivityInstance.findFirst({
       where: { instanceId, elementId: completedElementId, status: "ACTIVE" },

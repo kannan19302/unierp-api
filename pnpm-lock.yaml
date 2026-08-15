@@ -22,7 +22,7 @@ importers:
         version: 1.0.3(@kannan19302/shared@1.0.5)
       '@kannan19302/database':
         specifier: ^1.0.14
-        version: 1.0.14(magicast@0.3.5)(typescript@5.9.3)
+        version: link:../unierp-data
       '@kannan19302/extension-api':
         specifier: ^1.0.6
         version: 1.0.6

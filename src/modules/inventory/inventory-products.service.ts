@@ -6,13 +6,8 @@ import {
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
-import {
-  CreateProductInput,
-  UpdateProductInput,
-  CreateCategoryInput,
-  UpdateCategoryInput,
-  CreateVariantInput,
-} from "@kannan19302/shared";
+import { CreateProductInput, UpdateProductInput } from '@kannan19302/shared';
+import { CreateCategoryInput, UpdateCategoryInput, CreateVariantInput } from './shared';;
 import {
   buildPaginationValues,
   buildOrderBy,

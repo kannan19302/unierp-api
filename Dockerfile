@@ -60,6 +60,30 @@ ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
 
 COPY tsconfig.json nest-cli.json ./
 COPY src ./src
+
+# ── dev ─────────────────────────────────────────────────────────────────────
+# Build dist/ at IMAGE BUILD TIME using webpack (via nest build), not at
+# container start. Running `nest start --watch` (tsc watch) inside the
+# container held ~5 GB of V8 heap indefinitely, crashing Docker Desktop's
+# WSL2 engine under the 10 GB memory budget shared across all services.
+#
+# With webpack the build uses ~800 MB and exits; the container then runs
+# `node dist/main.js` which is a cheap, stable process.
+#
+# Trade-off: src/ changes need `docker restart unerp-api` to be picked up
+# (same rule as unerp-web's app/ routes). The mounted src/ volume is still
+# useful for inspecting source inside the container.
+FROM builder AS dev
+ENV NODE_ENV=development
+# Build the bundle inside the image so the container starts instantly.
+RUN node --max-old-space-size=8192 ./node_modules/@nestjs/cli/bin/nest.js build
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD node -e "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node", "dist/main.js"]
+
+# ── build ───────────────────────────────────────────────────────────────────
+FROM dev AS prod-builder
 RUN npm run build
 
 # ── runtime ─────────────────────────────────────────────────────────────────
@@ -70,11 +94,11 @@ RUN apt-get update && apt-get install -y openssl
 
 # The generated Prisma client lives in node_modules, so it has to come across
 # with it rather than being regenerated in an image with no schema.
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./package.json
+COPY --from=prod-builder /app/node_modules ./node_modules
+COPY --from=prod-builder /app/dist ./dist
+COPY --from=prod-builder /app/package.json ./package.json
 
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-  CMD node -e "fetch('http://localhost:3001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "dist/main.js"]

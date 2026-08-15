@@ -17,13 +17,7 @@ import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { HrOperationsService } from "./hr-operations.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
-import {
-  createHrTicketSchema,
-  createEmployeeGrievanceSchema,
-  createBackgroundCheckRequestSchema,
-  createVisaRecordSchema,
-  createEmployeeWellnessProgramSchema,
-} from "@kannan19302/shared";
+import { createHrTicketSchema, createEmployeeGrievanceSchema, createBackgroundCheckRequestSchema, createVisaRecordSchema, createEmployeeWellnessProgramSchema } from '../hr/shared';;
 
 interface AuthenticatedRequest extends Request {
   user: {

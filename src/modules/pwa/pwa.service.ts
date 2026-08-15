@@ -1,15 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import type {
-  UpdateManifestDto,
-  UpdateServiceWorkerDto,
-  CreateCacheRuleDto,
-  UpdateCacheRuleDto,
-  UpdateInstallPromptDto,
-  CreateSyncQueueDto,
-  CreatePushSubscriptionDto,
-} from "@kannan19302/shared";
+import { UpdateManifestDto, UpdateServiceWorkerDto, CreateCacheRuleDto, UpdateCacheRuleDto, UpdateInstallPromptDto, CreateSyncQueueDto, CreatePushSubscriptionDto } from './shared';;
 
 @Injectable()
 export class PwaService {

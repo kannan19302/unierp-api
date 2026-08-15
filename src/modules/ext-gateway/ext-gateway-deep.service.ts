@@ -1,16 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import type {
-  CreateConnectionDto,
-  UpdateConnectionDto,
-  CreateWebhookConfigDto,
-  UpdateWebhookConfigDto,
-  CreateRateLimitConfigDto,
-  UpdateRateLimitConfigDto,
-  CreateIntegrationTemplateDto,
-  UpdateIntegrationTemplateDto,
-} from "@kannan19302/shared";
+import { CreateConnectionDto, UpdateConnectionDto, CreateWebhookConfigDto, UpdateWebhookConfigDto, CreateRateLimitConfigDto, UpdateRateLimitConfigDto, CreateIntegrationTemplateDto, UpdateIntegrationTemplateDto } from './shared';;
 
 @Injectable()
 export class ExtGatewayDeepService {

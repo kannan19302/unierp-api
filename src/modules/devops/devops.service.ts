@@ -1,16 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import type {
-  CreateDeploymentDto,
-  UpdateDeploymentDto,
-  CreateEnvironmentDto,
-  UpdateEnvironmentDto,
-  CreateEnvironmentConfigDto,
-  CreateReleaseDto,
-  UpdateReleaseDto,
-  CreateBuildLogDto,
-} from "@kannan19302/shared";
+import { CreateDeploymentDto, UpdateDeploymentDto, CreateEnvironmentDto, UpdateEnvironmentDto, CreateEnvironmentConfigDto, CreateReleaseDto, UpdateReleaseDto, CreateBuildLogDto } from './shared';;
 
 @Injectable()
 export class DevopsService {

@@ -6,12 +6,7 @@ import {
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
-import {
-  CreateQAInspectionTemplateInput,
-  UpdateQAInspectionTemplateInput,
-  CreateQAInspectionInput,
-  SubmitQAInspectionInput,
-} from "@kannan19302/shared";
+import { CreateQAInspectionTemplateInput, UpdateQAInspectionTemplateInput, CreateQAInspectionInput, SubmitQAInspectionInput } from './shared';;
 import {
   buildPaginationValues,
   paginatedResult,

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { OutboxService, type OutboxTxClient } from "@kannan19302/shared";
-import type { WriteEventParams } from "@kannan19302/shared";
+import { OutboxService, type OutboxTxClient } from "../shared";
+import type { WriteEventParams } from "../shared";
 
 describe("OutboxService (shared)", () => {
   let service: OutboxService;

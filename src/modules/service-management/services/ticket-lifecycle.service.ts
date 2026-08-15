@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "@kannan19302/database";
-import { OutboxService } from "@kannan19302/shared";
+import { OutboxService } from '../../outbox/shared';;
 
 @Injectable()
 export class TicketLifecycleService {
