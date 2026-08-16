@@ -4,6 +4,10 @@ import { AiCopilotService } from "./ai-copilot.service";
 import { AiAgentService } from "./ai-agent.service";
 import { AiConfigService } from "./ai-config.service";
 import { OllamaProcessService } from "./ollama-process.service";
+import { AgentRuntimeService } from "./agent-runtime.service";
+import { CapabilityRegistryService } from "./capability-registry.service";
+import { MutationApprovalService } from "./mutation-approval.service";
+import { AiAuditService } from "./ai-audit.service";
 import { AiController } from "./ai.controller";
 import { AiAdminController } from "./ai-admin.controller";
 import { AiExpansionController } from "./ai-expansion.controller";
@@ -29,6 +33,10 @@ import { ReportingQueryClientModule } from "../../common/integrations/reporting-
     OllamaProcessService,
     AiExpansionService,
     AiDeepService,
+    AgentRuntimeService,
+    CapabilityRegistryService,
+    MutationApprovalService,
+    AiAuditService,
   ],
   exports: [
     AiService,
@@ -38,6 +46,10 @@ import { ReportingQueryClientModule } from "../../common/integrations/reporting-
     OllamaProcessService,
     AiExpansionService,
     AiDeepService,
+    AgentRuntimeService,
+    CapabilityRegistryService,
+    MutationApprovalService,
+    AiAuditService,
   ],
 })
 export class AiModule {}
