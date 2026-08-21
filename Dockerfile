@@ -73,17 +73,63 @@ COPY src ./src
 # Trade-off: src/ changes need `docker restart unerp-api` to be picked up
 # (same rule as unerp-web's app/ routes). The mounted src/ volume is still
 # useful for inspecting source inside the container.
-FROM builder AS dev
+# ── local package overlay (DEV ONLY) ────────────────────────────────────────
+#
+# Same reasoning as idp/Dockerfile's localdeps stage, different symptom: this
+# service imports members of `@kannan19302/shared` (resolve, bindProvider,
+# unbindProvider, CreateScorecardInput, CreateForecastDto, CompleteTaskInput,
+# ReconciliationEntry, the builder-workflow and custom-object schemas) that all
+# exist in the local `shared` package but not in published shared@1.0.5. The
+# `nest build` below therefore failed with 32 "has no exported member" errors,
+# so this image could not be built at all.
+#
+# DEV target only — `prod-builder` still builds against the registry, keeping
+# publishing as the real release path. Sources come from the `localpkgs` named
+# build context (repo root, wired in infra/docker-compose.platform.yml); the
+# default `docker build .` target is `runner`, which never builds this stage.
+FROM builder AS localdeps
+
+# tsconfig.base.json is required, not optional — see idp/Dockerfile: a missing
+# extends target makes tsc fall back to ES3/ES5 defaults and report dozens of
+# spurious "Property 'padStart' does not exist" errors instead of failing on
+# the real cause.
+COPY --from=localpkgs shared/package.json shared/tsconfig.json shared/tsconfig.base.json /tmp/shared/
+COPY --from=localpkgs shared/src /tmp/shared/src
+RUN cd /tmp/shared \
+ && npm install --no-audit --no-fund \
+ && npm run build
+
+COPY --from=localpkgs data/package.json data/tsconfig.json data/tsconfig.base.json data/prisma.config.ts /tmp/data/
+COPY --from=localpkgs data/prisma /tmp/data/prisma
+COPY --from=localpkgs data/src /tmp/data/src
+COPY --from=localpkgs data/scripts /tmp/data/scripts
+# Host-generated Prisma output carries a host-native query engine; regenerate
+# on this platform instead (see data/scripts/postinstall.mjs for why the
+# published package ships prisma/ but never the generated client).
+RUN rm -rf /tmp/data/src/idp-client /tmp/data/dist \
+ && cd /tmp/data \
+ && npm install --no-audit --no-fund \
+ && npm run build
+
+RUN rm -rf node_modules/@kannan19302/shared node_modules/@kannan19302/database \
+ && mkdir -p node_modules/@kannan19302 \
+ && cp -r /tmp/shared node_modules/@kannan19302/shared \
+ && cp -r /tmp/data node_modules/@kannan19302/database \
+ && rm -rf /tmp/shared /tmp/data
+
+FROM localdeps AS dev
 ENV NODE_ENV=development
 # Build the bundle inside the image so the container starts instantly.
 RUN node --max-old-space-size=8192 ./node_modules/@nestjs/cli/bin/nest.js build
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD node -e "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://localhost:3001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "dist/main.js"]
 
 # ── build ───────────────────────────────────────────────────────────────────
-FROM dev AS prod-builder
+# FROM builder, not dev: the production artifact is built against the registry,
+# so a published release never silently depends on a developer's working tree.
+FROM builder AS prod-builder
 RUN npm run build
 
 # ── runtime ─────────────────────────────────────────────────────────────────
@@ -100,5 +146,5 @@ COPY --from=prod-builder /app/package.json ./package.json
 
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-  CMD node -e "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://localhost:3001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "dist/main.js"]

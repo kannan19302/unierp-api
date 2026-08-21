@@ -15,6 +15,7 @@ import {
   findDeprecation,
   type DeprecationEntry,
 } from "./deprecation-registry";
+import { recordDeprecatedUsage } from "./deprecation-usage";
 
 export function applyDeprecationHeaders(
   response: Response,
@@ -38,7 +39,18 @@ export function deprecationMiddleware(
 ) {
   return (request: Request, response: Response, next: NextFunction): void => {
     const entry = findDeprecation(request.path, registry);
-    if (entry) applyDeprecationHeaders(response, entry);
+    if (entry) {
+      applyDeprecationHeaders(response, entry);
+      // P4 stage 2 — count who is still calling this, so a sunset date can be
+      // set from evidence. The tenant is read from the already-parsed request
+      // when a guard has run; before that it is "unknown", which is still
+      // useful (it separates authenticated integrations from anonymous
+      // probes) and never blocks the request.
+      const tenantId =
+        (request as unknown as { user?: { tenantId?: string } }).user?.tenantId ??
+        "unknown";
+      recordDeprecatedUsage(entry.pathPrefix, tenantId);
+    }
     next();
   };
 }

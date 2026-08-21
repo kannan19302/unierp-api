@@ -259,13 +259,14 @@ export class SaasPortalSecurityService {
 
     const roles = user.roles.map((r: any) => r.role.name);
     const token = signSessionToken({
+      sid: `impersonation:${tenantId}:${targetUserId}:${Date.now()}`,
       userId: user.id,
       tenantId: user.tenantId,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       roles,
-    });
+    } as any);
 
     return {
       token,

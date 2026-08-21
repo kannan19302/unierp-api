@@ -60,7 +60,8 @@ import { LocalizationModule } from "./modules/localization/localization.module";
 import { PwaModule } from "./modules/pwa/pwa.module";
 import { DevopsModule } from "./modules/devops/devops.module";
 import { SaasPortalModule } from "./modules/saas-portal/saas-portal.module";
-import { BuilderModule } from "./developer/builder/builder.module";
+import { BuilderLegacyModule } from "./developer/builder/builder-legacy.module";
+import { DeveloperPlatformModule } from "./developer/platform/developer-platform.module";
 import { CommonModule } from "./common/common.module";
 import { QueueModule } from "./common/queues/queue.module";
 import { AiModule } from "./modules/ai/ai.module";
@@ -268,8 +269,11 @@ import {
     SaasPortalModule,
     SaasPortalEnterpriseModule,
 
-    // Builder Studio
-    BuilderModule,
+    // Developer Platform — the project-first surface (/api/v1/dev/*).
+    DeveloperPlatformModule,
+    // The deprecated /api/v1/builder/* surface. Removing it is deleting this
+    // one import; see builder-legacy.module.ts for the gating checklist.
+    BuilderLegacyModule,
     BuilderEnterpriseModule,
 
     // AI Layer

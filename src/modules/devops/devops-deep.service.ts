@@ -97,7 +97,10 @@ export class DevopsDeepService {
     return prisma.deployment.findMany({
       where: { tenantId },
       orderBy: { createdAt: "desc" },
-      include: { depEnvironment: true },
+      // P6: was `depEnvironment`, the workaround relation that existed only
+      // because `environment` pointed at DeploymentStage and returned a stage.
+      // `environment` is now the real thing, so the workaround is gone.
+      include: { environment: true },
     });
   }
   async createDeployment(tenantId: string, userId: string, data: any) {

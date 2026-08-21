@@ -10,6 +10,10 @@ import { BuilderScriptingService } from "./builder-scripting.service";
 import { BuilderAiService } from "./builder-ai.service";
 import { GovernanceController } from "./governance.controller";
 import { AiClientModule } from "../../common/integrations/ai-client.module";
+// P4 — the legacy builder services now read module composition from the real
+// tables via ModuleCompositionService instead of builder_modules' JSON
+// columns. No cycle: DeveloperPlatformModule does not import this one.
+import { DeveloperPlatformModule } from "../platform/developer-platform.module";
 
 // Decomposed Sub-services
 import { BuilderFormsService } from "./builder-forms.service";
@@ -50,7 +54,7 @@ import { BuilderDataObjectsService } from "./services/builder-data-objects.servi
 import { CustomObjectSchemaService } from "./services/custom-object-schema.service";
 
 @Module({
-  imports: [AiClientModule, BuilderEnterpriseModule],
+  imports: [DeveloperPlatformModule, AiClientModule, BuilderEnterpriseModule],
   controllers: [
     BuilderDeepExpansionController,
     BuilderController,

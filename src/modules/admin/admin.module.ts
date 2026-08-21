@@ -28,6 +28,8 @@ import { SubscriptionController } from "./subscription.controller";
 import { SubscriptionService } from "./subscription.service";
 import { ErrorReportsController } from "./error-reports.controller";
 import { ErrorReportsService } from "./error-reports.service";
+import { SupportImpersonationController } from "./support-impersonation.controller";
+import { SupportImpersonationService } from "./support-impersonation.service";
 
 import { PlatformCredentialsModule } from "../../common/platform-credentials/platform-credentials.module";
 
@@ -49,6 +51,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     DataQualityController,
     SubscriptionController,
     ErrorReportsController,
+    SupportImpersonationController,
   ],
   providers: [
     AdminService,
@@ -67,6 +70,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     DataQualityService,
     SubscriptionService,
     ErrorReportsService,
+    SupportImpersonationService,
   ],
   exports: [
     AdminService,

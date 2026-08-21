@@ -10,6 +10,30 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Resolve the sibling workspace packages from disk rather than from the
+      // registry copy in node_modules.
+      //
+      // `@kannan19302/shared` 1.0.5 is published, but the local source at the
+      // SAME version number is ahead of it: `policy/engine` (CONTROL_PLANE_ROLE,
+      // CONTROL_PLANE_ROLE_PERMISSIONS) exists on disk and not in the published
+      // dist. policy-engine.spec.ts and permission-harness-coverage.spec.ts
+      // therefore imported `undefined` and failed with "Cannot read properties
+      // of undefined", which reads as a broken guard and is actually a stale
+      // package. Tests should exercise the source in this checkout.
+      //
+      // Test-time only: the Docker build context is this repo alone, so runtime
+      // resolution is untouched and still uses the published package.
+      "@kannan19302/shared": fileURLToPath(
+        new URL("../shared/dist/index.js", import.meta.url),
+      ),
+      // `@kannan19302/database` is a DANGLING symlink in node_modules: it points
+      // at ../unierp-data, a directory that does not exist (the package lives in
+      // ../data). Anything importing it failed to collect with "Failed to load
+      // url @kannan19302/database". ../data is the same version the manifest
+      // asks for (1.0.14) and carries a built dist.
+      "@kannan19302/database": fileURLToPath(
+        new URL("../data/dist/index.js", import.meta.url),
+      ),
     },
   },
   test: {
@@ -73,7 +97,16 @@ export default defineConfig({
     // always-passing padding files), which meant a test that only ever
     // ran locally could rot for months with nobody noticing, since CI
     // never executed it at all. The whole suite runs everywhere it runs.
-    exclude: ["**/node_modules/**", "**/dist/**"],
+    // `.stryker-tmp/sandbox-*` holds full source copies left behind by
+    // interrupted Stryker mutation runs. Vitest globbed them, so the suite
+    // collected every spec ~11 times over and reported hundreds of phantom
+    // failures from stale copies (836 tests instead of 138). They are build
+    // artefacts, never a test target.
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.stryker-tmp/**",
+    ],
     coverage: {
       provider: "v8",
       // `json` emits coverage/coverage-final.json for tooling that consumes

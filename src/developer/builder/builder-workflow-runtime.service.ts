@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  Optional,
+  BadRequestException,
+  NotFoundException,
+} from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 
 /**
@@ -27,6 +32,20 @@ import { prisma } from "@kannan19302/database";
 @Injectable()
 export class BuilderWorkflowRuntimeService {
   constructor(
+    // @Optional() is load-bearing, not decoration. A constructor parameter
+    // whose type is a function emits `Function` as its design:paramtypes
+    // metadata, and Nest resolves parameters by that metadata regardless of
+    // whether TypeScript gave them a default value — so it looked for a
+    // provider called `Function`, found none, and refused to instantiate the
+    // whole module: "Nest can't resolve dependencies of the
+    // BuilderWorkflowRuntimeService (?)". That took the entire API process
+    // down at boot, not just this feature.
+    //
+    // With @Optional() Nest injects undefined when nothing is registered,
+    // which is exactly when the `= defaultFetch` default applies — giving the
+    // behaviour the doc comment above always described: global fetch in
+    // production, a stub in tests.
+    @Optional()
     private readonly httpClient: (
       url: string,
       init: {

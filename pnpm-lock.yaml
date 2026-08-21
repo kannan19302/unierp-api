@@ -22,7 +22,7 @@ importers:
         version: 1.0.3(@kannan19302/shared@1.0.5)
       '@kannan19302/database':
         specifier: ^1.0.14
-        version: link:../unierp-data
+        version: 1.0.14(magicast@0.3.5)(typescript@5.9.3)
       '@kannan19302/extension-api':
         specifier: ^1.0.6
         version: 1.0.6
@@ -110,6 +110,9 @@ importers:
       ioredis:
         specifier: ^5.10.1
         version: 5.11.1
+      jose:
+        specifier: ^5.9.6
+        version: 5.10.0
       nodemailer:
         specifier: ^9.0.3
         version: 9.0.5
@@ -3780,6 +3783,9 @@ packages:
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
+
+  jose@5.10.0:
+    resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
 
   js-md4@0.3.2:
     resolution: {integrity: sha512-/GDnfQYsltsjRswQhN9fhv3EMw2sCpUdrdxyWDOUK7eyD++r3gRhzgiQgc/x4MAv2i1iuQ4lxO5mvqM3vj4bwA==}
@@ -9355,6 +9361,8 @@ snapshots:
       supports-color: 8.1.1
 
   jiti@2.7.0: {}
+
+  jose@5.10.0: {}
 
   js-md4@0.3.2: {}
 

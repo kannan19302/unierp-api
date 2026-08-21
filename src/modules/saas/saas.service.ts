@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { buildAppCatalog } from "@/common/app-slug-map";
 
 /**
  * Stable catalog keys for the paid tiers self-healed by `ensurePlanCatalog()`
@@ -336,5 +337,14 @@ export class SaasService {
         discountValue: dto.discountValue,
       },
     });
+  }
+
+  /**
+   * The canonical module catalog — see AppCatalogEntry / buildAppCatalog in
+   * app-slug-map.ts for why this is a shared function rather than yet
+   * another hand-maintained list.
+   */
+  getAppCatalog() {
+    return buildAppCatalog();
   }
 }

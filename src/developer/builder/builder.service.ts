@@ -18,6 +18,7 @@ import type {
   UpdateSchemaRegistryInput,
 } from "@kannan19302/shared";
 import * as vm from "vm";
+import { ModuleCompositionService } from "../platform/module-composition.service";
 
 type ImportRecord = Record<string, string | number | boolean | Date | null>;
 type ImportRow = Record<string, unknown>;
@@ -35,6 +36,14 @@ type AutomationAction = {
 @Injectable()
 export class BuilderService {
   private readonly logger = new Logger(BuilderService.name);
+
+  /**
+   * P4 — `components`, `pages` and `dataModels` moved out of
+   * `builder_modules`' JSON columns into real tables. This service reads and
+   * writes them in the SAME shapes the JSON held, so every route below keeps
+   * its existing response contract while the storage changes underneath.
+   */
+  constructor(private readonly composition: ModuleCompositionService) {}
 
   // ══════════════════════════════════════════════
   // BUILDER MODULES
@@ -147,9 +156,10 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const components = Array.isArray(mod.components)
-      ? (mod.components as any[])
-      : [];
+    // P4: components now come from `builder_artifacts` (via the composition
+    // service) instead of the module's JSON column, which P8 drops. The shape
+    // returned is identical, so this method's response is unchanged.
+    const components = await this.composition.components(tenantId, id);
 
     // Resolve linked components to their full objects
     const formIds = components
@@ -188,8 +198,19 @@ export class BuilderService {
         : [],
     ]);
 
+    // The `...mod` spread still carries the legacy JSON columns, which P8
+    // drops and which are already stale — the real data lives in the tables
+    // behind ModuleCompositionService. Override all three explicitly so this
+    // response is correct both before and after the contract migration.
+    const [modulePages, moduleDataModels] = await Promise.all([
+      this.composition.pages(tenantId, id),
+      this.composition.dataModels(tenantId, id),
+    ]);
     return {
       ...mod,
+      components,
+      pages: modulePages,
+      dataModels: moduleDataModels,
       resolvedComponents: { forms, workflows, dashboards, automations },
     };
   }
@@ -204,11 +225,7 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const components = Array.isArray(mod.components)
-      ? (mod.components as any[])
-      : [];
-
-    // Prevent duplicates
+    const components = await this.composition.components(tenantId, moduleId);
     if (
       components.some(
         (c) => c.refId === component.refId && c.type === component.type,
@@ -219,18 +236,16 @@ export class BuilderService {
       );
     }
 
-    const newComponent = {
-      id: `comp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-      type: component.type,
-      refId: component.refId,
-      name: component.name,
-      addedAt: new Date().toISOString(),
-    };
-
-    return prisma.builderModule.update({
-      where: { id: moduleId },
-      data: { components: [...components, newComponent] },
-    });
+    // P4: "linking a component" is now "this project owns this artifact",
+    // recorded once in `builder_artifacts` rather than duplicated into a JSON
+    // array that could disagree with the registry.
+    const added = await this.composition.addComponent(tenantId, moduleId, component);
+    if (!added) {
+      throw new BadRequestException(
+        "That component could not be linked — no such artifact for this app.",
+      );
+    }
+    return this.getModuleById(tenantId, moduleId);
   }
 
   async removeComponentFromModule(
@@ -243,15 +258,10 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const components = Array.isArray(mod.components)
-      ? (mod.components as any[])
-      : [];
-    const updated = components.filter((c) => c.id !== componentId);
-
-    return prisma.builderModule.update({
-      where: { id: moduleId },
-      data: { components: updated },
-    });
+    // Unlinking returns the artifact to the Library rather than deleting it —
+    // it outlives the app that used it.
+    await this.composition.removeComponent(tenantId, moduleId, componentId);
+    return this.getModuleById(tenantId, moduleId);
   }
 
   async addPageToModule(
@@ -271,29 +281,16 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const pages = Array.isArray(mod.pages) ? (mod.pages as any[]) : [];
-
+    // P4: pages live in `builder_module_pages` now. Same shape out.
+    const pages = await this.composition.pages(tenantId, moduleId);
     if (pages.some((p) => p.slug === page.slug)) {
       throw new BadRequestException(
         "A page with this slug already exists in the app",
       );
     }
 
-    const newPage = {
-      id: `page_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-      name: page.name,
-      slug: page.slug,
-      type: page.type,
-      formId: page.formId || null,
-      dashboardId: page.dashboardId || null,
-      layout: page.layout || [],
-      addedAt: new Date().toISOString(),
-    };
-
-    return prisma.builderModule.update({
-      where: { id: moduleId },
-      data: { pages: [...pages, newPage] },
-    });
+    await this.composition.addPage(tenantId, moduleId, page);
+    return this.getModuleById(tenantId, moduleId);
   }
 
   async updatePageInModule(
@@ -314,22 +311,14 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const pages = Array.isArray(mod.pages) ? (mod.pages as any[]) : [];
-    const pageIndex = pages.findIndex((p) => p.id === pageId);
-    if (pageIndex === -1)
-      throw new NotFoundException("Page not found in this app");
-
-    // Merge updates
-    pages[pageIndex] = {
-      ...pages[pageIndex],
-      ...update,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return prisma.builderModule.update({
-      where: { id: moduleId },
-      data: { pages },
-    });
+    const updated = await this.composition.updatePage(
+      tenantId,
+      moduleId,
+      pageId,
+      update,
+    );
+    if (!updated) throw new NotFoundException("Page not found in this app");
+    return this.getModuleById(tenantId, moduleId);
   }
 
   async removePageFromModule(
@@ -342,13 +331,8 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const pages = Array.isArray(mod.pages) ? (mod.pages as any[]) : [];
-    const updated = pages.filter((p) => p.id !== pageId);
-
-    return prisma.builderModule.update({
-      where: { id: moduleId },
-      data: { pages: updated },
-    });
+    await this.composition.removePage(tenantId, moduleId, pageId);
+    return this.getModuleById(tenantId, moduleId);
   }
 
   async addDataModelToModule(
@@ -361,9 +345,7 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const dataModels = Array.isArray(mod.dataModels)
-      ? (mod.dataModels as any[])
-      : [];
+    const dataModels = await this.composition.dataModels(tenantId, moduleId);
 
     if (
       dataModels.some(
@@ -375,18 +357,8 @@ export class BuilderService {
       );
     }
 
-    const newModel = {
-      id: `dm_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-      name: dataModel.name,
-      fields: dataModel.fields || [],
-      relationships: dataModel.relationships || [],
-      addedAt: new Date().toISOString(),
-    };
-
-    return prisma.builderModule.update({
-      where: { id: moduleId },
-      data: { dataModels: [...dataModels, newModel] },
-    });
+    await this.composition.addDataModel(tenantId, moduleId, dataModel);
+    return this.getModuleById(tenantId, moduleId);
   }
 
   async removeDataModelFromModule(
@@ -399,15 +371,8 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const dataModels = Array.isArray(mod.dataModels)
-      ? (mod.dataModels as any[])
-      : [];
-    const updated = dataModels.filter((dm) => dm.id !== dataModelId);
-
-    return prisma.builderModule.update({
-      where: { id: moduleId },
-      data: { dataModels: updated },
-    });
+    await this.composition.removeDataModel(tenantId, moduleId, dataModelId);
+    return this.getModuleById(tenantId, moduleId);
   }
 
   async runAppTests(tenantId: string, moduleId: string) {
@@ -416,13 +381,12 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const components = Array.isArray(mod.components)
-      ? (mod.components as any[])
-      : [];
-    const pages = Array.isArray(mod.pages) ? (mod.pages as any[]) : [];
-    const dataModels = Array.isArray(mod.dataModels)
-      ? (mod.dataModels as any[])
-      : [];
+    // P4: all three come from real tables now (see ModuleCompositionService).
+    const [components, pages, dataModels] = await Promise.all([
+      this.composition.components(tenantId, moduleId),
+      this.composition.pages(tenantId, moduleId),
+      this.composition.dataModels(tenantId, moduleId),
+    ]);
 
     const errors: {
       code: string;
@@ -576,7 +540,10 @@ export class BuilderService {
     // Test 7: Data model integrity
     for (const dm of dataModels) {
       totalTests++;
-      if (!dm.fields || dm.fields.length === 0) {
+      // `fields` is Json on BuilderModuleDataModel (it was `any` when it
+      // lived in the module's JSON blob), so narrow before reading length.
+      const dmFields = Array.isArray(dm.fields) ? dm.fields : [];
+      if (dmFields.length === 0) {
         errors.push({
           code: "EMPTY_DATA_MODEL",
           severity: "warning",
@@ -912,7 +879,7 @@ export class BuilderService {
    * longer depends on the publisher's live records.
    */
   private async buildModuleSnapshot(tenantId: string, mod: any) {
-    const components = Array.isArray(mod.components) ? mod.components : [];
+    const components = await this.composition.components(tenantId, mod.id);
     const formIds = components
       .filter((c: any) => c.type === "form")
       .map((c: any) => c.refId);
@@ -961,8 +928,8 @@ export class BuilderService {
         publisher: mod.publisher,
       },
       components,
-      pages: Array.isArray(mod.pages) ? mod.pages : [],
-      dataModels: Array.isArray(mod.dataModels) ? mod.dataModels : [],
+      pages: await this.composition.pages(tenantId, mod.id),
+      dataModels: await this.composition.dataModels(tenantId, mod.id),
       entities: Array.isArray(mod.entities) ? mod.entities : [],
       relationships: Array.isArray(mod.relationships) ? mod.relationships : [],
       permissions: mod.permissions ?? {},
@@ -1132,12 +1099,13 @@ export class BuilderService {
         : {}
     ) as any;
 
+    // P4: components/pages/dataModels live in real tables now, so the
+    // snapshot is restored into those rather than written back as JSON.
+    await this.composition.restoreFromSnapshot(tenantId, moduleId, snap);
+
     const updated = await prisma.builderModule.update({
       where: { id: moduleId },
       data: {
-        components: snap.components ?? mod.components,
-        pages: snap.pages ?? mod.pages,
-        dataModels: snap.dataModels ?? mod.dataModels,
         entities: snap.entities ?? mod.entities,
         relationships: snap.relationships ?? mod.relationships,
         permissions: snap.permissions ?? mod.permissions,
@@ -1185,6 +1153,7 @@ export class BuilderService {
     ) as any;
 
     // Build diff object detailing components, pages and data model structure count
+    const counts = await this.composition.counts(tenantId, moduleId);
     return {
       version: release.version,
       publishedAt: release.publishedAt,
@@ -1195,20 +1164,16 @@ export class BuilderService {
         permissionsCount: Object.keys(snap.permissions || {}).length,
       },
       live: {
-        componentsCount: Array.isArray(mod.components)
-          ? mod.components.length
-          : 0,
-        pagesCount: Array.isArray(mod.pages) ? mod.pages.length : 0,
-        dataModelsCount: Array.isArray(mod.dataModels)
-          ? mod.dataModels.length
-          : 0,
+        componentsCount: counts.components,
+        pagesCount: counts.pages,
+        dataModelsCount: counts.dataModels,
         permissionsCount: Object.keys((mod.permissions as any) || {}).length,
       },
       snapshotDetails: snap,
       liveDetails: {
-        components: mod.components,
-        pages: mod.pages,
-        dataModels: mod.dataModels,
+        components: await this.composition.components(tenantId, moduleId),
+        pages: await this.composition.pages(tenantId, moduleId),
+        dataModels: await this.composition.dataModels(tenantId, moduleId),
         permissions: mod.permissions,
       },
     };
@@ -1496,13 +1461,12 @@ export class BuilderService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const components = Array.isArray(mod.components)
-      ? (mod.components as any[])
-      : [];
-    const pages = Array.isArray(mod.pages) ? (mod.pages as any[]) : [];
-    const dataModels = Array.isArray(mod.dataModels)
-      ? (mod.dataModels as any[])
-      : [];
+    // P4: all three come from real tables now (see ModuleCompositionService).
+    const [components, pages, dataModels] = await Promise.all([
+      this.composition.components(tenantId, moduleId),
+      this.composition.pages(tenantId, moduleId),
+      this.composition.dataModels(tenantId, moduleId),
+    ]);
     const testResults =
       mod.testResults &&
       typeof mod.testResults === "object" &&

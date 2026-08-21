@@ -18,6 +18,22 @@ export interface EnvironmentConfig {
 
 @Injectable()
 export class BuilderGovernanceService {
+
+  /**
+   * P6 — `app_releases` became `project_releases`, keyed by DevProject rather
+   * than BuilderModule. IDs were preserved by the backfill, so lookups BY ID
+   * work unchanged; only filters that were `{ moduleId }` need the project
+   * resolved first. Returns a sentinel that matches nothing rather than null,
+   * so callers keep their existing "not found" behaviour instead of needing a
+   * new branch.
+   */
+  private async projectIdForModule(tenantId: string, moduleId: string): Promise<string> {
+    const project = await prisma.devProject.findFirst({
+      where: { tenantId, appId: moduleId },
+      select: { id: true },
+    });
+    return project?.id ?? "__no_project__";
+  }
   async getModuleEnvironments(
     tenantId: string,
     moduleId: string,
@@ -27,8 +43,9 @@ export class BuilderGovernanceService {
     });
     if (!mod) throw new NotFoundException("Module not found");
 
-    const releases = await prisma.appRelease.findMany({
-      where: { moduleId, tenantId },
+    const projectId = await this.projectIdForModule(tenantId, moduleId);
+    const releases = await prisma.projectRelease.findMany({
+      where: { projectId, tenantId },
       orderBy: { publishedAt: "desc" },
     });
 
@@ -71,15 +88,15 @@ export class BuilderGovernanceService {
     if (!mod) throw new NotFoundException("Module not found");
 
     const currentRelease = mod.currentReleaseId
-      ? await prisma.appRelease.findFirst({
-          where: { id: mod.currentReleaseId },
+      ? await prisma.projectRelease.findFirst({
+          where: { id: mod.currentReleaseId, tenantId },
         })
       : null;
 
     if (!currentRelease)
       throw new BadRequestException("No published release to promote");
 
-    await prisma.appRelease.update({
+    await prisma.projectRelease.update({
       where: { id: currentRelease.id },
       data: { channel: "STAGING", publishedBy: userId },
     });
@@ -97,8 +114,9 @@ export class BuilderGovernanceService {
     moduleId: string,
     userId: string,
   ) {
-    const stagingRelease = await prisma.appRelease.findFirst({
-      where: { moduleId, tenantId, channel: "STAGING", status: "PUBLISHED" },
+    const projectId = await this.projectIdForModule(tenantId, moduleId);
+    const stagingRelease = await prisma.projectRelease.findFirst({
+      where: { projectId, tenantId, channel: "STAGING", status: "PUBLISHED" },
       orderBy: { publishedAt: "desc" },
     });
 
@@ -108,12 +126,12 @@ export class BuilderGovernanceService {
       );
 
     // Mark old production releases as superseded
-    await prisma.appRelease.updateMany({
-      where: { moduleId, tenantId, channel: "PRODUCTION", status: "PUBLISHED" },
+    await prisma.projectRelease.updateMany({
+      where: { projectId, tenantId, channel: "PRODUCTION", status: "PUBLISHED" },
       data: { status: "SUPERSEDED" },
     });
 
-    await prisma.appRelease.update({
+    await prisma.projectRelease.update({
       where: { id: stagingRelease.id },
       data: {
         channel: "PRODUCTION",
@@ -223,12 +241,13 @@ export class BuilderGovernanceService {
     fromReleaseId: string,
     toReleaseId: string,
   ) {
+    const projectId = await this.projectIdForModule(tenantId, moduleId);
     const [fromRelease, toRelease] = await Promise.all([
-      prisma.appRelease.findFirst({
-        where: { id: fromReleaseId, moduleId, tenantId },
+      prisma.projectRelease.findFirst({
+        where: { id: fromReleaseId, projectId, tenantId },
       }),
-      prisma.appRelease.findFirst({
-        where: { id: toReleaseId, moduleId, tenantId },
+      prisma.projectRelease.findFirst({
+        where: { id: toReleaseId, projectId, tenantId },
       }),
     ]);
 
@@ -277,7 +296,7 @@ export class BuilderGovernanceService {
   // --- Summary ---
   async getGovernanceSummary(tenantId: string) {
     const [releases, logs, connectors] = await Promise.all([
-      prisma.appRelease.count({ where: { tenantId } }),
+      prisma.projectRelease.count({ where: { tenantId } }),
       prisma.runLog.count({ where: { tenantId } }),
       prisma.thirdPartyConnector.count({ where: { tenantId } }),
     ]);

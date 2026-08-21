@@ -14,17 +14,89 @@ import { idpClient as idpPrisma } from "@/common/idp-client";
 @Injectable()
 export class BuilderWebContentService {
   // ── WEB PAGES ─────────────────────────────────
+  //
+  // P7: `web_pages` was migrated into `web_site_pages` and dropped. These
+  // routes are deprecated (see the deprecation registry) but must keep their
+  // exact request/response shape until they are removed, so everything below
+  // translates between the legacy vocabulary and the multi-site one:
+  //
+  //   name       <-> title
+  //   slug       <-> path        ("about" <-> "/about", "" <-> "/")
+  //   sections   <-> blocks
+  //   metaTitle/metaDesc/ogImage <-> seo{...}
+  //   visibility  -> seo.legacyVisibility
+  //
+  // `visibility` has no column on WebSitePage. Rather than drop it (silently
+  // losing a field callers still send) it rides in the seo blob under a
+  // clearly-named key, so a round-trip through these routes is lossless.
+
+  /** The tenant's default site — the one legacy pages were migrated onto. */
+  private async defaultSiteId(tenantId: string): Promise<string> {
+    const site = await prisma.webSite.findFirst({
+      where: { tenantId, slug: "default" },
+      select: { id: true },
+    });
+    if (site) return site.id;
+    const created = await prisma.webSite.create({
+      data: { tenantId, name: "Default Site", slug: "default" },
+      select: { id: true },
+    });
+    return created.id;
+  }
+
+  private slugToPath(slug: string): string {
+    if (!slug || ["home", "index"].includes(slug)) return "/";
+    return slug.startsWith("/") ? slug : `/${slug}`;
+  }
+
+  private pathToSlug(path: string): string {
+    return path === "/" ? "home" : path.replace(/^\//, "");
+  }
+
+  /** Presents a WebSitePage row in the legacy WebPage shape. */
+  private toLegacyPage(row: {
+    id: string;
+    tenantId: string;
+    title: string;
+    path: string;
+    blocks: unknown;
+    seo: unknown;
+    status: string;
+    sortOrder: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }) {
+    const seo = (row.seo ?? {}) as Record<string, unknown>;
+    return {
+      id: row.id,
+      tenantId: row.tenantId,
+      name: row.title,
+      slug: this.pathToSlug(row.path),
+      status: row.status,
+      sections: row.blocks ?? [],
+      metaTitle: (seo.metaTitle as string) ?? null,
+      metaDesc: (seo.metaDesc as string) ?? null,
+      ogImage: (seo.ogImage as string) ?? null,
+      visibility: (seo.legacyVisibility as string) ?? "PUBLIC",
+      sortOrder: row.sortOrder,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
   async getWebPages(tenantId: string) {
-    return prisma.webPage.findMany({
-      where: { tenantId },
+    const siteId = await this.defaultSiteId(tenantId);
+    const rows = await prisma.webSitePage.findMany({
+      where: { tenantId, siteId },
       orderBy: { sortOrder: "asc" },
     });
+    return rows.map((r) => this.toLegacyPage(r));
   }
 
   async getWebPageById(tenantId: string, id: string) {
-    const page = await prisma.webPage.findFirst({ where: { id, tenantId } });
+    const page = await prisma.webSitePage.findFirst({ where: { id, tenantId } });
     if (!page) throw new NotFoundException("Web page not found");
-    return page;
+    return this.toLegacyPage(page);
   }
 
   async createWebPage(
@@ -39,24 +111,32 @@ export class BuilderWebContentService {
       visibility?: string;
     },
   ) {
-    const existing = await prisma.webPage.findFirst({
-      where: { tenantId, slug: dto.slug },
+    const siteId = await this.defaultSiteId(tenantId);
+    const path = this.slugToPath(dto.slug);
+
+    const existing = await prisma.webSitePage.findFirst({
+      where: { siteId, path },
     });
     if (existing)
       throw new BadRequestException("A page with this slug already exists");
 
-    return prisma.webPage.create({
+    const created = await prisma.webSitePage.create({
       data: {
         tenantId,
-        name: dto.name,
-        slug: dto.slug,
-        sections: dto.sections || [],
-        metaTitle: dto.metaTitle || null,
-        metaDesc: dto.metaDesc || null,
-        ogImage: dto.ogImage || null,
-        visibility: dto.visibility || "PUBLIC",
+        siteId,
+        title: dto.name,
+        path,
+        type: "PAGE",
+        blocks: dto.sections || [],
+        seo: {
+          metaTitle: dto.metaTitle || null,
+          metaDesc: dto.metaDesc || null,
+          ogImage: dto.ogImage || null,
+          legacyVisibility: dto.visibility || "PUBLIC",
+        },
       },
     });
+    return this.toLegacyPage(created);
   }
 
   async updateWebPage(
@@ -74,28 +154,35 @@ export class BuilderWebContentService {
       sortOrder: number;
     }>,
   ) {
-    const page = await prisma.webPage.findFirst({ where: { id, tenantId } });
+    const page = await prisma.webSitePage.findFirst({ where: { id, tenantId } });
     if (!page) throw new NotFoundException("Web page not found");
 
-    return prisma.webPage.update({
+    // Merge into the existing seo blob rather than replacing it, so updating
+    // one meta field does not clear the others.
+    const seo = { ...((page.seo ?? {}) as Record<string, unknown>) };
+    if (dto.metaTitle !== undefined) seo.metaTitle = dto.metaTitle;
+    if (dto.metaDesc !== undefined) seo.metaDesc = dto.metaDesc;
+    if (dto.ogImage !== undefined) seo.ogImage = dto.ogImage;
+    if (dto.visibility !== undefined) seo.legacyVisibility = dto.visibility;
+
+    const updated = await prisma.webSitePage.update({
       where: { id },
       data: {
-        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.name !== undefined && { title: dto.name }),
+        ...(dto.slug !== undefined && { path: this.slugToPath(dto.slug) }),
         ...(dto.status !== undefined && { status: dto.status }),
-        ...(dto.sections !== undefined && { sections: dto.sections }),
-        ...(dto.metaTitle !== undefined && { metaTitle: dto.metaTitle }),
-        ...(dto.metaDesc !== undefined && { metaDesc: dto.metaDesc }),
-        ...(dto.ogImage !== undefined && { ogImage: dto.ogImage }),
-        ...(dto.visibility !== undefined && { visibility: dto.visibility }),
+        ...(dto.sections !== undefined && { blocks: dto.sections }),
         ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+        seo: seo as never,
       },
     });
+    return this.toLegacyPage(updated);
   }
 
   async deleteWebPage(tenantId: string, id: string) {
-    const page = await prisma.webPage.findFirst({ where: { id, tenantId } });
+    const page = await prisma.webSitePage.findFirst({ where: { id, tenantId } });
     if (!page) throw new NotFoundException("Web page not found");
-    return prisma.webPage.delete({ where: { id } });
+    return prisma.webSitePage.delete({ where: { id } });
   }
 
   // ── BLOG POSTS ────────────────────────────────

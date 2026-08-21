@@ -3,7 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
-import { prisma } from "@kannan19302/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { Prisma } from "@prisma/client";
 import type {
@@ -345,24 +345,42 @@ export class WebCollectionsService {
   // PUBLIC READ (no auth) — for the live website
   // ══════════════════════════════════════════════
 
+  // The four methods below are the only callers reaching these tables with
+  // no `TenantInterceptor` session established — every caller is
+  // `WebPublicController`, which serves anonymous visitors by design (see
+  // that controller's own comment on `resolveTenantId`: tenant comes from a
+  // caller-supplied slug, not from an authenticated session). `web_collections`
+  // / `web_collection_items` / `web_form_submissions` / `web_orders` all carry
+  // FORCE ROW LEVEL SECURITY, so without a session these silently returned
+  // zero rows under this deployment's NOBYPASSRLS `unerp_api` role — the
+  // public site's collections and forms were unreadable/unsubmittable, not
+  // leaking, but for the same reason detailed in
+  // `web-studio.service.ts`'s public-serving section: failing closed here was
+  // an accident of role configuration, not a property of the code. Wrapping
+  // each call in `runWithTenantSession` (the caller already resolved a real
+  // `tenantId` via `Tenant.slug`, itself unscoped and RLS-exempt) makes the
+  // session explicit instead of implicit.
+
   async getPublicItems(tenantId: string, collectionSlug: string) {
-    const collection = await prisma.webCollection.findUnique({
-      where: { tenantId_slug: { tenantId, slug: collectionSlug } },
+    return runWithTenantSession({ tenantId, userId: "public" }, async () => {
+      const collection = await prisma.webCollection.findUnique({
+        where: { tenantId_slug: { tenantId, slug: collectionSlug } },
+      });
+      if (!collection) throw new NotFoundException("Collection not found");
+      const items = await prisma.webCollectionItem.findMany({
+        where: { tenantId, collectionId: collection.id, status: "PUBLISHED" },
+        orderBy: [{ sortOrder: "asc" }, { publishedAt: "desc" }],
+      });
+      return {
+        collection: {
+          name: collection.name,
+          slug: collection.slug,
+          fields: collection.fields,
+          settings: collection.settings,
+        },
+        items,
+      };
     });
-    if (!collection) throw new NotFoundException("Collection not found");
-    const items = await prisma.webCollectionItem.findMany({
-      where: { tenantId, collectionId: collection.id, status: "PUBLISHED" },
-      orderBy: [{ sortOrder: "asc" }, { publishedAt: "desc" }],
-    });
-    return {
-      collection: {
-        name: collection.name,
-        slug: collection.slug,
-        fields: collection.fields,
-        settings: collection.settings,
-      },
-      items,
-    };
   }
 
   async getPublicItem(
@@ -370,28 +388,30 @@ export class WebCollectionsService {
     collectionSlug: string,
     itemSlug: string,
   ) {
-    const collection = await prisma.webCollection.findUnique({
-      where: { tenantId_slug: { tenantId, slug: collectionSlug } },
+    return runWithTenantSession({ tenantId, userId: "public" }, async () => {
+      const collection = await prisma.webCollection.findUnique({
+        where: { tenantId_slug: { tenantId, slug: collectionSlug } },
+      });
+      if (!collection) throw new NotFoundException("Collection not found");
+      const item = await prisma.webCollectionItem.findFirst({
+        where: {
+          tenantId,
+          collectionId: collection.id,
+          slug: itemSlug,
+          status: "PUBLISHED",
+        },
+      });
+      if (!item) throw new NotFoundException("Item not found");
+      return {
+        collection: {
+          name: collection.name,
+          slug: collection.slug,
+          fields: collection.fields,
+          settings: collection.settings,
+        },
+        item,
+      };
     });
-    if (!collection) throw new NotFoundException("Collection not found");
-    const item = await prisma.webCollectionItem.findFirst({
-      where: {
-        tenantId,
-        collectionId: collection.id,
-        slug: itemSlug,
-        status: "PUBLISHED",
-      },
-    });
-    if (!item) throw new NotFoundException("Item not found");
-    return {
-      collection: {
-        name: collection.name,
-        slug: collection.slug,
-        fields: collection.fields,
-        settings: collection.settings,
-      },
-      item,
-    };
   }
 
   // ══════════════════════════════════════════════
@@ -399,15 +419,17 @@ export class WebCollectionsService {
   // ══════════════════════════════════════════════
 
   async createSubmission(tenantId: string, dto: CreateWebFormSubmissionInput) {
-    return prisma.webFormSubmission.create({
-      data: {
-        tenantId,
-        formName: dto.formName,
-        pageSlug: dto.pageSlug || null,
-        data: dto.data as any,
-        meta: (dto.meta || {}) as any,
-      },
-    });
+    return runWithTenantSession({ tenantId, userId: "public" }, () =>
+      prisma.webFormSubmission.create({
+        data: {
+          tenantId,
+          formName: dto.formName,
+          pageSlug: dto.pageSlug || null,
+          data: dto.data as any,
+          meta: (dto.meta || {}) as any,
+        },
+      }),
+    );
   }
 
   async getSubmissions(
@@ -454,19 +476,23 @@ export class WebCollectionsService {
     const total = subtotal; // taxes/shipping can be layered later
     const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 
-    const order = await prisma.webOrder.create({
-      data: {
-        tenantId,
-        orderNumber,
-        status: "PENDING",
-        customer: dto.customer as any,
-        items: items as any,
-        subtotal,
-        total,
-        currency: dto.currency || "USD",
-        notes: dto.notes || null,
-      },
-    });
+    const order = await runWithTenantSession(
+      { tenantId, userId: "public" },
+      () =>
+        prisma.webOrder.create({
+          data: {
+            tenantId,
+            orderNumber,
+            status: "PENDING",
+            customer: dto.customer as any,
+            items: items as any,
+            subtotal,
+            total,
+            currency: dto.currency || "USD",
+            notes: dto.notes || null,
+          },
+        }),
+    );
     return {
       orderNumber: order.orderNumber,
       total: order.total,

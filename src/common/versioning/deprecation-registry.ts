@@ -24,11 +24,44 @@ export interface DeprecationEntry {
 }
 
 /**
- * Live registry — currently empty: no UniERP API surface is deprecated.
- * Add entries here (never delete before their sunset passes; move expired
- * entries to the policy doc's history table).
+ * Live registry. Add entries here (never delete before their sunset passes;
+ * move expired entries to the policy doc's history table).
+ *
+ * The `/api/v1/builder/*` entries below are stage 1 of the developer
+ * platform's project-first reshape: **announce, with no `sunsetAt`**. That
+ * omission is deliberate, not an oversight — nobody currently knows whether
+ * `/builder/etl/pipelines` has one caller or a hundred, and announcing a
+ * removal date before you can measure the traffic is how integrations get
+ * broken. A usage counter keyed by (prefix, tenant) comes next; the sunset
+ * date comes after that, at least two release cycles out.
+ *
+ * Successors are chosen by SEMANTICS, not by name similarity:
+ * `/builder/forms` returns every form the tenant owns, which is what
+ * `/library/forms` does today — NOT what `/apps/:appId/forms` will do. Where
+ * no successor preserves the old behaviour, the entry points at the
+ * migration guide rather than lying about an equivalent.
  */
-export const API_DEPRECATIONS: DeprecationEntry[] = [];
+export const API_DEPRECATIONS: DeprecationEntry[] = [
+  {
+    pathPrefix: "/api/v1/builder",
+    deprecatedAt: new Date("2026-08-20T00:00:00Z"),
+    successor: "/api/v1/dev",
+    link: "https://docs.unierp.dev/api/migrations/builder-to-projects",
+  },
+  {
+    // Longer prefix wins, so the web-studio half carries its own successor.
+    pathPrefix: "/api/v1/builder/web-studio",
+    deprecatedAt: new Date("2026-08-20T00:00:00Z"),
+    successor: "/api/v1/dev/sites",
+    link: "https://docs.unierp.dev/api/migrations/builder-to-projects",
+  },
+  {
+    pathPrefix: "/api/v1/builder/modules",
+    deprecatedAt: new Date("2026-08-20T00:00:00Z"),
+    successor: "/api/v1/dev/apps",
+    link: "https://docs.unierp.dev/api/migrations/builder-to-projects",
+  },
+];
 
 /** Longest-prefix match so nested surfaces can carry their own clocks. */
 export function findDeprecation(

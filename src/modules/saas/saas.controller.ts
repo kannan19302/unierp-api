@@ -66,6 +66,17 @@ export class SaasController {
     return this.saasService.getInstalledApps(req.user.tenantId);
   }
 
+  @ApiOperation({
+    summary:
+      "The canonical module/app catalog — every installable module and kernel app, with its route segments",
+  })
+  @Permissions("saas.read")
+  @Get("app-catalog")
+  @UseGuards(JwtAuthGuard)
+  async getAppCatalog() {
+    return this.saasService.getAppCatalog();
+  }
+
   @ApiOperation({ summary: "Install app" })
   @Permissions("saas.create")
   @Post("install")

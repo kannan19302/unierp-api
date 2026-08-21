@@ -6,7 +6,6 @@ import {
   Param,
   Query,
   Headers,
-  NotFoundException,
 } from "@nestjs/common";
 import {
   createWebFormSubmissionSchema,
@@ -62,18 +61,10 @@ export class WebPublicController {
     @Headers("host") host?: string,
     @Query("host") hostQuery?: string,
   ) {
-    const site = await this.studio.resolveSiteByHost(hostQuery || host);
-    if (!site) throw new NotFoundException("Site not found for host");
-    const page = await this.studio.getPublicPage(site.id, path || "/");
-    return {
-      site: {
-        id: site.id,
-        name: site.name,
-        theme: site.theme,
-        settings: site.settings,
-      },
-      page,
-    };
+    // One call, one tenant session — see `getPublicSitePage`'s own comment
+    // for why this replaced the previous two-call
+    // `resolveSiteByHost` / `getPublicPage` sequence.
+    return this.studio.getPublicSitePage(hostQuery || host, path || "/");
   }
 
   @ApiOperation({ summary: "Chat with the site assistant" })

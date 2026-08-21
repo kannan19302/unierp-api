@@ -8,6 +8,7 @@ import { Reflector } from "@nestjs/core";
 import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { hasPermission } from "@kannan19302/auth";
 import { PERMISSIONS_KEY } from "../decorators/permissions.decorator";
+import { emitAuthAudit } from "../audit/emit-auth-audit";
 
 @Injectable()
 export class RbacGuard implements CanActivate {
@@ -48,6 +49,17 @@ export class RbacGuard implements CanActivate {
     );
 
     if (!isAuthorized) {
+      const tenantId = (user as any).tenantId;
+      const userId = (user as any).userId ?? (user as any).sub;
+      if (tenantId && userId) {
+        await emitAuthAudit({
+          tenantId,
+          userId,
+          action: "AUTH_PERMISSION_DENIED",
+          entityType: "Permission",
+          entityId: requiredPermissions.join(","),
+        });
+      }
       throw new ForbiddenException(
         "You do not have the required permissions to access this resource",
       );

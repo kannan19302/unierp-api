@@ -17,7 +17,8 @@ export class BuilderEnterpriseService {
       where: { tenantId },
     });
     const pages = await this.p.pageRegistry.findMany({ where: { tenantId } });
-    const deployments = await this.p.builderDeployment.findMany({
+    // P6: builder_deployments folded into `deployments`.
+    const deployments = await this.p.deployment.findMany({
       where: { tenantId },
     });
     return {
@@ -86,14 +87,18 @@ export class BuilderEnterpriseService {
   }
 
   async getNoCodeGovernance(tenantId: string) {
-    const deployments = await this.p.builderDeployment.findMany({
+    // P6: builder_deployments was folded into `deployments`, whose
+    // `environment` relation now correctly targets `Environment` (it used to
+    // point at DeploymentStage).
+    const deployments = await this.p.deployment.findMany({
       where: { tenantId },
       include: { environment: true },
     });
     const permissionRules = await this.p.builderPermissionRule.findMany({
       where: { tenantId },
     });
-    const environments = await this.p.builderEnvironment.findMany({
+    // P6: builder_environments folded into `environments`.
+    const environments = await this.p.environment.findMany({
       where: { tenantId },
     });
     const approved = deployments.filter(
@@ -110,7 +115,7 @@ export class BuilderEnterpriseService {
       environments: environments.map((e) => ({
         id: e.id,
         name: e.name,
-        envType: e.envType,
+        envType: e.type,
       })),
       changeFrequency:
         deployments.length > 0 ? Math.round(deployments.length / 30) : 0,
@@ -124,7 +129,8 @@ export class BuilderEnterpriseService {
     const dataModels = await this.p.builderDataModel.findMany({
       where: { tenantId },
     });
-    const deployments = await this.p.builderDeployment.findMany({
+    // P6: builder_deployments folded into `deployments`.
+    const deployments = await this.p.deployment.findMany({
       where: { tenantId },
     });
     const scripts = await this.p.builderScript.findMany({

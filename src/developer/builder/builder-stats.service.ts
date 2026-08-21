@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ModuleCompositionService } from "../platform/module-composition.service";
 
 /**
  * Cross-module analytics for the Builder home: platform-wide KPI rollups,
@@ -10,6 +11,10 @@ import { idpClient as idpPrisma } from "@/common/idp-client";
 @Injectable()
 export class BuilderStatsService {
   private readonly logger = new Logger(BuilderStatsService.name);
+
+  /** P4 — module composition moved out of JSON columns; see
+   * ModuleCompositionService. */
+  constructor(private readonly composition: ModuleCompositionService) {}
 
   async getGlobalPerformanceStats(tenantId: string) {
     let totalRevenue = 0;
@@ -86,9 +91,6 @@ export class BuilderStatsService {
           category: true,
           version: true,
           status: true,
-          pages: true,
-          components: true,
-          dataModels: true,
         },
       });
 
@@ -123,26 +125,30 @@ export class BuilderStatsService {
         );
       }
 
-      customApps = modules.map((m) => {
-        const mSlug = m.slug.toLowerCase();
-        const pagesArr = Array.isArray(m.pages) ? m.pages : [];
-        const componentsArr = Array.isArray(m.components) ? m.components : [];
-        const dmsArr = Array.isArray(m.dataModels) ? m.dataModels : [];
-
-        return {
-          id: m.id,
-          name: m.name,
-          slug: m.slug,
-          category: m.category || "Operations",
-          version: m.version,
-          status: m.status,
-          pagesCount: pagesArr.length,
-          formsCount: componentsArr.filter((c: any) => c.type === "form")
-            .length,
-          dataModelsCount: dmsArr.length,
-          submissionsCount: moduleRecordCountMap.get(mSlug) || 0,
-        };
-      });
+      // P4: counts come from the real tables now. One query per module rather
+      // than reading three arrays off a row we already had — an N+1 the JSON
+      // shape used to hide. Acceptable here (this is a stats endpoint over a
+      // tenant's own app list, tens of rows), and `counts()` is one place to
+      // optimise if that stops being true.
+      customApps = await Promise.all(
+        modules.map(async (m) => {
+          const mSlug = m.slug.toLowerCase();
+          const counts = await this.composition.counts(tenantId, m.id);
+          const components = await this.composition.components(tenantId, m.id);
+          return {
+            id: m.id,
+            name: m.name,
+            slug: m.slug,
+            category: m.category || "Operations",
+            version: m.version,
+            status: m.status,
+            pagesCount: counts.pages,
+            formsCount: components.filter((c) => c.type === "form").length,
+            dataModelsCount: counts.dataModels,
+            submissionsCount: moduleRecordCountMap.get(mSlug) || 0,
+          };
+        }),
+      );
     } catch (err) {
       this.logger.error("Error fetching custom apps for global stats", err);
     }
@@ -268,7 +274,8 @@ export class BuilderStatsService {
       prisma.builderModule.count({ where: { tenantId } }),
       prisma.automationRule.count({ where: { tenantId } }),
       prisma.dataImportJob.count({ where: { tenantId } }),
-      prisma.webPage.count({ where: { tenantId } }),
+      // P7: web_pages was migrated into web_site_pages.
+      prisma.webSitePage.count({ where: { tenantId } }),
       prisma.blogPost.count({ where: { tenantId } }),
       prisma.webAsset.count({ where: { tenantId } }),
       prisma.webTemplate.count({ where: { tenantId } }),
@@ -279,7 +286,7 @@ export class BuilderStatsService {
     const activeRules = await prisma.automationRule.count({
       where: { tenantId, status: "ACTIVE" },
     });
-    const publishedPages = await prisma.webPage.count({
+    const publishedPages = await prisma.webSitePage.count({
       where: { tenantId, status: "PUBLISHED" },
     });
     const publishedPosts = await prisma.blogPost.count({
@@ -329,11 +336,12 @@ export class BuilderStatsService {
         take: 3,
         select: { id: true, name: true, status: true, updatedAt: true },
       }),
-      prisma.webPage.findMany({
+      prisma.webSitePage.findMany({
         where: { tenantId },
         orderBy: { updatedAt: "desc" },
         take: 3,
-        select: { id: true, name: true, status: true, updatedAt: true },
+        // `title`, not `name` — WebSitePage's field for the same thing.
+        select: { id: true, title: true, status: true, updatedAt: true },
       }),
       prisma.blogPost.findMany({
         where: { tenantId },
@@ -370,7 +378,7 @@ export class BuilderStatsService {
       })),
       ...pages.map((p) => ({
         id: p.id,
-        name: p.name,
+        name: p.title,
         type: "web",
         path: `/builder/web/pages`,
         status: p.status,

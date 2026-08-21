@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { prisma } from "@kannan19302/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { AiClient } from "../../common/integrations/ai-client";
 
@@ -198,49 +198,156 @@ export class WebStudioService {
   }
 
   // ── Public host resolution + serving ──
-  /** Resolve a request Host header to its site (custom domain → default site). */
-  async resolveSiteByHost(host?: string) {
-    if (host) {
-      const cleanHost = (host.split(":")[0] || host).toLowerCase();
-      const domain = await prisma.webDomain.findUnique({
-        where: { host: cleanHost },
-        include: { site: true },
-      });
-      if (domain?.site && domain.site.status === "ACTIVE") return domain.site;
-    }
-    return null;
+  //
+  // Every method below serves an ANONYMOUS visitor, so no `RequireSession`-
+  // authenticated request ever reaches this code and `TenantInterceptor`
+  // (which only fires for authenticated requests — see its own source) never
+  // establishes a tenant session for it. Before this file's P0 fix, that
+  // meant every query below ran with NO tenant context at all: under
+  // `unerp_api` (NOBYPASSRLS, FORCE ROW LEVEL SECURITY on `web_sites` /
+  // `web_site_pages` / `web_chatbots`) the database silently returned zero
+  // rows for all of it — verified empirically against this dev database
+  // before writing the fix, by clearing the tenant GUC on an existing row
+  // and watching the row count drop to 0 with the query itself unchanged.
+  // The public site feature was not leaking; it could not serve a single
+  // page. But relying on `unerp_api`'s specific role configuration to fail
+  // CLOSED was never a safe design — a connection string pointed at a
+  // different role (an ops shortcut, a maintenance script run as the
+  // BYPASSRLS-capable migration role) would have turned "broken" into
+  // "leaking every tenant's site" with no code change at all.
+  //
+  // The fix: resolve host → tenant via `resolve_tenant_for_host`, a
+  // SECURITY DEFINER SQL function (migration
+  // `20260820000000_public_site_tenant_resolver`) that crosses the RLS
+  // boundary for exactly one narrow, non-sensitive read — site id, tenant
+  // id, status; nothing a visitor couldn't already infer from owning a
+  // verified domain for that site — then run every subsequent query for the
+  // request inside `runWithTenantSession`, the same primitive
+  // `TenantInterceptor` uses for authenticated requests. From that point on,
+  // RLS enforces the boundary itself; the code no longer has to get it right
+  // by construction.
+
+  /** Resolve a request Host header to `{siteId, tenantId}` via the
+   * SECURITY DEFINER resolver — the one read in this file that intentionally
+   * runs with no tenant session, because establishing one requires knowing
+   * the tenant this function exists to discover. */
+  private async resolveHostTenant(
+    host?: string,
+  ): Promise<{ siteId: string; tenantId: string } | null> {
+    if (!host) return null;
+    const cleanHost = (host.split(":")[0] || host).toLowerCase();
+    const rows = await prisma.$queryRaw<
+      { site_id: string; tenant_id: string; site_status: string }[]
+    >`SELECT * FROM resolve_tenant_for_host(${cleanHost})`;
+    const resolved = rows[0];
+    if (!resolved || resolved.site_status !== "ACTIVE") return null;
+    return { siteId: resolved.site_id, tenantId: resolved.tenant_id };
   }
 
-  async getPublicPage(siteId: string, path: string) {
+  /**
+   * Resolves `host` and runs `fn` inside that tenant's session, all as one
+   * request. Every public entry point below is a one-line call to this —
+   * the shape that makes "resolve, then query outside the session" (the bug
+   * this file had) structurally impossible to reintroduce by accident.
+   */
+  private async withPublicSiteSession<T>(
+    host: string | undefined,
+    fn: (siteId: string) => Promise<T>,
+  ): Promise<T | null> {
+    const resolved = await this.resolveHostTenant(host);
+    if (!resolved) return null;
+    return runWithTenantSession(
+      { tenantId: resolved.tenantId, userId: "public" },
+      () => fn(resolved.siteId),
+    );
+  }
+
+  /** Resolve a request Host header to its site (custom domain → default site).
+   * Runs the returned site read inside the resolved tenant's session — a
+   * caller that then makes further Prisma calls OUTSIDE this method's
+   * `await` (as every caller here used to) is back outside any session, so
+   * `getPublicSiteByHost` and `answerChat` below do not call this and then
+   * query further; they call `withPublicSiteSession` themselves and do all
+   * of their reads inside its callback. */
+  async resolveSiteByHost(host?: string) {
+    return this.withPublicSiteSession(host, (siteId) =>
+      prisma.webSite.findUnique({ where: { id: siteId } }),
+    );
+  }
+
+  async getPublicPage(siteId: string, path: string, tenantId?: string) {
     const normalized =
       path && path !== "" ? (path.startsWith("/") ? path : `/${path}`) : "/";
-    const page = await prisma.webSitePage.findFirst({
-      where: { siteId, path: normalized, status: "PUBLISHED" },
-    });
+    const read = () =>
+      prisma.webSitePage.findFirst({
+        where: { siteId, path: normalized, status: "PUBLISHED" },
+      });
+    // Callers inside an established session (e.g. `getSitePage` below) pass
+    // no `tenantId` and reuse the ambient one; this overload exists only for
+    // a caller that has already resolved a session-worthy id elsewhere.
+    const page = tenantId
+      ? await runWithTenantSession({ tenantId, userId: "public" }, read)
+      : await read();
     if (!page) throw new NotFoundException("Page not found");
     return page;
   }
 
-  async getPublicSiteByHost(host?: string) {
-    const site = await this.resolveSiteByHost(host);
-    if (!site) throw new NotFoundException("Site not found for host");
-    const pages = await prisma.webSitePage.findMany({
-      where: { siteId: site.id, status: "PUBLISHED" },
-      select: { path: true, title: true, type: true },
-      orderBy: { sortOrder: "asc" },
+  /** The combined "resolve host, then serve its page" read, as one session —
+   * this is what `WebPublicController#getSitePage` calls; it replaces the
+   * controller's previous two-step `resolveSiteByHost` then `getPublicPage`,
+   * which ran as two separate, session-less calls. */
+  async getPublicSitePage(host: string | undefined, path: string) {
+    const result = await this.withPublicSiteSession(host, async (siteId) => {
+      const normalized =
+        path && path !== "" ? (path.startsWith("/") ? path : `/${path}`) : "/";
+      const [site, page] = await Promise.all([
+        prisma.webSite.findUnique({ where: { id: siteId } }),
+        prisma.webSitePage.findFirst({
+          where: { siteId, path: normalized, status: "PUBLISHED" },
+        }),
+      ]);
+      return { site, page };
     });
-    const chatbot = await prisma.webChatbot.findFirst({
-      where: { siteId: site.id, enabled: true },
-    });
+    if (!result?.site || !result.page) {
+      throw new NotFoundException("Site not found for host");
+    }
     return {
       site: {
-        id: site.id,
-        name: site.name,
-        theme: site.theme,
-        settings: site.settings,
+        id: result.site.id,
+        name: result.site.name,
+        theme: result.site.theme,
+        settings: result.site.settings,
       },
-      pages,
-      chatbot: chatbot ? { name: chatbot.name, config: chatbot.config } : null,
+      page: result.page,
+    };
+  }
+
+  async getPublicSiteByHost(host?: string) {
+    const result = await this.withPublicSiteSession(host, async (siteId) => {
+      const site = await prisma.webSite.findUnique({ where: { id: siteId } });
+      if (!site || site.status !== "ACTIVE") return null;
+      const pages = await prisma.webSitePage.findMany({
+        where: { siteId, status: "PUBLISHED" },
+        select: { path: true, title: true, type: true },
+        orderBy: { sortOrder: "asc" },
+      });
+      const chatbot = await prisma.webChatbot.findFirst({
+        where: { siteId, enabled: true },
+      });
+      return { site, pages, chatbot };
+    });
+    if (!result) throw new NotFoundException("Site not found for host");
+    return {
+      site: {
+        id: result.site.id,
+        name: result.site.name,
+        theme: result.site.theme,
+        settings: result.site.settings,
+      },
+      pages: result.pages,
+      chatbot: result.chatbot
+        ? { name: result.chatbot.name, config: result.chatbot.config }
+        : null,
     };
   }
 
@@ -250,7 +357,20 @@ export class WebStudioService {
     message: string,
     history: { role: "user" | "assistant"; content: string }[] = [],
   ) {
-    const site = await this.resolveSiteByHost(host);
+    return this.withPublicSiteSession(host, (siteId) =>
+      this.answerChatForSite(siteId, message, history),
+    ).then((result) => {
+      if (!result) throw new NotFoundException("Site not found for host");
+      return result;
+    });
+  }
+
+  private async answerChatForSite(
+    siteId: string,
+    message: string,
+    history: { role: "user" | "assistant"; content: string }[],
+  ) {
+    const site = await prisma.webSite.findUnique({ where: { id: siteId } });
     if (!site) throw new NotFoundException("Site not found for host");
 
     const bot = await prisma.webChatbot.findFirst({

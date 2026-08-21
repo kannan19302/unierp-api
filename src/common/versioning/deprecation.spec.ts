@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { findDeprecation, type DeprecationEntry } from "./deprecation-registry";
 import {
   applyDeprecationHeaders,
   deprecationMiddleware,
 } from "./deprecation.middleware";
+import { deprecationUsage, __resetDeprecationUsage } from "./deprecation-usage";
 
 const registry: DeprecationEntry[] = [
   {
@@ -84,5 +85,85 @@ describe("deprecation headers (Track G.1)", () => {
     expect(nextCalls).toBe(2);
     expect(hit.headers["Deprecation"]).toBeDefined();
     expect(miss.headers["Deprecation"]).toBeUndefined();
+  });
+});
+
+/**
+ * The LIVE registry, not a fixture. These assert the properties the
+ * developer-platform reshape depends on — that the announcement actually
+ * reaches callers, and that it does not accidentally promise a removal date
+ * or shadow a still-current surface.
+ */
+describe("live builder deprecations (developer platform reshape)", () => {
+  it("announces the legacy builder surface", () => {
+    const entry = findDeprecation("/api/v1/builder/forms");
+    expect(entry).not.toBeNull();
+    expect(entry!.successor).toBeDefined();
+  });
+
+  it("carries no sunset date yet", () => {
+    // Deliberate: a removal date announced before traffic is measured is how
+    // integrations get broken. Flipping this test is the conscious act of
+    // committing to a removal date.
+    for (const path of [
+      "/api/v1/builder/forms",
+      "/api/v1/builder/web-studio/sites",
+      "/api/v1/builder/modules",
+    ]) {
+      expect(findDeprecation(path)?.sunsetAt).toBeUndefined();
+    }
+  });
+
+  it("routes each sub-surface to the successor that matches its semantics", () => {
+    expect(findDeprecation("/api/v1/builder/web-studio/sites")?.successor).toBe(
+      "/api/v1/dev/sites",
+    );
+    expect(findDeprecation("/api/v1/builder/modules")?.successor).toBe(
+      "/api/v1/dev/apps",
+    );
+  });
+
+  it("does not mark the new /dev surface or unrelated routes as deprecated", () => {
+    // A prefix typo here would deprecate the replacement on day one.
+    expect(findDeprecation("/api/v1/dev/home")).toBeNull();
+    expect(findDeprecation("/api/v1/public/web/site")).toBeNull();
+    expect(findDeprecation("/api/v1/orders")).toBeNull();
+  });
+});
+
+describe("deprecation usage counters (P4 stage 2)", () => {
+  beforeEach(() => __resetDeprecationUsage());
+
+  it("counts calls per (prefix, tenant) so you know WHO to notify", () => {
+    const middleware = deprecationMiddleware(registry);
+    const call = (tenantId?: string) =>
+      middleware(
+        { path: "/api/v1/legacy-reports", user: tenantId ? { tenantId } : undefined } as never,
+        fakeResponse() as never,
+        () => {},
+      );
+    call("tnt-a");
+    call("tnt-a");
+    call("tnt-b");
+
+    const rows = deprecationUsage();
+    expect(rows).toHaveLength(2);
+    // Sorted by count desc — the noisiest caller first is the one you act on.
+    expect(rows[0]).toMatchObject({ tenantId: "tnt-a", count: 2 });
+    expect(rows[1]).toMatchObject({ tenantId: "tnt-b", count: 1 });
+  });
+
+  it("records anonymous callers as 'unknown' rather than dropping them", () => {
+    // An un-authenticated probe still tells you the surface is reachable and
+    // in use; silently discarding it would understate the traffic.
+    const middleware = deprecationMiddleware(registry);
+    middleware({ path: "/api/v1/legacy-reports" } as never, fakeResponse() as never, () => {});
+    expect(deprecationUsage()[0]).toMatchObject({ tenantId: "unknown", count: 1 });
+  });
+
+  it("does not count requests that are not deprecated", () => {
+    const middleware = deprecationMiddleware(registry);
+    middleware({ path: "/api/v1/orders" } as never, fakeResponse() as never, () => {});
+    expect(deprecationUsage()).toHaveLength(0);
   });
 });

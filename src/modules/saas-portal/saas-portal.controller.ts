@@ -35,4 +35,14 @@ export class SaasPortalController {
   async getInstalledApps(@Req() req: AuthenticatedRequest) {
     return this.saasPortalService.getInstalledApps(req.user.tenantId);
   }
+
+  @ApiOperation({
+    summary:
+      "The canonical module/app catalog — every installable module and kernel app, with its route segments",
+  })
+  @Permissions("saas.read")
+  @Get("app-catalog")
+  async getAppCatalog() {
+    return this.saasPortalService.getAppCatalog();
+  }
 }
