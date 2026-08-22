@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@kannan19302/database";
@@ -10,6 +11,8 @@ import type {
   AddCustomObjectFieldInput,
 } from "@kannan19302/shared";
 import { CustomObjectSchemaService } from "./custom-object-schema.service";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
 
 /** Columns the platform supplies on every generated table — never a declarable field name. */
 const RESERVED_FIELD_NAMES = new Set([
@@ -30,7 +33,17 @@ const RESERVED_FIELD_NAMES = new Set([
  */
 @Injectable()
 export class BuilderDataObjectsService {
-  constructor(private readonly schemaService: CustomObjectSchemaService) {}
+  constructor(private readonly schemaService: CustomObjectSchemaService, @Optional() private readonly artifacts?: ArtifactRegistryService, @Optional() private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirror(tenantId: string, object: any, createdBy?: string | null) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "DATA_OBJECT", artifactId: object.id, name: object.label, slug: object.apiName, status: object.status === "ACTIVE" ? "DRAFT" : "ARCHIVED", createdBy: createdBy ?? object.createdByUserId ?? null });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: createdBy ?? object.createdByUserId ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "DATA_OBJECT", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: object.label, description: object.description ?? undefined },
+      spec: { objectDefinitionId: object.id, apiName: object.apiName, fields: (object.fields ?? []).map((field: any) => ({ name: field.name, label: field.label, type: field.type, required: Boolean(field.required), indexed: Boolean(field.indexed) })) },
+      interfaces: { inputs: [{ name: "record", type: `${object.apiName}.record`, required: true }], outputs: [{ name: "recordId", type: "string", required: true }], events: [{ name: "record.created", payloadType: `${object.apiName}.record` }] }, dependencies: [], capabilities: ["data.write"], tests: [], extensions: { storage: { strategy: "generated-table", tenantIsolation: "forced-rls" } },
+    } });
+  }
 
   async list(tenantId: string) {
     return prisma.customObjectDefinition.findMany({
@@ -67,7 +80,7 @@ export class BuilderDataObjectsService {
     const objectId = randomUUID();
     const tableName = this.schemaService.tableName(objectId);
 
-    return prisma.$transaction(async (tx) => {
+    const object = await prisma.$transaction(async (tx) => {
       const object = await tx.customObjectDefinition.create({
         data: {
           id: objectId,
@@ -94,7 +107,9 @@ export class BuilderDataObjectsService {
       await this.schemaService.provision(tx, objectId, dto.fields);
 
       return object;
-    });
+    }, { timeout: 30_000, maxWait: 10_000 });
+    await this.mirror(tenantId, object, userId);
+    return object;
   }
 
   /**
@@ -125,13 +140,15 @@ export class BuilderDataObjectsService {
       );
     }
 
-    return prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       const created = await tx.customObjectFieldDefinition.create({
         data: { tenantId, objectId: id, ...field },
       });
       await this.schemaService.addField(tx, id, field);
       return created;
-    });
+    }, { timeout: 30_000, maxWait: 10_000 });
+    await this.mirror(tenantId, await this.getById(tenantId, id));
+    return created;
   }
 
   /**
@@ -142,10 +159,12 @@ export class BuilderDataObjectsService {
    */
   async archive(tenantId: string, id: string) {
     const object = await this.getById(tenantId, id);
-    return prisma.customObjectDefinition.update({
+    const archived = await prisma.customObjectDefinition.update({
       where: { id: object.id },
       data: { status: "ARCHIVED" },
     });
+    await this.artifacts?.retire(tenantId, "DATA_OBJECT", object.id);
+    return archived;
   }
 
   private validateFields(fields: CreateCustomObjectInput["fields"]) {

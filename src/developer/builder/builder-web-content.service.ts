@@ -1,10 +1,12 @@
 import {
-  Injectable,
+  Injectable, Optional,
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../platform/artifact-revisions.service";
 
 /**
  * Web Studio content: pages, blog posts, assets, templates, menus, SEO configs,
@@ -13,6 +15,48 @@ import { idpClient as idpPrisma } from "@/common/idp-client";
  */
 @Injectable()
 export class BuilderWebContentService {
+  constructor(@Optional() private readonly artifacts?: ArtifactRegistryService, @Optional() private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorBlogPost(tenantId: string, post: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "BLOG_POST", artifactId: post.id, name: post.title, slug: post.slug, status: post.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: post.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "BLOG_POST", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: post.title, description: post.excerpt ?? undefined },
+      spec: { slug: post.slug, content: post.content ?? null, category: post.category ?? null, tags: post.tags ?? [], author: post.author ?? null, featuredImage: post.featuredImage ?? null, metaTitle: post.metaTitle ?? null, metaDesc: post.metaDesc ?? null, readTime: post.readTime ?? null },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "blog_posts", id: post.id } },
+    } });
+  }
+
+  private async mirrorWebAsset(tenantId: string, asset: any) {
+    const slug = `asset-${String(asset.name ?? asset.id).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || asset.id}`;
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "ASSET", artifactId: asset.id, name: asset.name, slug, status: asset.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: asset.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "ASSET", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: asset.name },
+      spec: { url: asset.url, type: asset.type, sizeBytes: asset.sizeBytes ?? 0 }, interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "web_assets", id: asset.id } },
+    } });
+  }
+
+  private async mirrorWebMenu(tenantId: string, menu: any) {
+    const slug = `menu-${String(menu.location ?? "default").toLowerCase()}-${menu.id}`;
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "MENU", artifactId: menu.id, name: menu.name, slug, status: menu.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: menu.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "MENU", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: menu.name },
+      spec: { location: menu.location, items: menu.items ?? [] }, interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "web_menus", id: menu.id } },
+    } });
+  }
+
+  private async mirrorSeoProfile(tenantId: string, seo: any) {
+    const slug = `seo-${String(seo.path ?? seo.id).replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "") || seo.id}`;
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "SEO_PROFILE", artifactId: seo.id, name: seo.title, slug, status: seo.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: seo.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "SEO_PROFILE", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: seo.title },
+      spec: { path: seo.path, title: seo.title, description: seo.description ?? null, keywords: seo.keywords ?? null, ogImage: seo.ogImage ?? null }, interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "web_seo", id: seo.id } },
+    } });
+  }
+
   // ── WEB PAGES ─────────────────────────────────
   //
   // P7: `web_pages` was migrated into `web_site_pages` and dropped. These
@@ -223,7 +267,7 @@ export class BuilderWebContentService {
         "A blog post with this slug already exists",
       );
 
-    return prisma.blogPost.create({
+    const post = await prisma.blogPost.create({
       data: {
         tenantId,
         title: dto.title,
@@ -239,6 +283,8 @@ export class BuilderWebContentService {
         readTime: dto.readTime || null,
       },
     });
+    await this.mirrorBlogPost(tenantId, post);
+    return post;
   }
 
   async updateBlogPost(
@@ -261,7 +307,7 @@ export class BuilderWebContentService {
     const post = await prisma.blogPost.findFirst({ where: { id, tenantId } });
     if (!post) throw new NotFoundException("Blog post not found");
 
-    return prisma.blogPost.update({
+    const updated = await prisma.blogPost.update({
       where: { id },
       data: {
         ...(dto.title !== undefined && { title: dto.title }),
@@ -281,12 +327,16 @@ export class BuilderWebContentService {
           !post.publishedAt && { publishedAt: new Date() }),
       },
     });
+    await this.mirrorBlogPost(tenantId, updated);
+    return updated;
   }
 
   async deleteBlogPost(tenantId: string, id: string) {
     const post = await prisma.blogPost.findFirst({ where: { id, tenantId } });
     if (!post) throw new NotFoundException("Blog post not found");
-    return prisma.blogPost.delete({ where: { id } });
+    const deleted = await prisma.blogPost.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "BLOG_POST", id);
+    return deleted;
   }
 
   // ── WEB ASSETS ────────────────────────────────
@@ -301,7 +351,7 @@ export class BuilderWebContentService {
     tenantId: string,
     dto: { name: string; url: string; type?: string; sizeBytes?: number },
   ) {
-    return prisma.webAsset.create({
+    const asset = await prisma.webAsset.create({
       data: {
         tenantId,
         name: dto.name,
@@ -310,6 +360,8 @@ export class BuilderWebContentService {
         sizeBytes: dto.sizeBytes || 0,
       },
     });
+    await this.mirrorWebAsset(tenantId, asset);
+    return asset;
   }
 
   async updateWebAsset(
@@ -319,16 +371,20 @@ export class BuilderWebContentService {
   ) {
     const asset = await prisma.webAsset.findFirst({ where: { id, tenantId } });
     if (!asset) throw new NotFoundException("Web asset not found");
-    return prisma.webAsset.update({
+    const updated = await prisma.webAsset.update({
       where: { id },
       data: dto,
     });
+    await this.mirrorWebAsset(tenantId, updated);
+    return updated;
   }
 
   async deleteWebAsset(tenantId: string, id: string) {
     const asset = await prisma.webAsset.findFirst({ where: { id, tenantId } });
     if (!asset) throw new NotFoundException("Web asset not found");
-    return prisma.webAsset.delete({ where: { id } });
+    const deleted = await prisma.webAsset.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "ASSET", id);
+    return deleted;
   }
 
   // ── WEB TEMPLATES ─────────────────────────────
@@ -402,7 +458,7 @@ export class BuilderWebContentService {
     tenantId: string,
     dto: { name: string; location?: string; items?: any; status?: string },
   ) {
-    return prisma.webMenu.create({
+    const menu = await prisma.webMenu.create({
       data: {
         tenantId,
         name: dto.name,
@@ -411,6 +467,8 @@ export class BuilderWebContentService {
         status: dto.status || "ACTIVE",
       },
     });
+    await this.mirrorWebMenu(tenantId, menu);
+    return menu;
   }
 
   async updateWebMenu(
@@ -425,16 +483,20 @@ export class BuilderWebContentService {
   ) {
     const menu = await prisma.webMenu.findFirst({ where: { id, tenantId } });
     if (!menu) throw new NotFoundException("Web menu not found");
-    return prisma.webMenu.update({
+    const updated = await prisma.webMenu.update({
       where: { id },
       data: dto,
     });
+    await this.mirrorWebMenu(tenantId, updated);
+    return updated;
   }
 
   async deleteWebMenu(tenantId: string, id: string) {
     const menu = await prisma.webMenu.findFirst({ where: { id, tenantId } });
     if (!menu) throw new NotFoundException("Web menu not found");
-    return prisma.webMenu.delete({ where: { id } });
+    const deleted = await prisma.webMenu.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "MENU", id);
+    return deleted;
   }
 
   // ── WEB SEO ───────────────────────────────────
@@ -461,7 +523,7 @@ export class BuilderWebContentService {
     });
     if (existing)
       throw new BadRequestException("SEO config for this path already exists");
-    return prisma.webSeo.create({
+    const seo = await prisma.webSeo.create({
       data: {
         tenantId,
         path: dto.path,
@@ -472,6 +534,8 @@ export class BuilderWebContentService {
         status: dto.status || "ACTIVE",
       },
     });
+    await this.mirrorSeoProfile(tenantId, seo);
+    return seo;
   }
 
   async updateWebSeo(
@@ -488,16 +552,20 @@ export class BuilderWebContentService {
   ) {
     const seo = await prisma.webSeo.findFirst({ where: { id, tenantId } });
     if (!seo) throw new NotFoundException("Web SEO not found");
-    return prisma.webSeo.update({
+    const updated = await prisma.webSeo.update({
       where: { id },
       data: dto,
     });
+    await this.mirrorSeoProfile(tenantId, updated);
+    return updated;
   }
 
   async deleteWebSeo(tenantId: string, id: string) {
     const seo = await prisma.webSeo.findFirst({ where: { id, tenantId } });
     if (!seo) throw new NotFoundException("Web SEO not found");
-    return prisma.webSeo.delete({ where: { id } });
+    const deleted = await prisma.webSeo.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "SEO_PROFILE", id);
+    return deleted;
   }
 
   // ── WEB SETTINGS ──────────────────────────────

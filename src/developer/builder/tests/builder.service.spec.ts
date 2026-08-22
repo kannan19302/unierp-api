@@ -6,6 +6,7 @@ import { BuilderStatsService } from "../builder-stats.service";
 import { BuilderDashboardsService } from "../builder-dashboards.service";
 import { BuilderDevOpsService } from "../builder-devops.service";
 import { BuilderWebContentService } from "../builder-web-content.service";
+import { ModuleCompositionService } from "../../platform/module-composition.service";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -24,8 +25,12 @@ vi.mock("@kannan19302/database", () => {
     count: vi.fn(),
   });
 
+  const builderModule = generateMock();
+  const webSitePage = generateMock();
   const txMock = {
     schemaRegistry: generateMock(),
+    builderModule,
+    devProject: generateMock(),
   };
 
   return {
@@ -33,10 +38,12 @@ vi.mock("@kannan19302/database", () => {
       builderForm: generateMock(),
       builderWorkflow: generateMock(),
       builderDashboard: generateMock(),
-      builderModule: generateMock(),
+      builderModule,
       automationRule: generateMock(),
       dataImportJob: generateMock(),
-      webPage: generateMock(),
+      webPage: webSitePage,
+      webSite: generateMock(),
+      webSitePage,
       blogPost: generateMock(),
       webAsset: generateMock(),
       webTemplate: generateMock(),
@@ -77,6 +84,7 @@ describe("BuilderService", () => {
         BuilderDashboardsService,
         BuilderDevOpsService,
         BuilderWebContentService,
+        { provide: ModuleCompositionService, useValue: { components: vi.fn().mockResolvedValue([]), pages: vi.fn().mockResolvedValue([]), dataModels: vi.fn().mockResolvedValue([]), permissions: vi.fn().mockResolvedValue({}), counts: vi.fn().mockResolvedValue({ pages: 0, dataModels: 0 }) } },
       ],
     }).compile();
 
@@ -86,6 +94,9 @@ describe("BuilderService", () => {
       BuilderWorkflowsService,
     );
     statsService = module.get<BuilderStatsService>(BuilderStatsService);
+    const composition = module.get(ModuleCompositionService);
+    (service as any).composition = composition;
+    (statsService as any).composition = composition;
     dashboardsService = module.get<BuilderDashboardsService>(
       BuilderDashboardsService,
     );
@@ -145,13 +156,6 @@ describe("BuilderService", () => {
       serviceName: "service",
       prismaMock: prisma.automationRule,
       createArgs: ["t1", { name: "n", trigger: "t" }],
-      updateArgs: ["t1", "id", { name: "n2" }],
-    },
-    {
-      entity: "WebPage",
-      serviceName: "webContentService",
-      prismaMock: prisma.webPage,
-      createArgs: ["t1", { name: "n", slug: "s" }],
       updateArgs: ["t1", "id", { name: "n2" }],
     },
     {

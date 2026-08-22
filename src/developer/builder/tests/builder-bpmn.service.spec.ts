@@ -55,6 +55,11 @@ describe("BuilderBpmnService", () => {
     expect(result.id).toBe("bpmn-1");
   });
 
+  it("evaluates supported BPMN gateway conditions without executing code", () => {
+    expect((service as any).evaluateCondition("${approved == true && amount > 100}", { approved: true, amount: 200 })).toBe(true);
+    expect((service as any).evaluateCondition("${constructor.constructor('return process')()}", { approved: true })).toBe(false);
+  });
+
   it("createBpmnProcess succeeds", async () => {
     const { prisma } = await import("@kannan19302/database");
     (prisma.bpmnProcessDefinition.findFirst as any).mockResolvedValue(null);

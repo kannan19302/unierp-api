@@ -49,7 +49,11 @@ export class BuilderDevOpsService {
         lastSync: null,
       };
     }
-    return config;
+    // Never send a persisted credential back through an API read. This legacy
+    // configuration is retained only for compatibility while project-scoped
+    // provider mappings are introduced; callers receive presence metadata.
+    const { accessToken: _accessToken, ...safe } = config;
+    return { ...safe, hasAccessToken: Boolean(_accessToken) };
   }
 
   async saveGitConfig(

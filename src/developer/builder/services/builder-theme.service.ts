@@ -5,9 +5,23 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
 
 @Injectable()
 export class BuilderThemeService {
+  constructor(private readonly artifacts?: ArtifactRegistryService, private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorTheme(tenantId: string, theme: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "THEME", artifactId: theme.id, name: theme.name, slug: theme.slug, status: theme.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: theme.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "THEME", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: theme.name, description: theme.description ?? undefined },
+      spec: { tokens: theme.tokens ?? {}, cssVariables: theme.cssVariables ?? {}, typography: theme.typography ?? {}, spacing: theme.spacing ?? {}, borderRadius: theme.borderRadius ?? {}, shadows: theme.shadows ?? {}, colors: theme.colors ?? {}, isDefault: Boolean(theme.isDefault), settings: theme.settings ?? {} },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "builder_themes", id: theme.id } },
+    } });
+  }
+
   async getThemes(tenantId: string) {
     return prisma.themeConfig.findMany({
       where: { tenantId },
@@ -30,7 +44,7 @@ export class BuilderThemeService {
     if (existing)
       throw new BadRequestException("A theme with this slug already exists");
 
-    return prisma.themeConfig.create({
+    const theme = await prisma.themeConfig.create({
       data: {
         tenantId,
         name: dto.name,
@@ -47,6 +61,8 @@ export class BuilderThemeService {
         settings: dto.settings || {},
       },
     });
+    await this.mirrorTheme(tenantId, theme);
+    return theme;
   }
 
   async updateTheme(tenantId: string, id: string, dto: any) {
@@ -62,7 +78,7 @@ export class BuilderThemeService {
       });
     }
 
-    return prisma.themeConfig.update({
+    const updated = await prisma.themeConfig.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -85,6 +101,8 @@ export class BuilderThemeService {
         ...(dto.settings !== undefined && { settings: dto.settings as any }),
       },
     });
+    await this.mirrorTheme(tenantId, updated);
+    return updated;
   }
 
   async deleteTheme(tenantId: string, id: string) {
@@ -92,7 +110,9 @@ export class BuilderThemeService {
       where: { id, tenantId },
     });
     if (!theme) throw new NotFoundException("Theme not found");
-    return prisma.themeConfig.delete({ where: { id } });
+    const deleted = await prisma.themeConfig.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "THEME", id);
+    return deleted;
   }
 
   async updateDesignTokens(tenantId: string, themeId: string, dto: any) {
@@ -129,7 +149,7 @@ export class BuilderThemeService {
       }
     }
 
-    return prisma.themeConfig.update({
+    const updated = await prisma.themeConfig.update({
       where: { id: themeId },
       data: {
         tokens: { ...(theme.tokens as any), ...(dto.tokens || {}) } as any,
@@ -141,6 +161,8 @@ export class BuilderThemeService {
         }),
       },
     });
+    await this.mirrorTheme(tenantId, updated);
+    return updated;
   }
 
   async getDesignTokens(tenantId: string, themeId: string) {

@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Optional } from "@nestjs/common";
 import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { AiClient } from "../../common/integrations/ai-client";
+import { ArtifactRegistryService } from "../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../platform/artifact-revisions.service";
 
 /**
  * Web Studio multi-site engine. Owns sites, custom domains, site pages,
@@ -10,7 +12,19 @@ import { AiClient } from "../../common/integrations/ai-client";
  */
 @Injectable()
 export class WebStudioService {
-  constructor(private readonly ai: AiClient) {}
+  constructor(private readonly ai: AiClient, @Optional() private readonly artifacts?: ArtifactRegistryService, @Optional() private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorPage(tenantId: string, siteId: string, page: { id: string; title: string; path: string; status: string; blocks?: unknown; seo?: unknown }) {
+    const project = await prisma.devProject.findFirst({ where: { tenantId, siteId }, select: { id: true } });
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "PAGE", artifactId: page.id, name: page.title, slug: page.path, status: page.status, ownerProjectId: project?.id ?? null });
+    if (!artifact || !project || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "PROJECT", projectId: project.id }, source: {
+      apiVersion: "unierp.dev/v1", kind: "PAGE", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: page.title },
+      spec: { title: page.title, slug: page.path, sections: Array.isArray(page.blocks) ? page.blocks : [], seo: page.seo && typeof page.seo === "object" ? page.seo as Record<string, unknown> : {} },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [],
+      extensions: { legacyProjection: { table: "web_site_pages", id: page.id, siteId } },
+    } });
+  }
 
   private slugify(s: string): string {
     return s
@@ -44,15 +58,21 @@ export class WebStudioService {
     userId?: string,
   ) {
     const slug = this.slugify(data.slug || data.name) || "site";
-    return prisma.webSite.create({
-      data: {
-        tenantId,
-        name: data.name,
-        slug,
-        theme: data.theme ?? {},
-        settings: data.settings ?? {},
-        createdBy: userId,
-      },
+    // Keep the old Web Studio route compatible while preserving the project
+    // identity invariant required by packages, releases and environments.
+    return prisma.$transaction(async (tx: any) => {
+      const site = await tx.webSite.create({
+        data: {
+          tenantId,
+          name: data.name,
+          slug,
+          theme: data.theme ?? {},
+          settings: data.settings ?? {},
+          createdBy: userId,
+        },
+      });
+      await tx.devProject.create({ data: { tenantId, kind: "SITE", name: site.name, slug: site.slug, status: site.status, siteId: site.id, createdBy: userId ?? null } });
+      return site;
     });
   }
 
@@ -129,7 +149,9 @@ export class WebStudioService {
     await this.getSite(tenantId, siteId);
     const path = data.path.startsWith("/") ? data.path : `/${data.path}`;
     if (data.id) {
-      return prisma.webSitePage.update({
+      const existing = await prisma.webSitePage.findFirst({ where: { id: data.id, siteId, tenantId }, select: { id: true } });
+      if (!existing) throw new NotFoundException("Site page not found");
+      const updated = await prisma.webSitePage.update({
         where: { id: data.id },
         data: {
           path,
@@ -140,8 +162,10 @@ export class WebStudioService {
           status: data.status ?? undefined,
         },
       });
+      await this.mirrorPage(tenantId, siteId, updated);
+      return updated;
     }
-    return prisma.webSitePage.upsert({
+    const page = await prisma.webSitePage.upsert({
       where: { siteId_path: { siteId, path } },
       update: {
         title: data.title,
@@ -161,6 +185,8 @@ export class WebStudioService {
         status: data.status || "DRAFT",
       },
     });
+    await this.mirrorPage(tenantId, siteId, page);
+    return page;
   }
 
   async deletePage(tenantId: string, siteId: string, pageId: string) {
@@ -168,6 +194,7 @@ export class WebStudioService {
     await prisma.webSitePage.deleteMany({
       where: { id: pageId, siteId, tenantId },
     });
+    await this.artifacts?.retire(tenantId, "PAGE", pageId);
     return { ok: true };
   }
 

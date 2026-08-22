@@ -73,6 +73,7 @@ export class BuilderService {
       icon?: string;
       color?: string;
       scope?: string;
+      createdBy?: string | null;
       entities?: any;
       relationships?: any;
       permissions?: any;
@@ -84,19 +85,27 @@ export class BuilderService {
     if (existing)
       throw new BadRequestException("A module with this slug already exists");
 
-    return prisma.builderModule.create({
-      data: {
-        tenantId,
-        name: dto.name,
-        slug: dto.slug,
-        description: dto.description || null,
-        icon: dto.icon || null,
-        color: dto.color || null,
-        scope: dto.scope || "DRAFT",
-        entities: dto.entities || [],
-        relationships: dto.relationships || [],
-        permissions: dto.permissions || {},
-      },
+    // Legacy route compatibility must not create an orphan App. The canonical
+    // DevProject identity and mutable BuilderModule projection are born in one
+    // transaction, just as the `/dev/projects` creation route does.
+    return prisma.$transaction(async (tx: any) => {
+      const module = await tx.builderModule.create({
+        data: {
+          tenantId,
+          name: dto.name,
+          slug: dto.slug,
+          description: dto.description || null,
+          icon: dto.icon || null,
+          color: dto.color || null,
+          scope: dto.scope || "DRAFT",
+          entities: dto.entities || [],
+          relationships: dto.relationships || [],
+          permissions: dto.permissions || {},
+          createdBy: dto.createdBy ?? null,
+        },
+      });
+      await tx.devProject.create({ data: { tenantId, kind: "APP", name: module.name, slug: module.slug, description: module.description, icon: module.icon, color: module.color, status: module.status, appId: module.id, createdBy: dto.createdBy ?? null } });
+      return module;
     });
   }
 

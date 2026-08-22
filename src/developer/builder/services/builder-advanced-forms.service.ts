@@ -1,13 +1,25 @@
 import {
   Injectable,
+  Optional,
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
 
 @Injectable()
 export class BuilderAdvancedFormsService {
+  constructor(@Optional() private readonly artifacts?: ArtifactRegistryService, @Optional() private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorCanonicalForm(tenantId: string, form: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "ADVANCED_FORM", artifactId: form.id, name: form.name, slug: form.slug, status: form.status });
+    if (!artifact || !this.revisions) return;
+    const fields = Array.isArray(form.fields) ? form.fields : [];
+    const pages = Array.isArray(form.pages) && form.pages.length ? form.pages.map((page: any) => ({ id: String(page.id ?? page.title ?? "page"), title: page.title, fields: (Array.isArray(page.fieldIds) ? page.fieldIds.map((id: string) => fields.find((field: any) => field.id === id)).filter(Boolean) : fields).map((field: any) => ({ id: String(field.id ?? field.name), name: String(field.name ?? field.id), type: String(field.type ?? field.fieldType ?? "string"), label: String(field.label ?? field.name ?? field.id), required: Boolean(field.required), configuration: field })) })) : [{ id: "default", fields: fields.map((field: any) => ({ id: String(field.id ?? field.name), name: String(field.name ?? field.id), type: String(field.type ?? field.fieldType ?? "string"), label: String(field.label ?? field.name ?? field.id), required: Boolean(field.required), configuration: field })) }];
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, source: { apiVersion: "unierp.dev/v1", kind: "ADVANCED_FORM", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: form.name, description: form.description ?? undefined }, spec: { title: form.name, pages }, interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "advanced_forms", id: form.id, formType: form.formType, conditions: form.conditions ?? [], calculatedFields: form.calculatedFields ?? [], settings: form.settings ?? {} } } } });
+  }
   async getAdvancedForms(
     tenantId: string,
     params: { page?: number; limit?: number; search?: string } = {},
@@ -54,7 +66,7 @@ export class BuilderAdvancedFormsService {
         "An advanced form with this slug already exists",
       );
 
-    return prisma.advancedForm.create({
+    const created = await prisma.advancedForm.create({
       data: {
         tenantId,
         name: dto.name,
@@ -68,6 +80,8 @@ export class BuilderAdvancedFormsService {
         settings: dto.settings || {},
       },
     });
+    await this.mirrorCanonicalForm(tenantId, created);
+    return created;
   }
 
   async updateAdvancedForm(tenantId: string, id: string, dto: any) {
@@ -76,7 +90,7 @@ export class BuilderAdvancedFormsService {
     });
     if (!form) throw new NotFoundException("Advanced form not found");
 
-    return prisma.advancedForm.update({
+    const updated = await prisma.advancedForm.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -93,6 +107,8 @@ export class BuilderAdvancedFormsService {
         ...(dto.settings !== undefined && { settings: dto.settings as any }),
       },
     });
+    await this.mirrorCanonicalForm(tenantId, updated);
+    return updated;
   }
 
   async deleteAdvancedForm(tenantId: string, id: string) {
@@ -100,7 +116,9 @@ export class BuilderAdvancedFormsService {
       where: { id, tenantId },
     });
     if (!form) throw new NotFoundException("Advanced form not found");
-    return prisma.advancedForm.delete({ where: { id } });
+    const deleted = await prisma.advancedForm.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "ADVANCED_FORM", id);
+    return deleted;
   }
 
   async addCalculatedField(tenantId: string, formId: string, dto: any) {
@@ -121,10 +139,12 @@ export class BuilderAdvancedFormsService {
       },
     ];
 
-    return prisma.advancedForm.update({
+    const updated = await prisma.advancedForm.update({
       where: { id: formId },
       data: { calculatedFields: calculatedFields as any },
     });
+    await this.mirrorCanonicalForm(tenantId, updated);
+    return updated;
   }
 
   async addFormPage(tenantId: string, formId: string, dto: any) {
@@ -144,10 +164,12 @@ export class BuilderAdvancedFormsService {
       },
     ];
 
-    return prisma.advancedForm.update({
+    const updated = await prisma.advancedForm.update({
       where: { id: formId },
       data: { pages: pages as any, formType: "MULTI_PAGE" },
     });
+    await this.mirrorCanonicalForm(tenantId, updated);
+    return updated;
   }
 
   async getFormAnalytics(tenantId: string, formId: string) {

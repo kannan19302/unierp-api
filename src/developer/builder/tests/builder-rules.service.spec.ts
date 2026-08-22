@@ -114,6 +114,22 @@ describe("BuilderRulesService", () => {
     expect(result.matched).toBe(true);
   });
 
+  it("fails closed instead of executing authored JavaScript", async () => {
+    const { prisma } = await import("@kannan19302/database");
+    (prisma.ruleSet.findFirst as any).mockResolvedValue({ id: "rs-1" });
+    (prisma.ruleDefinition.findMany as any).mockResolvedValue([{ id: "r1", condition: "constructor.constructor('return process')()", actions: [{ action: "exfiltrate" }], priority: 0 }]);
+    const result = await service.evaluateRules("t1", "rs-1", { input: { age: 25 } });
+    expect(result).toEqual({ matched: false, output: null });
+  });
+
+  it("supports data-only comparisons joined by boolean operators", async () => {
+    const { prisma } = await import("@kannan19302/database");
+    (prisma.ruleSet.findFirst as any).mockResolvedValue({ id: "rs-1" });
+    (prisma.ruleDefinition.findMany as any).mockResolvedValue([{ id: "r1", condition: "age >= 18 && country === 'IN'", actions: [{ action: "approve" }], priority: 0 }]);
+    const result = await service.evaluateRules("t1", "rs-1", { input: { age: 25, country: "IN" } });
+    expect(result.matched).toBe(true);
+  });
+
   it("getRuleAnalytics returns counts", async () => {
     const result = await service.getRuleAnalytics("t1");
     expect(result).toHaveProperty("totalTables");

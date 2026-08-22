@@ -462,6 +462,7 @@ export class BuilderController {
       icon: layout.icon,
       color: layout.color,
       scope: "ORGANIZATION",
+      createdBy: req.user.userId,
     });
 
     // Seed generated pages
@@ -513,7 +514,7 @@ export class BuilderController {
     @Req() req: AuthenticatedRequest,
     @Body(new ZodValidationPipe(createBuilderModuleSchema)) dto: any,
   ) {
-    return this.builderService.createModule(req.user.tenantId, dto);
+    return this.builderService.createModule(req.user.tenantId, { ...dto, createdBy: req.user.userId });
   }
 
   @ApiOperation({ summary: "Update module" })

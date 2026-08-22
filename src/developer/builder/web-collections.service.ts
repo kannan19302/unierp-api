@@ -1,5 +1,5 @@
 import {
-  Injectable,
+  Injectable, Optional,
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
@@ -16,6 +16,8 @@ import type {
 } from "@kannan19302/shared";
 import { COLLECTION_PRESETS } from "./web-collections.presets";
 import { resolveUniqueSlug } from "../../common/utils/slug.util";
+import { ArtifactRegistryService } from "../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../platform/artifact-revisions.service";
 
 function slugify(input: string): string {
   return (
@@ -30,6 +32,25 @@ function slugify(input: string): string {
 
 @Injectable()
 export class WebCollectionsService {
+  constructor(@Optional() private readonly artifacts?: ArtifactRegistryService, @Optional() private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorCollection(tenantId: string, collection: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "COLLECTION", artifactId: collection.id, name: collection.name, slug: collection.slug, status: collection.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    const items = await prisma.webCollectionItem.findMany({ where: { tenantId, collectionId: collection.id }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: collection.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "COLLECTION", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: collection.name, description: collection.description ?? undefined },
+      spec: { singular: collection.singular, fields: collection.fields ?? [], settings: collection.settings ?? {}, items: items.map((item: any) => ({ id: item.id, slug: item.slug, data: item.data ?? {}, status: item.status, featured: Boolean(item.featured), sortOrder: item.sortOrder })) },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "web_collections", id: collection.id, kind: collection.kind, icon: collection.icon, color: collection.color } },
+    } });
+  }
+
+  private async mirrorCurrentCollection(tenantId: string, collectionId: string) {
+    if (!this.artifacts || !this.revisions) return;
+    const collection = await prisma.webCollection.findFirst({ where: { id: collectionId, tenantId } });
+    if (collection) await this.mirrorCollection(tenantId, collection);
+  }
+
   // ══════════════════════════════════════════════
   // COLLECTIONS
   // ══════════════════════════════════════════════
@@ -81,7 +102,7 @@ export class WebCollectionsService {
       throw new BadRequestException(
         "A collection with this slug already exists",
       );
-    return prisma.webCollection.create({
+    const collection = await prisma.webCollection.create({
       data: {
         tenantId,
         name: dto.name,
@@ -96,6 +117,8 @@ export class WebCollectionsService {
         createdBy: userId || null,
       },
     });
+    await this.mirrorCollection(tenantId, collection);
+    return collection;
   }
 
   async updateCollection(
@@ -104,7 +127,7 @@ export class WebCollectionsService {
     dto: UpdateWebCollectionInput,
   ) {
     await this.getCollectionById(tenantId, id);
-    return prisma.webCollection.update({
+    const collection = await prisma.webCollection.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -118,11 +141,15 @@ export class WebCollectionsService {
         ...(dto.status !== undefined && { status: dto.status }),
       },
     });
+    await this.mirrorCollection(tenantId, collection);
+    return collection;
   }
 
   async deleteCollection(tenantId: string, id: string) {
     await this.getCollectionById(tenantId, id);
-    return prisma.webCollection.delete({ where: { id } }); // items cascade
+    const deleted = await prisma.webCollection.delete({ where: { id } }); // items cascade
+    await this.artifacts?.retire(tenantId, "COLLECTION", id);
+    return deleted;
   }
 
   /** Instantiate a ready-made collection (with sample content) from a preset. */
@@ -175,6 +202,7 @@ export class WebCollectionsService {
     const itemCount = await prisma.webCollectionItem.count({
       where: { collectionId: collection.id },
     });
+    await this.mirrorCollection(tenantId, collection);
     return { ...collection, itemCount };
   }
 
@@ -293,7 +321,7 @@ export class WebCollectionsService {
     const slug = await this.resolveItemSlug(collectionId, String(desired));
     const status = dto.status || "DRAFT";
 
-    return prisma.webCollectionItem.create({
+    const item = await prisma.webCollectionItem.create({
       data: {
         tenantId,
         collectionId,
@@ -306,6 +334,8 @@ export class WebCollectionsService {
         createdBy: userId || null,
       },
     });
+    await this.mirrorCollection(tenantId, collection);
+    return item;
   }
 
   async updateItem(
@@ -323,7 +353,7 @@ export class WebCollectionsService {
     const justPublished =
       nextStatus === "PUBLISHED" && existing.status !== "PUBLISHED";
 
-    return prisma.webCollectionItem.update({
+    const item = await prisma.webCollectionItem.update({
       where: { id },
       data: {
         slug,
@@ -334,11 +364,15 @@ export class WebCollectionsService {
         ...(justPublished && { publishedAt: new Date() }),
       },
     });
+    await this.mirrorCurrentCollection(tenantId, collectionId);
+    return item;
   }
 
   async deleteItem(tenantId: string, collectionId: string, id: string) {
     await this.getItemById(tenantId, collectionId, id);
-    return prisma.webCollectionItem.delete({ where: { id } });
+    const deleted = await prisma.webCollectionItem.delete({ where: { id } });
+    await this.mirrorCurrentCollection(tenantId, collectionId);
+    return deleted;
   }
 
   // ══════════════════════════════════════════════

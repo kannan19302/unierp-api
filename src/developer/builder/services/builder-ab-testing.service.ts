@@ -5,9 +5,30 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
 
 @Injectable()
 export class BuilderAbTestingService {
+  constructor(private readonly artifacts?: ArtifactRegistryService, private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorTest(tenantId: string, test: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "AB_TEST", artifactId: test.id, name: test.name, slug: `ab-test-${test.id}`, status: test.status === "RUNNING" || test.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    const variants = await prisma.abTestVariant.findMany({ where: { tenantId, testId: test.id }, orderBy: { createdAt: "asc" } });
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: test.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "AB_TEST", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: test.name, description: test.description ?? undefined },
+      spec: { type: test.type, pageId: test.pageId ?? null, pagePath: test.pagePath ?? null, goalType: test.goalType, goalConfig: test.goalConfig ?? {}, trafficAlloc: test.trafficAlloc, minSampleSize: test.minSampleSize ?? null, confidence: test.confidence, variants: variants.map((variant: any) => ({ id: variant.id, name: variant.name, type: variant.type, changes: variant.changes ?? {}, weight: variant.weight })) },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "ab_tests", id: test.id } },
+    } });
+  }
+
+  private async mirrorCurrentTest(tenantId: string, testId: string) {
+    if (!this.artifacts || !this.revisions) return;
+    const test = await prisma.abTest.findFirst({ where: { id: testId, tenantId } });
+    if (test) await this.mirrorTest(tenantId, test);
+  }
+
   async getABTests(
     tenantId: string,
     params: { page?: number; limit?: number; search?: string } = {},
@@ -41,7 +62,7 @@ export class BuilderAbTestingService {
   }
 
   async createABTest(tenantId: string, dto: any) {
-    return prisma.abTest.create({
+    const test = await prisma.abTest.create({
       data: {
         tenantId,
         name: dto.name,
@@ -56,13 +77,15 @@ export class BuilderAbTestingService {
         confidence: dto.confidence ?? 0.95,
       },
     });
+    await this.mirrorTest(tenantId, test);
+    return test;
   }
 
   async updateABTest(tenantId: string, id: string, dto: any) {
     const test = await prisma.abTest.findFirst({ where: { id, tenantId } });
     if (!test) throw new NotFoundException("A/B test not found");
 
-    return prisma.abTest.update({
+    const updated = await prisma.abTest.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -81,12 +104,16 @@ export class BuilderAbTestingService {
         ...(dto.confidence !== undefined && { confidence: dto.confidence }),
       },
     });
+    await this.mirrorTest(tenantId, updated);
+    return updated;
   }
 
   async deleteABTest(tenantId: string, id: string) {
     const test = await prisma.abTest.findFirst({ where: { id, tenantId } });
     if (!test) throw new NotFoundException("A/B test not found");
-    return prisma.abTest.delete({ where: { id } });
+    const deleted = await prisma.abTest.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "AB_TEST", id);
+    return deleted;
   }
 
   async startABTest(tenantId: string, id: string) {
@@ -101,10 +128,12 @@ export class BuilderAbTestingService {
         "A/B test must have at least 2 variants (control + variant)",
       );
 
-    return prisma.abTest.update({
+    const updated = await prisma.abTest.update({
       where: { id },
       data: { status: "RUNNING", startedAt: new Date() },
     });
+    await this.mirrorTest(tenantId, updated);
+    return updated;
   }
 
   async getVariants(tenantId: string, testId: string) {
@@ -126,7 +155,7 @@ export class BuilderAbTestingService {
     if (existing)
       throw new BadRequestException("A variant with this name already exists");
 
-    return prisma.abTestVariant.create({
+    const variant = await prisma.abTestVariant.create({
       data: {
         tenantId,
         testId,
@@ -136,6 +165,8 @@ export class BuilderAbTestingService {
         weight: dto.weight ?? 50,
       },
     });
+    await this.mirrorTest(tenantId, test);
+    return variant;
   }
 
   async updateVariant(tenantId: string, variantId: string, dto: any) {
@@ -144,7 +175,7 @@ export class BuilderAbTestingService {
     });
     if (!variant) throw new NotFoundException("Variant not found");
 
-    return prisma.abTestVariant.update({
+    const updated = await prisma.abTestVariant.update({
       where: { id: variantId },
       data: {
         ...(dto.changes !== undefined && { changes: dto.changes as any }),
@@ -153,6 +184,8 @@ export class BuilderAbTestingService {
         ...(dto.conversions !== undefined && { conversions: dto.conversions }),
       },
     });
+    await this.mirrorCurrentTest(tenantId, variant.testId);
+    return updated;
   }
 
   async deleteVariant(tenantId: string, variantId: string) {
@@ -160,7 +193,9 @@ export class BuilderAbTestingService {
       where: { id: variantId, tenantId },
     });
     if (!variant) throw new NotFoundException("Variant not found");
-    return prisma.abTestVariant.delete({ where: { id: variantId } });
+    const deleted = await prisma.abTestVariant.delete({ where: { id: variantId } });
+    await this.mirrorCurrentTest(tenantId, variant.testId);
+    return deleted;
   }
 
   async analyzeResults(tenantId: string, testId: string) {

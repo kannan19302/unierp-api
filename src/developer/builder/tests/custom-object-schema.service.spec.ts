@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, afterAll, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { CustomObjectSchemaService } from "../services/custom-object-schema.service";
 import { BuilderDataObjectsService } from "../services/builder-data-objects.service";
+import { PreviewSubmissionsService } from "../../platform/preview-submissions.service";
 
 /**
  * The same database, reached as the `NOBYPASSRLS` application role — see
@@ -34,7 +35,9 @@ function appRoleUrlFrom(ownerUrl: string | undefined): string {
  */
 describe("CustomObjectSchemaService / BuilderDataObjectsService", () => {
   const schemaService = new CustomObjectSchemaService();
-  const service = new BuilderDataObjectsService(schemaService);
+  const artifactRecord = vi.fn(async ({ artifactId }: any) => ({ id: `canonical-${artifactId}` }));
+  const revisionSync = vi.fn(async () => undefined);
+  const service = new BuilderDataObjectsService(schemaService, { record: artifactRecord, retire: vi.fn() } as any, { syncLegacyProjection: revisionSync } as any);
   const tenantId = "spec-tenant-g09";
   let createdObjectId: string;
   let table: string;
@@ -68,6 +71,8 @@ describe("CustomObjectSchemaService / BuilderDataObjectsService", () => {
       Prisma.sql`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ${table}`,
     );
     expect(rows).toHaveLength(1);
+    expect(artifactRecord).toHaveBeenCalledWith(expect.objectContaining({ tenantId, artifactType: "DATA_OBJECT", artifactId: object.id, slug: apiName }));
+    expect(revisionSync).toHaveBeenCalledWith(expect.objectContaining({ artifactId: `canonical-${object.id}`, source: expect.objectContaining({ kind: "DATA_OBJECT", spec: expect.objectContaining({ objectDefinitionId: object.id, apiName }) }) }));
   });
 
   it("gives the generated table tenant_id, RLS ENABLED, FORCED and a policy — both indexes present", async () => {
@@ -106,6 +111,19 @@ describe("CustomObjectSchemaService / BuilderDataObjectsService", () => {
     expect(col.data_type).toBe("numeric");
     expect(col.numeric_precision).toBe(19);
     expect(col.numeric_scale).toBe(4);
+  });
+
+  it("persists a typed preview submission into the generated tenant table", async () => {
+    const submissions = new PreviewSubmissionsService();
+    const artifacts = [
+      { artifactId: "form-artifact", kind: "FORM", source: { spec: { pages: [{ fields: [{ id: "title" }, { id: "amount" }] }], submit: { targetArtifactId: "object-artifact" } } } },
+      { artifactId: "object-artifact", kind: "DATA_OBJECT", source: { spec: { objectDefinitionId: createdObjectId } } },
+    ];
+    const result = await submissions.submit({ tenantId, projectId: "project-1", previewId: "preview-1", formArtifactId: "form-artifact", values: { title: "Persistent pilot", amount: "19.2500" }, artifacts });
+    const [stored] = await prisma.$queryRaw<Array<{ title: string; amount: { toString(): string } }>>(Prisma.sql`SELECT "title", "amount" FROM ${Prisma.raw(`"${table}"`)} WHERE "id" = ${result.id}`);
+    expect(stored.title).toBe("Persistent pilot");
+    expect(stored.amount.toString()).toBe("19.25");
+    await expect(submissions.submit({ tenantId, projectId: "project-1", previewId: "preview-1", formArtifactId: "form-artifact", values: { title: "No", elevated: true }, artifacts })).rejects.toThrow(/not declared by the Form/);
   });
 
   it("refuses a field that redeclares a platform-supplied column", async () => {

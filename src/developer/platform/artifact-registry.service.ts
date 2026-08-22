@@ -1,6 +1,33 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 
+/** Concrete legacy projections that can be reconciled mechanically. Kinds not
+ * listed here are canonical-only or have no one-row-per-artifact projection
+ * yet, so reporting them as drift would be a false positive. */
+export const RECONCILABLE_ARTIFACT_PROJECTIONS = [
+  { type: "FORM", table: "builder_forms" },
+  { type: "ADVANCED_FORM", table: "advanced_forms" },
+  { type: "WORKFLOW", table: "builder_workflows" },
+  { type: "BPMN_PROCESS", table: "bpmn_process_definitions" },
+  { type: "DASHBOARD", table: "builder_dashboards" },
+  { type: "DATA_OBJECT", table: "builder_data_models" },
+  { type: "RULE_SET", table: "business_rules" },
+  { type: "API_ENDPOINT", table: "builder_apis" },
+  { type: "SCRIPT", table: "builder_scripts" },
+  { type: "MOBILE_APP", table: "mobile_apps" },
+  { type: "ETL_PIPELINE", table: "etl_pipelines" },
+  { type: "THEME", table: "builder_themes" },
+  { type: "PAGE", table: "web_site_pages" },
+  { type: "COLLECTION", table: "web_collections" },
+  { type: "BLOG_POST", table: "blog_posts" },
+  { type: "MENU", table: "web_menus" },
+  { type: "ASSET", table: "web_assets" },
+  { type: "SEO_PROFILE", table: "web_seo" },
+  { type: "AB_TEST", table: "ab_tests" },
+  { type: "CONNECTOR_DEFINITION", table: "integration_connectors" },
+  { type: "POLICY", table: "builder_permission_rules" },
+] as const;
+
 /**
  * The single write funnel for `builder_artifacts` — plan phase P3.
  *
@@ -62,6 +89,16 @@ export class ArtifactRegistryService {
         status: input.status ?? undefined,
         icon: input.icon ?? null,
       },
+    });
+  }
+
+  /** Retire a concrete legacy projection without erasing its registry identity
+   * or attachment history.  This is the migration-safe counterpart of a
+   * legacy table delete. */
+  async retire(tenantId: string, artifactType: string, artifactId: string) {
+    return prisma.builderArtifact.updateMany({
+      where: { tenantId, artifactType, artifactId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -246,18 +283,8 @@ export class ArtifactRegistryService {
     artifactType: string;
     missing: number;
   }[]> {
-    const sources: { type: string; table: string }[] = [
-      { type: "FORM", table: "builder_forms" },
-      { type: "WORKFLOW", table: "builder_workflows" },
-      { type: "DASHBOARD", table: "builder_dashboards" },
-      { type: "API_ENDPOINT", table: "builder_apis" },
-      { type: "THEME", table: "builder_themes" },
-      { type: "SCRIPT", table: "builder_scripts" },
-      { type: "DATA_OBJECT", table: "builder_data_models" },
-    ];
-
     const out: { artifactType: string; missing: number }[] = [];
-    for (const src of sources) {
+    for (const src of RECONCILABLE_ARTIFACT_PROJECTIONS) {
       // The table name is from the closed literal list above, never from
       // user input, so interpolating it is safe; the tenant id is still
       // parameterised.

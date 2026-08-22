@@ -17,6 +17,7 @@ vi.mock("@kannan19302/database", () => {
     groupBy: vi.fn(),
   });
   return {
+    runWithTenantSession: (_context: unknown, callback: () => unknown) => callback(),
     prisma: {
       webCollection: {
         findMany: vi.fn(),

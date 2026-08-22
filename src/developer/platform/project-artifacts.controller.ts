@@ -5,6 +5,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { ArtifactRegistryService } from "./artifact-registry.service";
+import { DeveloperAuthorizationService } from "./developer-authorization.service";
 import { deprecationUsage } from "../../common/versioning/deprecation-usage";
 
 interface AuthenticatedRequest extends Request {
@@ -26,7 +27,7 @@ interface AuthenticatedRequest extends Request {
 @Controller("dev")
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class ProjectArtifactsController {
-  constructor(private readonly registry: ArtifactRegistryService) {}
+  constructor(private readonly registry: ArtifactRegistryService, private readonly authorization: DeveloperAuthorizationService) {}
 
   /**
    * Declared BEFORE the `projects/:projectId/...` route below. Nest matches
@@ -69,6 +70,7 @@ export class ProjectArtifactsController {
     @Param("projectId") projectId: string,
     @Query("type") type?: string,
   ) {
+    await this.authorization.assertProjectAction(req.user.tenantId, projectId, req.user, "AUTHOR");
     return this.registry.listForProject(req.user.tenantId, projectId, type);
   }
 }

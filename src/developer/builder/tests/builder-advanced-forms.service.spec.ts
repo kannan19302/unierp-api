@@ -49,6 +49,17 @@ describe("BuilderAdvancedFormsService", () => {
     expect(result).toBeDefined();
   });
 
+  it("projects an advanced form into a canonical immutable revision", async () => {
+    const { prisma } = await import("@kannan19302/database");
+    const artifacts = { record: vi.fn(async () => ({ id: "artifact-1" })) };
+    const revisions = { syncLegacyProjection: vi.fn() };
+    const migrated = new BuilderAdvancedFormsService(artifacts as any, revisions as any);
+    (prisma.advancedForm.findFirst as any).mockResolvedValue(null);
+    (prisma.advancedForm.create as any).mockResolvedValue({ id: "form-1", name: "Conditional", slug: "conditional", status: "DRAFT", fields: [{ id: "amount", name: "amount", type: "number", label: "Amount" }], pages: [], conditions: [], calculatedFields: [], settings: {} });
+    await migrated.createConditionalForm("t1", { name: "Conditional", slug: "conditional" });
+    expect(revisions.syncLegacyProjection).toHaveBeenCalledWith(expect.objectContaining({ artifactId: "artifact-1", scope: { kind: "LIBRARY" }, source: expect.objectContaining({ kind: "ADVANCED_FORM" }) }));
+  });
+
   it("createConditionalForm rejects duplicate slug", async () => {
     const { prisma } = await import("@kannan19302/database");
     (prisma.advancedForm.findFirst as any).mockResolvedValue({ id: "form-1" });

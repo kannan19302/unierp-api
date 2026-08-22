@@ -26,6 +26,8 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
       { name: "export" },
       { name: "payroll" },
       { name: "data-import" },
+      { name: "developer-build" },
+      { name: "developer-preview" },
     ),
   ],
   providers: [EmailProcessor, ExportProcessor],

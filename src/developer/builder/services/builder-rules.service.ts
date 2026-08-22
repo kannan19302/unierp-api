@@ -5,9 +5,26 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
+
+const INVALID_RULE_LITERAL = Symbol("invalid-rule-literal");
 
 @Injectable()
 export class BuilderRulesService {
+  constructor(private readonly artifacts?: ArtifactRegistryService, private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorRuleSet(tenantId: string, ruleSet: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "RULE_SET", artifactId: ruleSet.id, name: ruleSet.name, slug: `rule-set-${ruleSet.id}`, status: ruleSet.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    const rules = await prisma.ruleDefinition.findMany({ where: { tenantId, ruleSetId: ruleSet.id }, orderBy: { priority: "asc" } });
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: ruleSet.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "RULE_SET", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: ruleSet.name, description: ruleSet.description ?? undefined },
+      spec: { rules: rules.map((rule: any) => ({ id: rule.id, name: rule.name, description: rule.description ?? undefined, priority: rule.priority, condition: rule.condition, actions: rule.actions ?? [], status: rule.status ?? "ACTIVE" })), settings: ruleSet.settings ?? {}, version: ruleSet.version ?? 0 },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "business_rules", id: ruleSet.id } },
+    } });
+  }
+
   async getDecisionTables(
     tenantId: string,
     params: { page?: number; limit?: number; search?: string } = {},
@@ -101,7 +118,7 @@ export class BuilderRulesService {
     if (existing)
       throw new BadRequestException("A rule set with this name already exists");
 
-    return prisma.ruleSet.create({
+    const ruleSet = await prisma.ruleSet.create({
       data: {
         tenantId,
         name: dto.name,
@@ -109,6 +126,8 @@ export class BuilderRulesService {
         settings: dto.settings || {},
       },
     });
+    await this.mirrorRuleSet(tenantId, ruleSet);
+    return ruleSet;
   }
 
   async getRuleSets(tenantId: string) {
@@ -130,7 +149,7 @@ export class BuilderRulesService {
     });
     if (!rs) throw new NotFoundException("Rule set not found");
 
-    return prisma.ruleDefinition.create({
+    const rule = await prisma.ruleDefinition.create({
       data: {
         tenantId,
         ruleSetId,
@@ -141,6 +160,8 @@ export class BuilderRulesService {
         actions: dto.actions || [],
       },
     });
+    await this.mirrorRuleSet(tenantId, rs);
+    return rule;
   }
 
   async evaluateRules(tenantId: string, ruleSetId: string, dto: any) {
@@ -188,12 +209,46 @@ export class BuilderRulesService {
     condition: string,
     input: Record<string, any>,
   ): boolean {
-    try {
-      const fn = new Function(...Object.keys(input), `return ${condition};`);
-      return fn(...Object.values(input));
-    } catch {
-      return false;
+    // Rules are tenant-authored data, never server-side code. The previous
+    // `new Function()` implementation made a condition an arbitrary API
+    // process payload. Support only identifier comparisons joined by && / ||;
+    // unsupported syntax fails closed and must move to typed expressions.
+    const orTerms = condition.split(/\s*\|\|\s*/);
+    return orTerms.some((orTerm) => orTerm.split(/\s*&&\s*/).every((term) => this.evaluateComparison(term.trim(), input)));
+  }
+
+  private evaluateComparison(term: string, input: Record<string, unknown>): boolean {
+    const match = /^([A-Za-z_][A-Za-z0-9_]*)\s*(===|!==|==|!=|>=|<=|>|<)\s*(.+)$/.exec(term);
+    if (!match) return false;
+    const field = match[1]!;
+    const operator = match[2]!;
+    const rawRight = match[3]!;
+    if (!Object.prototype.hasOwnProperty.call(input, field)) return false;
+    const right = this.ruleLiteral(rawRight.trim(), input);
+    if (right === INVALID_RULE_LITERAL) return false;
+    const left = input[field];
+    switch (operator) {
+      case "===": return left === right;
+      case "!==": return left !== right;
+      case "==": return left == right;
+      case "!=": return left != right;
+      case ">": return typeof left === "number" && typeof right === "number" && left > right;
+      case ">=": return typeof left === "number" && typeof right === "number" && left >= right;
+      case "<": return typeof left === "number" && typeof right === "number" && left < right;
+      case "<=": return typeof left === "number" && typeof right === "number" && left <= right;
+      default: return false;
     }
+  }
+
+  private ruleLiteral(value: string, input: Record<string, unknown>): unknown {
+    if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value)) return Number(value);
+    if (value === "true") return true;
+    if (value === "false") return false;
+    if (value === "null") return null;
+    const quoted = /^(["'])(.*)\1$/.exec(value);
+    if (quoted) return quoted[2];
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(value) && Object.prototype.hasOwnProperty.call(input, value)) return input[value];
+    return INVALID_RULE_LITERAL;
   }
 
   async getRuleAnalytics(tenantId: string) {
@@ -214,9 +269,11 @@ export class BuilderRulesService {
     });
     if (!rs) throw new NotFoundException("Rule set not found");
 
-    return prisma.ruleSet.update({
+    const ruleSet = await prisma.ruleSet.update({
       where: { id: ruleSetId },
       data: { version: (rs.version || 0) + 1 },
     });
+    await this.mirrorRuleSet(tenantId, { ...rs, ...ruleSet });
+    return ruleSet;
   }
 }

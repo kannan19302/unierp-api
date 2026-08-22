@@ -5,9 +5,24 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
 
 @Injectable()
 export class BuilderEtlService {
+  constructor(private readonly artifacts?: ArtifactRegistryService, private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorPipeline(tenantId: string, pipeline: any) {
+    const slug = `etl-${String(pipeline.name ?? pipeline.id).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || pipeline.id}`;
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "ETL_PIPELINE", artifactId: pipeline.id, name: pipeline.name, slug, status: pipeline.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: pipeline.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "ETL_PIPELINE", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: pipeline.name, description: pipeline.description ?? undefined },
+      spec: { sourceId: pipeline.sourceId, schedule: pipeline.schedule ?? null, mappings: pipeline.mappings ?? [], transforms: pipeline.transforms ?? [], target: pipeline.target ?? {}, settings: pipeline.settings ?? {} },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "etl_pipelines", id: pipeline.id } },
+    } });
+  }
+
   async getDataSources(tenantId: string) {
     return prisma.etlDataSource.findMany({
       where: { tenantId },
@@ -102,7 +117,7 @@ export class BuilderEtlService {
     });
     if (!source) throw new BadRequestException("Data source not found");
 
-    return prisma.etlPipeline.create({
+    const pipeline = await prisma.etlPipeline.create({
       data: {
         tenantId,
         name: dto.name,
@@ -115,6 +130,8 @@ export class BuilderEtlService {
         settings: dto.settings || {},
       },
     });
+    await this.mirrorPipeline(tenantId, pipeline);
+    return pipeline;
   }
 
   async updatePipeline(tenantId: string, id: string, dto: any) {
@@ -123,7 +140,7 @@ export class BuilderEtlService {
     });
     if (!pipe) throw new NotFoundException("ETL pipeline not found");
 
-    return prisma.etlPipeline.update({
+    const pipeline = await prisma.etlPipeline.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -138,6 +155,8 @@ export class BuilderEtlService {
         ...(dto.settings !== undefined && { settings: dto.settings as any }),
       },
     });
+    await this.mirrorPipeline(tenantId, pipeline);
+    return pipeline;
   }
 
   async deletePipeline(tenantId: string, id: string) {
@@ -145,7 +164,9 @@ export class BuilderEtlService {
       where: { id, tenantId },
     });
     if (!pipe) throw new NotFoundException("ETL pipeline not found");
-    return prisma.etlPipeline.delete({ where: { id } });
+    const deleted = await prisma.etlPipeline.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "ETL_PIPELINE", id);
+    return deleted;
   }
 
   async executeETLJob(tenantId: string, pipelineId: string, dto: any) {

@@ -1,10 +1,13 @@
 import {
   Injectable,
+  Optional,
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../platform/artifact-revisions.service";
 import type {
   CreateBuilderFormInput,
   UpdateBuilderFormInput,
@@ -26,6 +29,22 @@ function normalizeFields<T extends { fields?: unknown }>(form: T): T {
 
 @Injectable()
 export class BuilderFormsService {
+  constructor(@Optional() private readonly artifacts?: ArtifactRegistryService, @Optional() private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorCanonicalForm(tenantId: string, form: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "FORM", artifactId: form.id, name: form.name, slug: form.slug, status: form.status, icon: form.icon });
+    if (!artifact || !this.revisions) return;
+    const fields = Array.isArray(form.fields) ? form.fields : [];
+    const submitTargetArtifactId = typeof form.settings?.submitTargetArtifactId === "string" && form.settings.submitTargetArtifactId ? form.settings.submitTargetArtifactId : undefined;
+    const submit = submitTargetArtifactId ? { action: "CREATE_RECORD", targetArtifactId: submitTargetArtifactId, fieldMap: form.settings?.submitFieldMap && typeof form.settings.submitFieldMap === "object" ? form.settings.submitFieldMap : {} } : form.settings?.submitAction ? { action: String(form.settings.submitAction) } : undefined;
+    const pages = Array.isArray(form.pages) && form.pages.length ? form.pages.map((page: any) => ({ id: String(page.id ?? page.title ?? "page"), title: page.title, fields: (Array.isArray(page.fieldIds) ? page.fieldIds.map((id: string) => fields.find((field: any) => field.id === id)).filter(Boolean) : fields).map((field: any) => ({ id: String(field.id ?? field.name), name: String(field.name ?? field.id), type: String(field.type ?? "string"), label: String(field.label ?? field.name ?? field.id), required: Boolean(field.required), configuration: field })) })) : [{ id: "default", fields: fields.map((field: any) => ({ id: String(field.id ?? field.name), name: String(field.name ?? field.id), type: String(field.type ?? "string"), label: String(field.label ?? field.name ?? field.id), required: Boolean(field.required), configuration: field })) }];
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: form.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "FORM", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: form.name, description: form.description ?? undefined },
+      spec: { title: form.name, pages, submit },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: submitTargetArtifactId ? [{ targetArtifactId: submitTargetArtifactId }] : [], capabilities: submitTargetArtifactId ? ["data.write"] : [], tests: [],
+      extensions: { legacyProjection: { table: "builder_forms", id: form.id, slug: form.slug, conditions: form.conditions ?? [], settings: form.settings ?? {} } },
+    } });
+  }
   async getForms(
     tenantId: string,
     params: {
@@ -148,7 +167,7 @@ export class BuilderFormsService {
     if (existing)
       throw new BadRequestException("A form with this slug already exists");
 
-    return prisma.builderForm.create({
+    const created = await prisma.builderForm.create({
       data: {
         tenantId,
         name: dto.name,
@@ -157,11 +176,16 @@ export class BuilderFormsService {
         icon: dto.icon || null,
         module: dto.module || "Sales",
         fields: (dto.fields || []) as any,
-        pages: (dto.pages || []) as any,
-        conditions: (dto.conditions || []) as any,
+        // The deployed form contract already supports these G10 fields; the
+        // shared DTO is intentionally backwards compatible and is catching
+        // up separately, so preserve them without rejecting legacy callers.
+        pages: ((dto as any).pages || []) as any,
+        conditions: ((dto as any).conditions || []) as any,
         settings: (dto.settings || {}) as any,
       },
     });
+    await this.mirrorCanonicalForm(tenantId, created);
+    return created;
   }
 
   async updateForm(tenantId: string, id: string, dto: UpdateBuilderFormInput) {
@@ -170,7 +194,7 @@ export class BuilderFormsService {
     });
     if (!form) throw new NotFoundException("Form not found");
 
-    return prisma.builderForm.update({
+    const updated = await prisma.builderForm.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -179,11 +203,13 @@ export class BuilderFormsService {
         ...(dto.module !== undefined && { module: dto.module }),
         ...(dto.status !== undefined && { status: dto.status }),
         ...(dto.fields !== undefined && { fields: dto.fields as any }),
-        ...(dto.pages !== undefined && { pages: dto.pages as any }),
-        ...(dto.conditions !== undefined && { conditions: dto.conditions as any }),
+        ...((dto as any).pages !== undefined && { pages: (dto as any).pages as any }),
+        ...((dto as any).conditions !== undefined && { conditions: (dto as any).conditions as any }),
         ...(dto.settings !== undefined && { settings: dto.settings as any }),
       },
     });
+    await this.mirrorCanonicalForm(tenantId, updated);
+    return updated;
   }
 
   async deleteForm(tenantId: string, id: string) {
@@ -191,7 +217,9 @@ export class BuilderFormsService {
       where: { id, tenantId },
     });
     if (!form) throw new NotFoundException("Form not found");
-    return prisma.builderForm.delete({ where: { id } });
+    const deleted = await prisma.builderForm.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "FORM", id);
+    return deleted;
   }
 
   async publishBuilderForm(tenantId: string, id: string) {

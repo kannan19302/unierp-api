@@ -6,6 +6,8 @@ import {
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
 
 interface BpmnElement {
   id: string;
@@ -37,6 +39,18 @@ interface BpmnProcess {
 
 @Injectable()
 export class BuilderBpmnService {
+  constructor(private readonly artifacts?: ArtifactRegistryService, private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorProcess(tenantId: string, process: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "BPMN_PROCESS", artifactId: process.id, name: process.name, slug: process.key, status: process.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: process.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "BPMN_PROCESS", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: process.name, description: process.description ?? undefined },
+      spec: { key: process.key, elements: process.elements ?? [], flows: process.flows ?? [], bpmnXml: process.bpmnXml ?? undefined, slaConfig: process.slaConfig ?? {}, settings: process.settings ?? {} },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "bpmn_process_definitions", id: process.id } },
+    } });
+  }
+
   async getBpmnProcesses(
     tenantId: string,
     params: { page?: number; limit?: number; search?: string } = {},
@@ -81,7 +95,7 @@ export class BuilderBpmnService {
     if (existing)
       throw new BadRequestException("A process with this key already exists");
 
-    return prisma.bpmnProcessDefinition.create({
+    const process = await prisma.bpmnProcessDefinition.create({
       data: {
         tenantId,
         name: dto.name,
@@ -93,6 +107,8 @@ export class BuilderBpmnService {
         settings: dto.settings || {},
       },
     });
+    await this.mirrorProcess(tenantId, process);
+    return process;
   }
 
   async updateBpmnProcess(tenantId: string, id: string, dto: any) {
@@ -101,7 +117,7 @@ export class BuilderBpmnService {
     });
     if (!proc) throw new NotFoundException("BPMN process not found");
 
-    return prisma.bpmnProcessDefinition.update({
+    const process = await prisma.bpmnProcessDefinition.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -114,6 +130,8 @@ export class BuilderBpmnService {
         ...(dto.settings !== undefined && { settings: dto.settings as any }),
       },
     });
+    await this.mirrorProcess(tenantId, process);
+    return process;
   }
 
   async deleteBpmnProcess(tenantId: string, id: string) {
@@ -121,7 +139,9 @@ export class BuilderBpmnService {
       where: { id, tenantId },
     });
     if (!proc) throw new NotFoundException("BPMN process not found");
-    return prisma.bpmnProcessDefinition.delete({ where: { id } });
+    const deleted = await prisma.bpmnProcessDefinition.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "BPMN_PROCESS", id);
+    return deleted;
   }
 
   async addGateway(tenantId: string, processId: string, dto: any) {
@@ -699,29 +719,43 @@ export class BuilderBpmnService {
   }
 
   private evaluateCondition(expression: string, variables: Record<string, any>): boolean {
-    try {
-      // Handle BPMN condition expressions like ${approved == true} or ${amount > 100}
-      // Extract the expression inside ${...} and evaluate it with variables as context
-      const expr = expression
-        .replace(/\$\{([^}]+)\}/g, (_, innerExpr) => {
-          // Replace variable names in the inner expression with their values
-          let evaluated = innerExpr;
-          for (const [key, value] of Object.entries(variables)) {
-            const regex = new RegExp(`\\b${key}\\b`, 'g');
-            if (typeof value === "string") {
-              evaluated = evaluated.replace(regex, `"${value}"`);
-            } else {
-              evaluated = evaluated.replace(regex, String(value));
-            }
-          }
-          return evaluated;
-        })
-        .replace(/==/g, "===")
-        .replace(/!=/g, "!==");
+    // BPMN definition XML is tenant-authored input. Never turn it into API
+    // worker code: accept only `${field OP literal}` expressions joined by
+    // boolean operators, and fail closed for every other formal expression.
+    const match = /^\$\{([\s\S]*)\}$/.exec(expression.trim());
+    const source = (match?.[1] ?? expression).trim();
+    return source.split(/\s*\|\|\s*/).some((orTerm) => orTerm.split(/\s*&&\s*/).every((term) => this.evaluateBpmnComparison(term.trim(), variables)));
+  }
 
-      return new Function("vars", `with (vars) { return ${expr}; }`)(variables);
-    } catch {
-      return false;
+  private evaluateBpmnComparison(term: string, variables: Record<string, unknown>): boolean {
+    const match = /^([A-Za-z_][A-Za-z0-9_]*)\s*(===|!==|==|!=|>=|<=|>|<)\s*(.+)$/.exec(term);
+    if (!match) return false;
+    const field = match[1]!; const operator = match[2]!; const right = this.bpmnLiteral(match[3]!.trim(), variables);
+    if (right === BPMN_INVALID_LITERAL || !Object.prototype.hasOwnProperty.call(variables, field)) return false;
+    const left = variables[field];
+    switch (operator) {
+      case "===": return left === right;
+      case "!==": return left !== right;
+      case "==": return left == right;
+      case "!=": return left != right;
+      case ">": return typeof left === "number" && typeof right === "number" && left > right;
+      case ">=": return typeof left === "number" && typeof right === "number" && left >= right;
+      case "<": return typeof left === "number" && typeof right === "number" && left < right;
+      case "<=": return typeof left === "number" && typeof right === "number" && left <= right;
+      default: return false;
     }
   }
+
+  private bpmnLiteral(raw: string, variables: Record<string, unknown>): unknown {
+    if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)) return Number(raw);
+    if (raw === "true") return true;
+    if (raw === "false") return false;
+    if (raw === "null") return null;
+    const quoted = /^(["'])(.*)\1$/.exec(raw);
+    if (quoted) return quoted[2];
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(raw) && Object.prototype.hasOwnProperty.call(variables, raw)) return variables[raw];
+    return BPMN_INVALID_LITERAL;
+  }
 }
+
+const BPMN_INVALID_LITERAL = Symbol("bpmn-invalid-literal");

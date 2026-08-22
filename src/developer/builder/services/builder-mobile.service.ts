@@ -5,9 +5,33 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
 
 @Injectable()
 export class BuilderMobileService {
+  constructor(private readonly artifacts?: ArtifactRegistryService, private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorApp(tenantId: string, app: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "MOBILE_APP", artifactId: app.id, name: app.name, slug: app.slug, status: app.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    const [screens, notifications] = await Promise.all([
+      prisma.mobileScreen.findMany({ where: { tenantId, appId: app.id }, orderBy: { order: "asc" } }),
+      prisma.mobileNotificationConfig.findFirst({ where: { tenantId, appId: app.id } }),
+    ]);
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: app.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "MOBILE_APP", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: app.name, description: app.description ?? undefined },
+      spec: { platform: app.platform, appConfig: app.appConfig ?? {}, theme: app.theme ?? {}, capabilities: app.capabilities ?? [], settings: app.settings ?? {}, screens: screens.map((screen: any) => ({ id: screen.id, name: screen.name, type: screen.type, components: screen.components ?? [], layout: screen.layout ?? {}, settings: screen.settings ?? {}, order: screen.order })), notification: notifications ? { provider: notifications.provider, enabled: notifications.enabled, templates: notifications.templates ?? [], topics: notifications.topics ?? [], settings: notifications.settings ?? {} } : null },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "mobile_apps", id: app.id } },
+    } });
+  }
+
+  private async mirrorCurrentApp(tenantId: string, appId: string) {
+    if (!this.artifacts || !this.revisions) return;
+    const app = await prisma.mobileApp.findFirst({ where: { id: appId, tenantId } });
+    if (app) await this.mirrorApp(tenantId, app);
+  }
+
   async getMobileApps(tenantId: string) {
     return prisma.mobileApp.findMany({
       where: { tenantId },
@@ -30,7 +54,7 @@ export class BuilderMobileService {
         "A mobile app with this slug already exists",
       );
 
-    return prisma.mobileApp.create({
+    const app = await prisma.mobileApp.create({
       data: {
         tenantId,
         name: dto.name,
@@ -44,13 +68,15 @@ export class BuilderMobileService {
         settings: dto.settings || {},
       },
     });
+    await this.mirrorApp(tenantId, app);
+    return app;
   }
 
   async updateMobileApp(tenantId: string, id: string, dto: any) {
     const app = await prisma.mobileApp.findFirst({ where: { id, tenantId } });
     if (!app) throw new NotFoundException("Mobile app not found");
 
-    return prisma.mobileApp.update({
+    const updated = await prisma.mobileApp.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -66,12 +92,16 @@ export class BuilderMobileService {
         ...(dto.settings !== undefined && { settings: dto.settings as any }),
       },
     });
+    await this.mirrorApp(tenantId, updated);
+    return updated;
   }
 
   async deleteMobileApp(tenantId: string, id: string) {
     const app = await prisma.mobileApp.findFirst({ where: { id, tenantId } });
     if (!app) throw new NotFoundException("Mobile app not found");
-    return prisma.mobileApp.delete({ where: { id } });
+    const deleted = await prisma.mobileApp.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "MOBILE_APP", id);
+    return deleted;
   }
 
   async addMobileScreen(tenantId: string, appId: string, dto: any) {
@@ -80,7 +110,7 @@ export class BuilderMobileService {
     });
     if (!app) throw new NotFoundException("Mobile app not found");
 
-    return prisma.mobileScreen.create({
+    const screen = await prisma.mobileScreen.create({
       data: {
         tenantId,
         appId,
@@ -92,6 +122,8 @@ export class BuilderMobileService {
         order: dto.order || 0,
       },
     });
+    await this.mirrorApp(tenantId, app);
+    return screen;
   }
 
   async getMobileScreens(tenantId: string, appId: string) {
@@ -107,7 +139,7 @@ export class BuilderMobileService {
     });
     if (!screen) throw new NotFoundException("Mobile screen not found");
 
-    return prisma.mobileScreen.update({
+    const updated = await prisma.mobileScreen.update({
       where: { id: screenId },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -118,6 +150,8 @@ export class BuilderMobileService {
         ...(dto.settings !== undefined && { settings: dto.settings as any }),
       },
     });
+    await this.mirrorCurrentApp(tenantId, screen.appId);
+    return updated;
   }
 
   async deleteMobileScreen(tenantId: string, screenId: string) {
@@ -125,7 +159,9 @@ export class BuilderMobileService {
       where: { id: screenId, tenantId },
     });
     if (!screen) throw new NotFoundException("Mobile screen not found");
-    return prisma.mobileScreen.delete({ where: { id: screenId } });
+    const deleted = await prisma.mobileScreen.delete({ where: { id: screenId } });
+    await this.mirrorCurrentApp(tenantId, screen.appId);
+    return deleted;
   }
 
   async configurePushNotifications(tenantId: string, appId: string, dto: any) {
@@ -138,7 +174,7 @@ export class BuilderMobileService {
       where: { tenantId, appId },
     });
     if (existing) {
-      return prisma.mobileNotificationConfig.update({
+      const notification = await prisma.mobileNotificationConfig.update({
         where: { id: existing.id },
         data: {
           provider: dto.provider || existing.provider,
@@ -149,9 +185,11 @@ export class BuilderMobileService {
           settings: dto.settings || existing.settings,
         },
       });
+      await this.mirrorApp(tenantId, app);
+      return notification;
     }
 
-    return prisma.mobileNotificationConfig.create({
+    const notification = await prisma.mobileNotificationConfig.create({
       data: {
         tenantId,
         appId,
@@ -163,6 +201,8 @@ export class BuilderMobileService {
         settings: dto.settings || {},
       },
     });
+    await this.mirrorApp(tenantId, app);
+    return notification;
   }
 
   async getPushConfig(tenantId: string, appId: string) {

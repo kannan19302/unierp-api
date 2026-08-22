@@ -1,11 +1,25 @@
 import {
   Injectable,
+  Optional,
   NotFoundException,
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
+import { ArtifactRegistryService } from "../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../platform/artifact-revisions.service";
 
 @Injectable()
 export class BuilderWorkflowsService {
+  constructor(@Optional() private readonly artifacts?: ArtifactRegistryService, @Optional() private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorCanonicalWorkflow(tenantId: string, workflow: any) {
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "WORKFLOW", artifactId: workflow.id, name: workflow.name, status: workflow.status });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: workflow.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "WORKFLOW", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: workflow.name, description: workflow.description ?? undefined },
+      spec: { trigger: { type: workflow.trigger ?? "MANUAL", configuration: workflow.settings ?? {} }, nodes: Array.isArray(workflow.nodes) ? workflow.nodes.map((node: any) => ({ id: String(node.id), type: String(node.type ?? "TASK"), configuration: node.configuration ?? node })) : [], edges: Array.isArray(workflow.edges) ? workflow.edges.map((edge: any, index: number) => ({ id: String(edge.id ?? index), source: String(edge.source ?? edge.from), target: String(edge.target ?? edge.to), condition: edge.condition })) : [] },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "builder_workflows", id: workflow.id, docType: workflow.docType ?? null, settings: workflow.settings ?? {} } },
+    } });
+  }
   async getWorkflows(tenantId: string) {
     return prisma.builderWorkflow.findMany({
       where: { tenantId },
@@ -33,7 +47,7 @@ export class BuilderWorkflowsService {
       settings?: any;
     },
   ) {
-    return prisma.builderWorkflow.create({
+    const created = await prisma.builderWorkflow.create({
       data: {
         tenantId,
         name: dto.name,
@@ -45,6 +59,8 @@ export class BuilderWorkflowsService {
         settings: dto.settings || {},
       },
     });
+    await this.mirrorCanonicalWorkflow(tenantId, created);
+    return created;
   }
 
   async updateWorkflow(
@@ -66,7 +82,7 @@ export class BuilderWorkflowsService {
     });
     if (!wf) throw new NotFoundException("Workflow not found");
 
-    return prisma.builderWorkflow.update({
+    const updated = await prisma.builderWorkflow.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -79,6 +95,8 @@ export class BuilderWorkflowsService {
         ...(dto.settings !== undefined && { settings: dto.settings }),
       },
     });
+    await this.mirrorCanonicalWorkflow(tenantId, updated);
+    return updated;
   }
 
   async deleteWorkflow(tenantId: string, id: string) {
@@ -86,6 +104,8 @@ export class BuilderWorkflowsService {
       where: { id, tenantId },
     });
     if (!wf) throw new NotFoundException("Workflow not found");
-    return prisma.builderWorkflow.delete({ where: { id } });
+    const deleted = await prisma.builderWorkflow.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "WORKFLOW", id);
+    return deleted;
   }
 }

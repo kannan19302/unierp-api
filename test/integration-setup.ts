@@ -5,7 +5,10 @@ import { join } from "node:path";
 const TEST_DB_URL = process.env.DATABASE_URL ?? "postgresql://unerp:unerp_password@localhost:5432/unerp_test?schema=public";
 const TEST_DB_NAME = "unerp_test";
 const WORKSPACE_ROOT = join(process.cwd(), "..");
-const DATA_DIR = join(WORKSPACE_ROOT, "unierp-data");
+// The database package is part of this monorepo. Keeping this derived from
+// the workspace root makes `pnpm test:integration` usable from a clean clone
+// instead of relying on an old sibling checkout named `unierp-data`.
+const DATA_DIR = join(WORKSPACE_ROOT, "data");
 
 export async function setupIntegrationTestDatabase(): Promise<void> {
   console.log("[integration-setup] Setting up test database...");

@@ -5,9 +5,24 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
+import { ArtifactRegistryService } from "../../platform/artifact-registry.service";
+import { ArtifactRevisionsService } from "../../platform/artifact-revisions.service";
 
 @Injectable()
 export class BuilderApiService {
+  constructor(private readonly artifacts?: ArtifactRegistryService, private readonly revisions?: ArtifactRevisionsService) {}
+
+  private async mirrorEndpoint(tenantId: string, endpoint: any) {
+    const slug = `${String(endpoint.method ?? "GET").toLowerCase()}-${String(endpoint.path ?? endpoint.id).replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "") || endpoint.id}`;
+    const artifact = await this.artifacts?.record({ tenantId, artifactType: "API_ENDPOINT", artifactId: endpoint.id, name: endpoint.name, slug, status: endpoint.status === "ACTIVE" ? "PUBLISHED" : "DRAFT" });
+    if (!artifact || !this.revisions) return;
+    await this.revisions.syncLegacyProjection({ tenantId, artifactId: artifact.id, scope: { kind: "LIBRARY" }, createdBy: endpoint.createdBy ?? null, source: {
+      apiVersion: "unierp.dev/v1", kind: "API_ENDPOINT", metadata: { id: artifact.id, namespace: `tenant.${tenantId}`, name: endpoint.name, description: endpoint.description ?? undefined },
+      spec: { path: endpoint.path, method: endpoint.method, requestSchema: endpoint.requestSchema ?? {}, responseSchema: endpoint.responseSchema ?? {}, mappings: endpoint.mappings ?? [], middleware: endpoint.middleware ?? [], cacheTtl: endpoint.cacheTtl ?? null, rateLimit: endpoint.rateLimit ?? null },
+      interfaces: { inputs: [], outputs: [], events: [] }, dependencies: [], capabilities: [], tests: [], extensions: { legacyProjection: { table: "builder_apis", id: endpoint.id, source: endpoint.source ?? "CUSTOM" } },
+    } });
+  }
+
   async getApiEndpoints(
     tenantId: string,
     params: { page?: number; limit?: number; search?: string } = {},
@@ -52,7 +67,7 @@ export class BuilderApiService {
         "An endpoint with this path and method already exists",
       );
 
-    return prisma.apiEndpoint.create({
+    const endpoint = await prisma.apiEndpoint.create({
       data: {
         tenantId,
         name: dto.name,
@@ -68,13 +83,15 @@ export class BuilderApiService {
         rateLimit: dto.rateLimit || null,
       },
     });
+    await this.mirrorEndpoint(tenantId, endpoint);
+    return endpoint;
   }
 
   async updateApiEndpoint(tenantId: string, id: string, dto: any) {
     const ep = await prisma.apiEndpoint.findFirst({ where: { id, tenantId } });
     if (!ep) throw new NotFoundException("API endpoint not found");
 
-    return prisma.apiEndpoint.update({
+    const endpoint = await prisma.apiEndpoint.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -94,12 +111,16 @@ export class BuilderApiService {
         ...(dto.rateLimit !== undefined && { rateLimit: dto.rateLimit }),
       },
     });
+    await this.mirrorEndpoint(tenantId, endpoint);
+    return endpoint;
   }
 
   async deleteApiEndpoint(tenantId: string, id: string) {
     const ep = await prisma.apiEndpoint.findFirst({ where: { id, tenantId } });
     if (!ep) throw new NotFoundException("API endpoint not found");
-    return prisma.apiEndpoint.delete({ where: { id } });
+    const deleted = await prisma.apiEndpoint.delete({ where: { id } });
+    await this.artifacts?.retire(tenantId, "API_ENDPOINT", id);
+    return deleted;
   }
 
   async addEndpointMapping(tenantId: string, endpointId: string, dto: any) {
@@ -133,10 +154,11 @@ export class BuilderApiService {
       },
     ];
 
-    await prisma.apiEndpoint.update({
+    const endpoint = await prisma.apiEndpoint.update({
       where: { id: endpointId },
       data: { mappings: mappings as any },
     });
+    await this.mirrorEndpoint(tenantId, endpoint);
 
     return mapping;
   }
