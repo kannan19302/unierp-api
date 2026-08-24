@@ -139,6 +139,7 @@ export const envSchema = z.object({
     .string()
     .optional()
     .describe("CRM mailbox: Google OAuth client secret"),
+  GOOGLE_OAUTH_ENABLED: z.enum(["true", "false"]).optional(),
   MICROSOFT_OAUTH_CLIENT_ID: z
     .string()
     .optional()
@@ -147,6 +148,11 @@ export const envSchema = z.object({
     .string()
     .optional()
     .describe("CRM mailbox: Microsoft OAuth client secret"),
+  MICROSOFT_OAUTH_TENANT: z.string().optional(),
+  MICROSOFT_OAUTH_ENABLED: z.enum(["true", "false"]).optional(),
+  GITHUB_OAUTH_CLIENT_ID: z.string().optional(),
+  GITHUB_OAUTH_CLIENT_SECRET: z.string().optional(),
+  GITHUB_OAUTH_ENABLED: z.enum(["true", "false"]).optional(),
 
   // ── Payments ───────────────────────────────────────────────────────────
   STRIPE_SECRET_KEY: z

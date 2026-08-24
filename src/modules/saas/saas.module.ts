@@ -78,6 +78,9 @@ import { SaasIntegrationsComplianceDeepService } from "./integrations-compliance
 import { SaasIntegrationsComplianceDeepController } from "./integrations-compliance.controller";
 import { SaasMarketplaceLifecycleDeepService } from "./marketplace-lifecycle.service";
 import { SaasMarketplaceLifecycleDeepController } from "./marketplace-lifecycle.controller";
+import { OnboardingWizardController } from "./onboarding-wizard.controller";
+import { OnboardingWizardService } from "./onboarding-wizard.service";
+import { MasterDataImportService } from "./master-data-import.service";
 
 import { PlatformCredentialsModule } from "../../common/platform-credentials/platform-credentials.module";
 
@@ -136,6 +139,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     SaasRevenueChurnHealthDeepController,
     SaasIntegrationsComplianceDeepController,
     SaasMarketplaceLifecycleDeepController,
+    OnboardingWizardController,
   ],
   providers: [
     SaasService,
@@ -167,6 +171,8 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     SaasRevenueChurnHealthDeepService,
     SaasIntegrationsComplianceDeepService,
     SaasMarketplaceLifecycleDeepService,
+    OnboardingWizardService,
+    MasterDataImportService,
   ],
   exports: [
     SaasService,
@@ -197,6 +203,8 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     SaasRevenueChurnHealthDeepService,
     SaasIntegrationsComplianceDeepService,
     SaasMarketplaceLifecycleDeepService,
+    OnboardingWizardService,
+    MasterDataImportService,
   ],
 })
 export class SaasModule {}

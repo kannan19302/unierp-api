@@ -25,7 +25,7 @@ importers:
         version: file:../unierp-contracts
       '@kannan19302/database':
         specifier: file:../data
-        version: file:../data(magicast@0.3.5)(typescript@5.9.3)
+        version: link:../data
       '@kannan19302/extension-api':
         specifier: ^1.0.6
         version: 1.0.6
@@ -37,7 +37,7 @@ importers:
         version: 0.2.3
       '@kannan19302/shared':
         specifier: file:../shared
-        version: file:../shared
+        version: link:../shared
       '@nestjs/bullmq':
         specifier: ^11.0.4
         version: 11.0.5(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(bullmq@5.81.3)
@@ -1270,9 +1270,6 @@ packages:
 
   '@kannan19302/database@1.0.14':
     resolution: {integrity: sha512-S/bAFo+AH0RXKr1eAcGVHng2JEQ+FOq7sVa5Wigd/Bm5U33EfvAaUgdYc6PgGMM0gBSO+H2ZcrsQnl6QoXriWQ==}
-
-  '@kannan19302/database@file:../data':
-    resolution: {directory: ../data, type: directory}
 
   '@kannan19302/extension-api@1.0.6':
     resolution: {integrity: sha512-53SAlUFTqU9Yfx4cokZhGeLnErwAmui7FYGHYHBcAqI52vLloNiIIWR84WIs2ITnik+gsBoOTT5D+XhI1odElQ==}
@@ -6385,15 +6382,6 @@ snapshots:
   '@kannan19302/contracts@file:../unierp-contracts': {}
 
   '@kannan19302/database@1.0.14(magicast@0.3.5)(typescript@5.9.3)':
-    dependencies:
-      '@prisma/client': 6.19.3(prisma@6.19.3(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
-      '@prisma/config': 6.19.3(magicast@0.3.5)
-      prisma: 6.19.3(magicast@0.3.5)(typescript@5.9.3)
-    transitivePeerDependencies:
-      - magicast
-      - typescript
-
-  '@kannan19302/database@file:../data(magicast@0.3.5)(typescript@5.9.3)':
     dependencies:
       '@prisma/client': 6.19.3(prisma@6.19.3(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
       '@prisma/config': 6.19.3(magicast@0.3.5)

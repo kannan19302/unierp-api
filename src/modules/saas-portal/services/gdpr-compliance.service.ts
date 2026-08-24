@@ -4,11 +4,12 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
-import { prisma } from "@kannan19302/database";
+import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import * as fs from "fs";
 import * as path from "path";
 import { GdprCryptoShredService } from "./gdpr-crypto-shred.service";
+import { RecordLegalHoldService } from "./record-legal-hold.service";
 
 interface PiiModelEntry {
   treatment: "erase" | "anonymize" | "retain-legal-hold";
@@ -25,6 +26,7 @@ export interface ErasureResult {
   entityType: string;
   treatment: string;
   count: number;
+  heldCount?: number;
 }
 
 /**
@@ -40,7 +42,10 @@ export class SaasPortalGdprComplianceService {
   private readonly logger = new Logger(SaasPortalGdprComplianceService.name);
   private piiRegistry: PiiRegistry | null = null;
 
-  constructor(private readonly cryptoShred: GdprCryptoShredService) {}
+  constructor(
+    private readonly cryptoShred: GdprCryptoShredService,
+    private readonly legalHolds: RecordLegalHoldService,
+  ) {}
 
   private readonly prismaModelMap: Record<string, string> = {
     User: "user",
@@ -100,19 +105,35 @@ export class SaasPortalGdprComplianceService {
     modelName: string,
     tenantId: string,
     email: string,
-  ): Promise<number> {
+  ): Promise<{ count: number; heldCount: number }> {
     const prismaKey = this.prismaModelMap[modelName];
-    if (!prismaKey) return 0;
-    const model = (prisma as unknown as Record<string, unknown>)[prismaKey] as {
+    if (!prismaKey) return { count: 0, heldCount: 0 };
+    const source = modelName === "User"
+      ? idpPrisma as unknown as Record<string, unknown>
+      : prisma as unknown as Record<string, unknown>;
+    const model = source[prismaKey] as {
       findMany?: (args: {
         where: { tenantId: string; email: string };
         select: { id: true };
       }) => Promise<{ id: string }[]>;
       deleteMany?: (args: {
-        where: { tenantId: string; email: string };
+        where: { tenantId: string; email: string; id?: { in: string[] } };
       }) => Promise<{ count: number }>;
     };
-    if (!model?.deleteMany) return 0;
+    if (!model?.deleteMany || !model.findMany) return { count: 0, heldCount: 0 };
+
+    const candidates = await model.findMany({
+      where: { tenantId, email },
+      select: { id: true },
+    });
+    const candidateIds = candidates.map((record) => record.id);
+    const allowedIds = await this.legalHolds.excludeHeld(
+      tenantId,
+      modelName,
+      candidateIds,
+    );
+    const heldCount = candidateIds.length - allowedIds.length;
+    if (allowedIds.length === 0) return { count: 0, heldCount };
 
     // E32 exit criterion: "A GDPR erasure removes attachments too."
     // A User's identity record can be deleted while their uploaded
@@ -121,37 +142,49 @@ export class SaasPortalGdprComplianceService {
     // photos, ID scans, signed contracts) a subject-erasure request is
     // meant to reach. Capture the ids before deleting the User rows so
     // their attachments can be erased too, in the same call.
-    let userIds: string[] = [];
-    if (modelName === "User" && model.findMany) {
-      const users = await model.findMany({
-        where: { tenantId, email },
-        select: { id: true },
-      });
-      userIds = users.map((u) => u.id);
-    }
+    const userIds = modelName === "User" ? allowedIds : [];
 
-    const { count } = await model.deleteMany({ where: { tenantId, email } });
+    const { count } = await model.deleteMany({
+      where: { tenantId, email, id: { in: allowedIds } },
+    });
 
     if (userIds.length > 0) {
-      await prisma.storedFile.deleteMany({
-        where: { tenantId, createdBy: { in: userIds } },
-      });
-      await prisma.document.deleteMany({
-        where: { tenantId, createdBy: { in: userIds } },
-      });
+      const [storedFiles, documents] = await Promise.all([
+        prisma.storedFile.findMany({
+          where: { tenantId, createdBy: { in: userIds } },
+          select: { id: true },
+        }),
+        prisma.document.findMany({
+          where: { tenantId, createdBy: { in: userIds }, legalHold: false },
+          select: { id: true },
+        }),
+      ]);
+      const [storedFileIds, documentIds] = await Promise.all([
+        this.legalHolds.excludeHeld(tenantId, "StoredFile", storedFiles.map((file) => file.id)),
+        this.legalHolds.excludeHeld(tenantId, "Document", documents.map((document) => document.id)),
+      ]);
+      if (storedFileIds.length) {
+        await prisma.storedFile.deleteMany({ where: { tenantId, id: { in: storedFileIds } } });
+      }
+      if (documentIds.length) {
+        await prisma.document.deleteMany({ where: { tenantId, id: { in: documentIds } } });
+      }
     }
 
-    return count;
+    return { count, heldCount };
   }
 
   private async anonymizeRecords(
     modelName: string,
     tenantId: string,
     email: string,
-  ): Promise<number> {
+  ): Promise<{ count: number; heldCount: number }> {
     const prismaKey = this.prismaModelMap[modelName];
-    if (!prismaKey) return 0;
-    const model = (prisma as unknown as Record<string, unknown>)[prismaKey] as {
+    if (!prismaKey) return { count: 0, heldCount: 0 };
+    const source = modelName === "User"
+      ? idpPrisma as unknown as Record<string, unknown>
+      : prisma as unknown as Record<string, unknown>;
+    const model = source[prismaKey] as {
       findMany?: (args: {
         where: { tenantId: string; email: string };
         select: { id: true };
@@ -161,18 +194,82 @@ export class SaasPortalGdprComplianceService {
         data: Record<string, string>;
       }) => Promise<unknown>;
     };
-    if (!model?.findMany) return 0;
+    if (!model?.findMany) return { count: 0, heldCount: 0 };
 
     const records = await model.findMany({
       where: { tenantId, email },
       select: { id: true },
     });
-    if (records.length === 0) return 0;
+    if (records.length === 0) return { count: 0, heldCount: 0 };
+
+    const allowedIds = await this.legalHolds.excludeHeld(
+      tenantId,
+      modelName,
+      records.map((record) => record.id),
+    );
+    const heldCount = records.length - allowedIds.length;
+    if (!allowedIds.length) return { count: 0, heldCount };
+
+    if (modelName === "User") {
+      for (const id of allowedIds) {
+        const [storedFiles, documents] = await Promise.all([
+          prisma.storedFile.findMany({
+            where: { tenantId, createdBy: id },
+            select: { id: true },
+          }),
+          prisma.document.findMany({
+            where: { tenantId, createdBy: id, legalHold: false },
+            select: { id: true },
+          }),
+        ]);
+        const [storedFileIds, documentIds] = await Promise.all([
+          this.legalHolds.excludeHeld(tenantId, "StoredFile", storedFiles.map((file) => file.id)),
+          this.legalHolds.excludeHeld(tenantId, "Document", documents.map((document) => document.id)),
+        ]);
+        await Promise.all([
+          idpPrisma.userSession.deleteMany({ where: { userId: id } }),
+          idpPrisma.userIdentity.deleteMany({ where: { userId: id } }),
+          idpPrisma.userRole.deleteMany({ where: { userId: id } }),
+          idpPrisma.userGroupMember.deleteMany({ where: { userId: id } }),
+          idpPrisma.authApiToken.deleteMany({ where: { userId: id } }),
+          idpPrisma.pushSubscription.deleteMany({ where: { userId: id } }),
+          idpPrisma.passwordResetToken.deleteMany({ where: { userId: id } }),
+          idpPrisma.emailVerificationToken.deleteMany({ where: { userId: id } }),
+          idpPrisma.passkey.deleteMany({ where: { userId: id } }),
+          idpPrisma.accountContact.deleteMany({ where: { userId: id } }),
+          idpPrisma.userProfile.deleteMany({ where: { userId: id } }),
+          storedFileIds.length
+            ? prisma.storedFile.deleteMany({ where: { tenantId, id: { in: storedFileIds } } })
+            : Promise.resolve({ count: 0 }),
+          documentIds.length
+            ? prisma.document.deleteMany({ where: { tenantId, id: { in: documentIds } } })
+            : Promise.resolve({ count: 0 }),
+        ]);
+        await idpPrisma.user.update({
+          where: { id },
+          data: {
+            email: `[redacted-${id}]@erased.local`,
+            firstName: "[redacted]",
+            lastName: "[redacted]",
+            avatar: null,
+            passwordHash: null,
+            status: "ERASED",
+            mfaEnabled: false,
+            mfaSecret: null,
+            mfaPending: false,
+            mfaRecoveryCodes: [],
+            preferences: {},
+            deletedAt: new Date(),
+          },
+        });
+      }
+      return { count: allowedIds.length, heldCount };
+    }
 
     const fields = this.piiAnonymizeFields[modelName] || [];
-    if (fields.length === 0) return 0;
+    if (fields.length === 0) return { count: 0, heldCount };
 
-    for (const record of records) {
+    for (const record of records.filter((record) => allowedIds.includes(record.id))) {
       const updateData: Record<string, string> = {};
       for (const field of fields) {
         updateData[field] =
@@ -182,7 +279,7 @@ export class SaasPortalGdprComplianceService {
       }
       await model.update!({ where: { id: record.id }, data: updateData });
     }
-    return records.length;
+    return { count: allowedIds.length, heldCount };
   }
 
   /* ── Retention Policies ─────────────────────────────── */
@@ -247,92 +344,126 @@ export class SaasPortalGdprComplianceService {
   }
 
   async executeErasure(tenantId: string, requestId: string) {
-    const request = await prisma.dataErasureRequest.findFirst({
-      where: { id: requestId, tenantId },
-    });
-    if (!request) throw new NotFoundException("Erasure request not found");
-    if (request.status === "COMPLETED")
-      throw new BadRequestException("Already executed");
-
-    const entityTypes = (request.entityTypes as string[]) || [];
-    const email = request.subjectEmail;
-    const registry = this.loadPiiRegistry();
-    const results: ErasureResult[] = [];
-
-    for (const et of entityTypes) {
-      const modelName = this.resolveModelName(et);
-      if (!modelName) {
-        this.logger.warn(`Unrecognized entity type "${et}"; skipping`);
-        continue;
-      }
-      const entry = registry.models[modelName];
-      if (!entry) {
-        this.logger.warn(
-          `No PII registry entry for model "${modelName}"; skipping`,
-        );
-        continue;
-      }
-      switch (entry.treatment) {
-        case "erase": {
-          const count = await this.eraseRecords(modelName, tenantId, email);
-          results.push({ entityType: modelName, treatment: "erased", count });
-          break;
+    return runWithTenantSession(
+      { tenantId, userId: "privacy-operations" },
+      async () => {
+        const request = await prisma.dataErasureRequest.findFirst({
+          where: { id: requestId, tenantId },
+        });
+        if (!request) throw new NotFoundException("Erasure request not found");
+        if (["COMPLETED", "COMPLETED_WITH_RETENTIONS"].includes(request.status)) {
+          throw new BadRequestException("Already executed");
         }
-        case "anonymize": {
-          const count = await this.anonymizeRecords(modelName, tenantId, email);
-          results.push({
-            entityType: modelName,
-            treatment: "anonymized",
-            count,
+        if (["CANCELLED", "PROCESSING"].includes(request.status)) {
+          throw new BadRequestException(`Request cannot execute from ${request.status} state`);
+        }
+        if (request.eligibleAt && request.eligibleAt.getTime() > Date.now()) {
+          throw new BadRequestException("The account-deletion cooling-off period has not ended.");
+        }
+
+        await prisma.dataErasureRequest.update({
+          where: { id: requestId },
+          data: {
+            status: "PROCESSING",
+            executionStartedAt: new Date(),
+            executionAttempts: { increment: 1 },
+            executionError: null,
+            legalHoldReason: null,
+          },
+        });
+
+        try {
+          const entityTypes = (request.entityTypes as string[]) || [];
+          const email = request.subjectEmail;
+          const registry = this.loadPiiRegistry();
+          const results: ErasureResult[] = [];
+
+          for (const et of entityTypes) {
+            const modelName = this.resolveModelName(et);
+            if (!modelName) {
+              throw new BadRequestException(`Unrecognized erasure entity type "${et}".`);
+            }
+            const entry = registry.models[modelName];
+            if (!entry) {
+              throw new BadRequestException(`No reviewed PII treatment exists for "${modelName}".`);
+            }
+            switch (entry.treatment) {
+              case "erase": {
+                const outcome = await this.eraseRecords(modelName, tenantId, email);
+                results.push({
+                  entityType: modelName,
+                  treatment: outcome.heldCount ? "erased-with-legal-hold" : "erased",
+                  count: outcome.count,
+                  heldCount: outcome.heldCount || undefined,
+                });
+                break;
+              }
+              case "anonymize": {
+                const outcome = await this.anonymizeRecords(modelName, tenantId, email);
+                results.push({
+                  entityType: modelName,
+                  treatment: outcome.heldCount ? "anonymized-with-legal-hold" : "anonymized",
+                  count: outcome.count,
+                  heldCount: outcome.heldCount || undefined,
+                });
+                break;
+              }
+              case "retain-legal-hold": {
+                this.logger.log(`SKIP "${modelName}": retain-legal-hold (${entry.rationale})`);
+                results.push({
+                  entityType: modelName,
+                  treatment: "retained-legal-hold",
+                  count: 0,
+                  heldCount: 1,
+                });
+                break;
+              }
+            }
+          }
+
+          const hasRetentions = results.some((result) => (result.heldCount || 0) > 0);
+
+          // D11/G-3 — encrypt the subject reference before the immutable audit
+          // write, then destroy its only key after the audit transaction.
+          const encryptedEmailRef = await this.cryptoShred.encryptForAudit(tenantId, email, email);
+          await prisma.auditLog.create({
+            data: {
+              tenantId,
+              userId: request.requestedBy,
+              action: "GDPR_ERASURE",
+              entityType: "GDPR",
+              entityId: requestId,
+              changes: {
+                subjectEmailRef: encryptedEmailRef,
+                results,
+                executedAt: new Date().toISOString(),
+              } as never,
+            },
           });
-          break;
-        }
-        case "retain-legal-hold": {
-          this.logger.log(
-            `SKIP "${modelName}": retain-legal-hold (${entry.rationale})`,
-          );
-          results.push({
-            entityType: modelName,
-            treatment: "retained-legal-hold",
-            count: 0,
+          await this.cryptoShred.shred(tenantId, email);
+          await prisma.dataErasureRequest.update({
+            where: { id: requestId },
+            data: {
+              status: hasRetentions ? "COMPLETED_WITH_RETENTIONS" : "COMPLETED",
+              legalHoldReason: hasRetentions
+                ? "One or more records remain under an active or policy-mandated legal hold."
+                : null,
+              erasedAt: new Date(),
+            },
           });
-          break;
+          return { results, retainedUnderLegalHold: hasRetentions };
+        } catch (error) {
+          await prisma.dataErasureRequest.update({
+            where: { id: requestId },
+            data: {
+              status: "FAILED",
+              executionError: error instanceof Error ? error.message.slice(0, 1000) : "Unknown privacy operation failure",
+            },
+          });
+          throw error;
         }
-      }
-    }
-
-    await prisma.dataErasureRequest.update({
-      where: { id: requestId },
-      data: { status: "COMPLETED", erasedAt: new Date() },
-    });
-
-    // D11/G-3 — the subject's own email is a personal-data reference; it
-    // is encrypted under a per-subject key (crypto-shredding) rather than
-    // written in plaintext into the immutable audit trail, which would
-    // otherwise recreate the very PII this erasure just removed. The
-    // audit log ROW itself is written once and never mutated or deleted
-    // — its integrity (and any hash chain over it) is preserved by never
-    // touching it; shred() below destroys the key, not the row.
-    const encryptedEmailRef = await this.cryptoShred.encryptForAudit(tenantId, email, email);
-
-    await prisma.auditLog.create({
-      data: {
-        tenantId,
-        userId: request.requestedBy,
-        action: "GDPR_ERASURE",
-        entityType: "GDPR",
-        entityId: requestId,
-        changes: {
-          subjectEmailRef: encryptedEmailRef,
-          results,
-          executedAt: new Date().toISOString(),
-        } as never,
       },
-    });
-
-    await this.cryptoShred.shred(tenantId, email);
-
-    return { results };
+    );
   }
 
   /* ── Data Export (Right of Access) ──────────────────── */

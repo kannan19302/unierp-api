@@ -35,6 +35,9 @@ import { SaasPortalSsoSamlDeepController } from "./sso-saml.controller";
 import { SaasPortalAuditTrailDeepService } from "./audit-trail.service";
 import { SaasPortalAuditTrailDeepController } from "./audit-trail.controller";
 import { SaasPortalEnterpriseModule } from "./saas-portal-enterprise.module";
+import { PrivacyOperationsService } from "./services/privacy-operations.service";
+import { PrivacyOperationsProcessor } from "./services/privacy-operations.processor";
+import { PrivacyOperationsScheduler } from "./services/privacy-operations.scheduler";
 
 @Module({
   imports: [SaasPortalEnterpriseModule],
@@ -76,6 +79,9 @@ import { SaasPortalEnterpriseModule } from "./saas-portal-enterprise.module";
     SaasPortalFeedbackRoadmapService,
     SaasPortalSsoSamlDeepService,
     SaasPortalAuditTrailDeepService,
+    PrivacyOperationsService,
+    PrivacyOperationsProcessor,
+    PrivacyOperationsScheduler,
   ],
   exports: [
     SaasPortalService,
@@ -98,6 +104,7 @@ import { SaasPortalEnterpriseModule } from "./saas-portal-enterprise.module";
     SaasPortalFeedbackRoadmapService,
     SaasPortalSsoSamlDeepService,
     SaasPortalAuditTrailDeepService,
+    PrivacyOperationsService,
   ],
 })
 export class SaasPortalModule {}

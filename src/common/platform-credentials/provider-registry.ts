@@ -27,6 +27,12 @@ export const PLATFORM_CREDENTIAL_PROVIDERS: CredentialProviderSpec[] = [
     label: "Google OAuth",
     fields: [
       {
+        key: "enabled",
+        label: "Enabled",
+        sensitive: false,
+        envFallback: "GOOGLE_OAUTH_ENABLED",
+      },
+      {
         key: "clientId",
         label: "Client ID",
         sensitive: false,
@@ -45,6 +51,12 @@ export const PLATFORM_CREDENTIAL_PROVIDERS: CredentialProviderSpec[] = [
     label: "Microsoft OAuth",
     fields: [
       {
+        key: "enabled",
+        label: "Enabled",
+        sensitive: false,
+        envFallback: "MICROSOFT_OAUTH_ENABLED",
+      },
+      {
         key: "clientId",
         label: "Client ID",
         sensitive: false,
@@ -61,6 +73,30 @@ export const PLATFORM_CREDENTIAL_PROVIDERS: CredentialProviderSpec[] = [
         label: "Tenant ID",
         sensitive: false,
         envFallback: "MICROSOFT_OAUTH_TENANT",
+      },
+    ],
+  },
+  {
+    provider: "github-oauth",
+    label: "GitHub OAuth",
+    fields: [
+      {
+        key: "enabled",
+        label: "Enabled",
+        sensitive: false,
+        envFallback: "GITHUB_OAUTH_ENABLED",
+      },
+      {
+        key: "clientId",
+        label: "Client ID",
+        sensitive: false,
+        envFallback: "GITHUB_OAUTH_CLIENT_ID",
+      },
+      {
+        key: "clientSecret",
+        label: "Client Secret",
+        sensitive: true,
+        envFallback: "GITHUB_OAUTH_CLIENT_SECRET",
       },
     ],
   },

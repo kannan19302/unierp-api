@@ -48,6 +48,9 @@ const identityDelegates = [
   "passwordResetToken",
   "emailVerificationToken",
   "mfaPushChallenge",
+  "passkey",
+  "accountContact",
+  "accountContactVerification",
 ] as const;
 
 // Presence is declared in the MAIN schema (core.prisma) because it is a
