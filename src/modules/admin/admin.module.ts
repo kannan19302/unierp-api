@@ -32,6 +32,7 @@ import { SupportImpersonationController } from "./support-impersonation.controll
 import { SupportImpersonationService } from "./support-impersonation.service";
 
 import { PlatformCredentialsModule } from "../../common/platform-credentials/platform-credentials.module";
+import { AccessReviewService } from "../../common/services/access-review.service";
 
 @Module({
   imports: [PlatformCredentialsModule],
@@ -71,6 +72,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     SubscriptionService,
     ErrorReportsService,
     SupportImpersonationService,
+    AccessReviewService,
   ],
   exports: [
     AdminService,

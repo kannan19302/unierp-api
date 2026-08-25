@@ -14,12 +14,16 @@ import { SubscriptionDunningService } from "./subscription-dunning.service";
 import { SubscriptionCreditNoteService } from "./subscription-credit-note.service";
 import { SubscriptionAutoScaleService } from "./subscription-auto-scale.service";
 
+import { OrganizationEntitlementsController } from "./organization-entitlements.controller";
+import { OrganizationEntitlementsService } from "./organization-entitlements.service";
+
 @Module({
   controllers: [
     SubscriptionsGeneratedController,
     SubscriptionsController,
     SubscriptionsDeepController,
     SubscriptionsBulkController,
+    OrganizationEntitlementsController,
   ],
   providers: [
     SubscriptionsGeneratedService,
@@ -32,6 +36,7 @@ import { SubscriptionAutoScaleService } from "./subscription-auto-scale.service"
     SubscriptionDunningService,
     SubscriptionCreditNoteService,
     SubscriptionAutoScaleService,
+    OrganizationEntitlementsService,
   ],
   exports: [
     SubscriptionsGeneratedService,
@@ -40,6 +45,7 @@ import { SubscriptionAutoScaleService } from "./subscription-auto-scale.service"
     SubscriptionUsageService,
     SubscriptionCouponService,
     SubscriptionMigrationService,
+    OrganizationEntitlementsService,
   ],
 })
 export class SubscriptionsModule {}

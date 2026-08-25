@@ -22,6 +22,16 @@ export interface ExportManifest {
   };
 }
 
+export interface TenantPurgeReadiness {
+  eligible: boolean;
+  purgeEligibleAt: string | null;
+  activeLegalHolds: number | null;
+  blockers: Array<{
+    code: "OFFBOARDING_REQUIRED" | "RETENTION_EXPIRY_MISSING" | "RETENTION_ACTIVE" | "LEGAL_HOLD_ACTIVE";
+    message: string;
+  }>;
+}
+
 @Injectable()
 export class TenantLifecycleService {
   constructor(
@@ -41,6 +51,7 @@ export class TenantLifecycleService {
 
     const userCount = await idpPrisma.user.count({ where: { tenantId } });
     const orgCount = await prisma.organization.count({ where: { tenantId } });
+    const purgeReadiness = await this.evaluatePurgeReadiness(tenantId, tenant.status);
 
     return {
       tenant: {
@@ -56,6 +67,7 @@ export class TenantLifecycleService {
       },
       currentStatus: tenant.status,
       recentEvents: events,
+      purgeReadiness,
     };
   }
 
@@ -136,7 +148,7 @@ export class TenantLifecycleService {
    * step 2 (session revocation) FAILED — both durably visible — rather
    * than the caller only ever seeing whichever half happened to run.
    */
-  async suspendTenant(tenantId: string, initiatedBy?: string) {
+  async suspendTenant(tenantId: string, initiatedBy?: string, reason?: string) {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException("Tenant not found");
     if (tenant.status === "SUSPENDED")
@@ -155,7 +167,14 @@ export class TenantLifecycleService {
             await prisma.$transaction(async (tx) => {
               await tx.tenant.update({ where: { id: tenantId }, data: { status: "SUSPENDED" } });
               await tx.tenantLifecycleEvent.create({
-                data: { tenantId, eventType: "SUSPEND", status: "COMPLETED", initiatedBy, completedAt: new Date() },
+                data: {
+                  tenantId,
+                  eventType: "SUSPEND",
+                  status: "COMPLETED",
+                  initiatedBy,
+                  completedAt: new Date(),
+                  payload: reason ? { reason } : undefined,
+                },
               });
             });
             return { tenantId };
@@ -193,7 +212,7 @@ export class TenantLifecycleService {
     };
   }
 
-  async unsuspendTenant(tenantId: string, initiatedBy?: string) {
+  async unsuspendTenant(tenantId: string, initiatedBy?: string, reason?: string) {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException("Tenant not found");
     if (tenant.status !== "SUSPENDED")
@@ -210,7 +229,14 @@ export class TenantLifecycleService {
             await prisma.$transaction(async (tx) => {
               await tx.tenant.update({ where: { id: tenantId }, data: { status: "ACTIVE" } });
               await tx.tenantLifecycleEvent.create({
-                data: { tenantId, eventType: "UNSUSPEND", status: "COMPLETED", initiatedBy, completedAt: new Date() },
+                data: {
+                  tenantId,
+                  eventType: "UNSUSPEND",
+                  status: "COMPLETED",
+                  initiatedBy,
+                  completedAt: new Date(),
+                  payload: reason ? { reason } : undefined,
+                },
               });
             });
             return { tenantId };
@@ -239,6 +265,7 @@ export class TenantLifecycleService {
     tenantId: string,
     retentionDays: number = 90,
     initiatedBy?: string,
+    reason?: string,
   ) {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException("Tenant not found");
@@ -264,7 +291,11 @@ export class TenantLifecycleService {
           initiatedBy,
           retentionDays,
           completedAt: new Date(),
-          payload: { offboardDate: offboardDate.toISOString(), retentionDays },
+          payload: {
+            offboardDate: offboardDate.toISOString(),
+            retentionDays,
+            ...(reason ? { reason } : {}),
+          },
         },
       });
     });
@@ -280,7 +311,7 @@ export class TenantLifecycleService {
     };
   }
 
-  async cancelOffboarding(tenantId: string, initiatedBy?: string) {
+  async cancelOffboarding(tenantId: string, initiatedBy?: string, reason?: string) {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException("Tenant not found");
     if (tenant.status !== "OFFBOARDING")
@@ -301,6 +332,7 @@ export class TenantLifecycleService {
           status: "COMPLETED",
           initiatedBy,
           completedAt: new Date(),
+          payload: reason ? { reason } : undefined,
         },
       });
     });
@@ -319,6 +351,10 @@ export class TenantLifecycleService {
     if (!tenant) throw new NotFoundException("Tenant not found");
     if (tenant.status === "PURGED")
       throw new ConflictException("Tenant has already been purged");
+    const purgeReadiness = await this.evaluatePurgeReadiness(tenantId, tenant.status);
+    if (!purgeReadiness.eligible) {
+      throw new ConflictException(purgeReadiness.blockers[0]?.message ?? "Tenant is not eligible for purge");
+    }
 
     const models = await this.getAllTenantScopedModels();
     let totalDeleted = 0;
@@ -370,6 +406,74 @@ export class TenantLifecycleService {
       orderBy: { createdAt: "desc" },
       take: 50,
     });
+  }
+
+  private async evaluatePurgeReadiness(
+    tenantId: string,
+    tenantStatus: string,
+  ): Promise<TenantPurgeReadiness> {
+    if (tenantStatus !== "OFFBOARDING") {
+      return {
+        eligible: false,
+        purgeEligibleAt: null,
+        activeLegalHolds: null,
+        blockers: [{
+          code: "OFFBOARDING_REQUIRED",
+          message: "Tenant must complete offboarding before permanent purge",
+        }],
+      };
+    }
+
+    const offboarding = await prisma.tenantLifecycleEvent.findFirst({
+      where: { tenantId, eventType: "OFFBOARD", status: "COMPLETED" },
+      orderBy: { createdAt: "desc" },
+    });
+    const offboardDateValue = (offboarding?.payload as Record<string, unknown> | null)?.offboardDate;
+    const purgeEligibleAt =
+      typeof offboardDateValue === "string" ? new Date(offboardDateValue) : null;
+    if (!purgeEligibleAt || Number.isNaN(purgeEligibleAt.getTime())) {
+      return {
+        eligible: false,
+        purgeEligibleAt: null,
+        activeLegalHolds: null,
+        blockers: [{
+          code: "RETENTION_EXPIRY_MISSING",
+          message: "Tenant offboarding record has no valid retention expiry",
+        }],
+      };
+    }
+
+    if (purgeEligibleAt.getTime() > Date.now()) {
+      return {
+        eligible: false,
+        purgeEligibleAt: purgeEligibleAt.toISOString(),
+        activeLegalHolds: null,
+        blockers: [{
+          code: "RETENTION_ACTIVE",
+          message: `Tenant retention window has not elapsed; purge is eligible after ${purgeEligibleAt.toISOString()}`,
+        }],
+      };
+    }
+
+    const [recordHolds, matterHolds, heldDocuments, heldFolders] = await Promise.all([
+      (prisma as any).recordLegalHold.count({ where: { tenantId, releasedAt: null } }),
+      (prisma as any).legalHold.count({ where: { tenantId, status: "ACTIVE" } }),
+      (prisma as any).document.count({ where: { tenantId, legalHold: true } }),
+      (prisma as any).folder.count({ where: { tenantId, legalHold: true } }),
+    ]);
+    const activeLegalHolds = recordHolds + matterHolds + heldDocuments + heldFolders;
+
+    return {
+      eligible: activeLegalHolds === 0,
+      purgeEligibleAt: purgeEligibleAt.toISOString(),
+      activeLegalHolds,
+      blockers: activeLegalHolds > 0
+        ? [{
+            code: "LEGAL_HOLD_ACTIVE",
+            message: `Tenant purge blocked by ${activeLegalHolds} active legal hold(s)`,
+          }]
+        : [],
+    };
   }
 
   private async getTenantModelCounts(

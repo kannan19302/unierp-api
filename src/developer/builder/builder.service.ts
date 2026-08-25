@@ -45,6 +45,20 @@ export class BuilderService {
    */
   constructor(private readonly composition: ModuleCompositionService) {}
 
+  /** Resolve the canonical project that owns a legacy BuilderModule route. */
+  private async projectIdForModule(tenantId: string, moduleId: string): Promise<string> {
+    const project = await prisma.devProject.findFirst({
+      where: { tenantId, appId: moduleId },
+      select: { id: true },
+    });
+    if (!project) {
+      throw new BadRequestException(
+        "Module has no canonical developer project. Run the project backfill before releasing it.",
+      );
+    }
+    return project.id;
+  }
+
   // ══════════════════════════════════════════════
   // BUILDER MODULES
   // ══════════════════════════════════════════════
@@ -977,7 +991,7 @@ export class BuilderService {
   }
 
   /**
-   * Publish a module: create an immutable AppRelease snapshot, bump the version,
+   * Publish a module: create an immutable ProjectRelease snapshot, bump the version,
    * and flip the module to ACTIVE at the requested scope. Re-publishing creates
    * a new release rather than mutating the previous one.
    */
@@ -1000,15 +1014,16 @@ export class BuilderService {
       where: { id: moduleId, tenantId },
     });
     if (!mod) throw new NotFoundException("Module not found");
+    const projectId = await this.projectIdForModule(tenantId, moduleId);
 
     const version = this.nextVersion(mod.version, {
       version: dto.version,
       bump: dto.bump,
     });
 
-    // Guard against duplicate version (unique on moduleId+version).
-    const existingVersion = await prisma.appRelease.findUnique({
-      where: { moduleId_version: { moduleId, version } },
+    // Guard against duplicate version (unique on projectId+version).
+    const existingVersion = await prisma.projectRelease.findUnique({
+      where: { projectId_version: { projectId, version } },
     });
     if (existingVersion) {
       throw new BadRequestException(
@@ -1024,10 +1039,10 @@ export class BuilderService {
         ? (mod.testResults as any)
         : {};
 
-    const release = await prisma.appRelease.create({
+    const release = await prisma.projectRelease.create({
       data: {
         tenantId,
-        moduleId,
+        projectId,
         version,
         channel: dto.scope,
         changelog: dto.changelog || null,
@@ -1081,8 +1096,9 @@ export class BuilderService {
       where: { id: moduleId, tenantId },
     });
     if (!mod) throw new NotFoundException("Module not found");
-    return prisma.appRelease.findMany({
-      where: { moduleId, tenantId },
+    const projectId = await this.projectIdForModule(tenantId, moduleId);
+    return prisma.projectRelease.findMany({
+      where: { projectId, tenantId },
       orderBy: { publishedAt: "desc" },
     });
   }
@@ -1096,11 +1112,15 @@ export class BuilderService {
       where: { id: moduleId, tenantId },
     });
     if (!mod) throw new NotFoundException("Module not found");
+    const projectId = await this.projectIdForModule(tenantId, moduleId);
 
-    const release = await prisma.appRelease.findFirst({
-      where: { id: releaseId, moduleId, tenantId },
+    const release = await prisma.projectRelease.findFirst({
+      where: { id: releaseId, projectId, tenantId },
     });
     if (!release) throw new NotFoundException("Release not found");
+    if (!release.publishedAt) {
+      throw new BadRequestException("Only a published release can be restored");
+    }
 
     const snap = (
       release.snapshot && typeof release.snapshot === "object"
@@ -1124,9 +1144,9 @@ export class BuilderService {
     });
 
     // Any releases published after the restored one are now superseded.
-    await prisma.appRelease.updateMany({
+    await prisma.projectRelease.updateMany({
       where: {
-        moduleId,
+        projectId,
         tenantId,
         publishedAt: { gt: release.publishedAt },
         status: "PUBLISHED",
@@ -1149,9 +1169,10 @@ export class BuilderService {
       where: { id: moduleId, tenantId },
     });
     if (!mod) throw new NotFoundException("Module not found");
+    const projectId = await this.projectIdForModule(tenantId, moduleId);
 
-    const release = await prisma.appRelease.findFirst({
-      where: { id: releaseId, moduleId, tenantId },
+    const release = await prisma.projectRelease.findFirst({
+      where: { id: releaseId, projectId, tenantId },
     });
     if (!release) throw new NotFoundException("Release not found");
 
@@ -1261,8 +1282,9 @@ export class BuilderService {
     const targetReleaseId = releaseId || mod.currentReleaseId;
     if (!targetReleaseId)
       throw new BadRequestException("App has no published release to install");
-    const release = await prisma.appRelease.findFirst({
-      where: { id: targetReleaseId, moduleId },
+    const projectId = await this.projectIdForModule(mod.tenantId, moduleId);
+    const release = await prisma.projectRelease.findFirst({
+      where: { id: targetReleaseId, projectId },
     });
     if (!release) throw new NotFoundException("Release not found");
 
@@ -1469,6 +1491,7 @@ export class BuilderService {
       where: { id: moduleId, tenantId },
     });
     if (!mod) throw new NotFoundException("Module not found");
+    const projectId = await this.projectIdForModule(tenantId, moduleId);
 
     // P4: all three come from real tables now (see ModuleCompositionService).
     const [components, pages, dataModels] = await Promise.all([
@@ -1487,7 +1510,7 @@ export class BuilderService {
       .filter((c) => c.type === "automation")
       .map((c) => c.refId);
     const [releaseCount, linkedAutomations] = await Promise.all([
-      prisma.appRelease.count({ where: { moduleId, tenantId } }),
+      prisma.projectRelease.count({ where: { projectId, tenantId } }),
       automationIds.length
         ? prisma.automationRule.findMany({
             where: { tenantId, id: { in: automationIds } },

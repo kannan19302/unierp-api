@@ -45,7 +45,11 @@ vi.mock("@kannan19302/database", () => ({
     stickyRouteAssignment: { findUnique: vi.fn(() => null), upsert: vi.fn(({ create }: any) => create) },
   },
 }));
-vi.mock("@kannan19302/shared", () => ({ bindProvider: vi.fn(), unbindProvider: vi.fn() }));
+vi.mock("@kannan19302/shared", () => ({
+  bindProvider: vi.fn(),
+  unbindProvider: vi.fn(),
+  parseRolePermissions: vi.fn(() => []),
+}));
 
 import { ProviderRegistryService } from "../provider-registry/provider-registry.service";
 import { RoutingService } from "../provider-registry/routing.service";

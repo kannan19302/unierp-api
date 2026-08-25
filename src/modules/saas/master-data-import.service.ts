@@ -168,6 +168,20 @@ export class MasterDataImportService {
       );
     }
 
+    const targetOrganization = await prisma.organization.findFirst({
+      where: { tenantId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    if (
+      ["CUSTOMER", "VENDOR", "ITEM"].includes(entityType) &&
+      !targetOrganization
+    ) {
+      throw new BadRequestException(
+        "Create an organization before importing customers, vendors, or items.",
+      );
+    }
+
     // Create Job Record
     const job = await prisma.masterDataImportJob.create({
       data: {
@@ -211,6 +225,7 @@ export class MasterDataImportService {
               await tx.customer.create({
                 data: {
                   tenantId,
+                  orgId: targetOrganization!.id,
                   name: String(mappedRow.name).trim(),
                   email: mappedRow.email ? String(mappedRow.email).trim() : null,
                   phone: mappedRow.phone ? String(mappedRow.phone).trim() : null,
@@ -222,6 +237,7 @@ export class MasterDataImportService {
               await tx.vendor.create({
                 data: {
                   tenantId,
+                  orgId: targetOrganization!.id,
                   name: String(mappedRow.name).trim(),
                   email: mappedRow.email ? String(mappedRow.email).trim() : null,
                   phone: mappedRow.phone ? String(mappedRow.phone).trim() : null,
@@ -233,9 +249,10 @@ export class MasterDataImportService {
               await tx.product.create({
                 data: {
                   tenantId,
+                  orgId: targetOrganization!.id,
                   name: String(mappedRow.name).trim(),
                   sku: mappedRow.sku || `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                  price: mappedRow.price ? Number(mappedRow.price) : 0,
+                  sellPrice: mappedRow.price ? Number(mappedRow.price) : 0,
                   costPrice: mappedRow.costPrice ? Number(mappedRow.costPrice) : 0,
                   type: "GOODS",
                 },

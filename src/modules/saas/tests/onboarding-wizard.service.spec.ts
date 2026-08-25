@@ -2,8 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OnboardingWizardService } from "../onboarding-wizard.service";
 import { MasterDataImportService } from "../master-data-import.service";
 
-vi.mock("@kannan19302/database", () => ({
-  prisma: {
+vi.mock("@kannan19302/database", () => {
+  const customer = { create: vi.fn() };
+  const vendor = { create: vi.fn() };
+  const product = { create: vi.fn() };
+  return { prisma: {
     tenant: {
       findUnique: vi.fn(),
       update: vi.fn(),
@@ -25,26 +28,20 @@ vi.mock("@kannan19302/database", () => ({
       findFirst: vi.fn(),
       create: vi.fn(),
     },
-    customer: {
-      create: vi.fn(),
-    },
-    vendor: {
-      create: vi.fn(),
-    },
-    product: {
-      create: vi.fn(),
-    },
+    customer,
+    vendor,
+    product,
     $transaction: vi.fn(async (callback) => {
       const tx = {
         $executeRaw: vi.fn().mockResolvedValue(1),
-        customer: { create: vi.fn() },
-        vendor: { create: vi.fn() },
-        product: { create: vi.fn() },
+        customer,
+        vendor,
+        product,
       };
       return callback(tx);
     }),
-  },
-}));
+  }};
+});
 
 vi.mock("@/common/idp-client", () => ({
   idpClient: {
@@ -214,5 +211,54 @@ describe("MasterDataImportService", () => {
 
     expect(result.isDryRun).toBe(true);
     expect(result.validation.validRows).toBe(1);
+  });
+
+  it("should scope imported customers to the tenant's organization", async () => {
+    const { prisma } = await import("@kannan19302/database");
+    vi.mocked(prisma.organization.findFirst).mockResolvedValue({ id: "org-1" } as any);
+    vi.mocked(prisma.masterDataImportJob.create).mockResolvedValue({ id: "job-1" } as any);
+    vi.mocked(prisma.masterDataImportJob.update).mockResolvedValue({ id: "job-1", status: "COMPLETED" } as any);
+    vi.mocked(prisma.tenantOnboardingProgress.upsert).mockResolvedValue({} as any);
+
+    await service.executeImport("tenant-1", "user-1", {
+      entityType: "CUSTOMER",
+      fileName: "customers.csv",
+      fieldMappings: { Name: "name", Email: "email" },
+      rows: [{ Name: "Acme Client", Email: "client@acme.test" }],
+      dryRun: false,
+    });
+
+    expect(prisma.customer.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        tenantId: "tenant-1",
+        orgId: "org-1",
+        name: "Acme Client",
+      }),
+    });
+  });
+
+  it("should map item price to the canonical sellPrice field", async () => {
+    const { prisma } = await import("@kannan19302/database");
+    vi.mocked(prisma.organization.findFirst).mockResolvedValue({ id: "org-1" } as any);
+    vi.mocked(prisma.masterDataImportJob.create).mockResolvedValue({ id: "job-2" } as any);
+    vi.mocked(prisma.masterDataImportJob.update).mockResolvedValue({ id: "job-2", status: "COMPLETED" } as any);
+    vi.mocked(prisma.tenantOnboardingProgress.upsert).mockResolvedValue({} as any);
+
+    await service.executeImport("tenant-1", "user-1", {
+      entityType: "ITEM",
+      fileName: "items.csv",
+      fieldMappings: { Name: "name", SKU: "sku", Price: "price" },
+      rows: [{ Name: "Widget", SKU: "W-1", Price: "19.95" }],
+      dryRun: false,
+    });
+
+    expect(prisma.product.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        tenantId: "tenant-1",
+        orgId: "org-1",
+        sku: "W-1",
+        sellPrice: 19.95,
+      }),
+    });
   });
 });

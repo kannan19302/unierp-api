@@ -89,6 +89,29 @@ import { FinOpsRecommendationController } from "./v1/finops-recommendation.contr
 import { FinOpsRecommendationService } from "./v1/finops-recommendation.service";
 import { StaffIdpController } from "./v1/staff-idp.controller";
 import { StaffIdpService } from "./v1/staff-idp.service";
+import { AccessReviewService } from "../common/services/access-review.service";
+import { PrivilegeElevationController } from "./v1/privilege-elevation.controller";
+import { PrivilegeElevationService } from "./v1/privilege-elevation.service";
+import { StepUpMfaService } from "../common/services/step-up-mfa.service";
+import { EstateAbacController } from "./v1/estate-abac.controller";
+import { EstateAbacService } from "./v1/estate-abac.service";
+import { ObservabilityTraceController } from "./v1/observability-trace.controller";
+import { ObservabilityTraceService } from "./v1/observability-trace.service";
+import { IncidentController } from "./v1/incident.controller";
+import { IncidentService } from "./v1/incident.service";
+import { DisasterRecoveryController } from "./v1/disaster-recovery.controller";
+import { DisasterRecoveryService } from "./v1/disaster-recovery.service";
+import { RetentionScheduleController } from "./v1/retention-schedule.controller";
+import { RetentionScheduleService } from "./v1/retention-schedule.service";
+import { WebhookIntegrationController } from "./v1/webhook-integration.controller";
+import { PlatformEventBusService } from "./v1/platform-event-bus.service";
+import { WebhookDeliveryService } from "./v1/webhook-delivery.service";
+import { HttpWebhookTransport } from "./v1/http-webhook.transport";
+import { NotificationRoutingService } from "./v1/notification-routing.service";
+import { IndustrySuiteCatalogueService } from "./v1/industry-suite-catalogue.service";
+import { IndustrySuiteCatalogueController } from "./v1/industry-suite-catalogue.controller";
+import { RunbookService } from "./v1/runbook.service";
+import { RunbookController } from "./v1/runbook.controller";
 import { PrivilegeElevationController } from "./v1/privilege-elevation.controller";
 import { PrivilegeElevationService } from "./v1/privilege-elevation.service";
 import { StepUpMfaService } from "../common/services/step-up-mfa.service";
@@ -116,6 +139,10 @@ import { ComplianceControlController } from "./v1/compliance-control.controller"
 import { AiGatewayService } from "./v1/ai-gateway.service";
 import { AiGovernanceService } from "./v1/ai-governance.service";
 import { AiGovernanceController } from "./v1/ai-governance.controller";
+import { MobileOperationsController } from "./v1/mobile-operations.controller";
+import { MobileOperationsService } from "./v1/mobile-operations.service";
+import { DesktopOperationsController } from "./v1/desktop-operations.controller";
+import { DesktopOperationsService } from "./v1/desktop-operations.service";
 
 @Module({
   imports: [],
@@ -168,6 +195,8 @@ import { AiGovernanceController } from "./v1/ai-governance.controller";
     RunbookController,
     ComplianceControlController,
     AiGovernanceController,
+    MobileOperationsController,
+    DesktopOperationsController,
   ],
   providers: [
     ConsoleGateway,
@@ -223,6 +252,7 @@ import { AiGovernanceController } from "./v1/ai-governance.controller";
     EntitlementQuotaBindingService,
     FinOpsRecommendationService,
     StaffIdpService,
+    AccessReviewService,
     PrivilegeElevationService,
     StepUpMfaService,
     EstateAbacService,
@@ -239,6 +269,8 @@ import { AiGovernanceController } from "./v1/ai-governance.controller";
     ComplianceControlService,
     AiGatewayService,
     AiGovernanceService,
+    MobileOperationsService,
+    DesktopOperationsService,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -256,6 +288,8 @@ import { AiGovernanceController } from "./v1/ai-governance.controller";
     DurableExecutorService,
     ReconcilerService,
     NotificationRoutingService,
+    MobileOperationsService,
+    DesktopOperationsService,
   ],
 })
 export class PlatformModule {}

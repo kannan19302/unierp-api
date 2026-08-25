@@ -90,7 +90,9 @@ export class OnboardingWizardService {
       industryBlueprint: tenant.industry
         ? {
             industry: tenant.industry,
-            selectedApps: tenant.installedAppsRel.map((a) => a.appSlug),
+            selectedApps: tenant.installedAppsRel
+              .map((a) => a.appSlug)
+              .filter((appSlug): appSlug is string => appSlug !== null),
             chartOfAccountsTemplate: progress?.industryTemplate || "GAAP_STANDARD",
           }
         : undefined,
@@ -251,7 +253,11 @@ export class OnboardingWizardService {
     userId: string,
     invites: Array<{ email: string; role: string; firstName?: string; lastName?: string }>,
   ) {
-    const results = [];
+    const results: Array<{
+      email: string;
+      status: "INVITED" | "ALREADY_EXISTS";
+      userId: string;
+    }> = [];
 
     for (const invite of invites) {
       const email = invite.email.toLowerCase().trim();

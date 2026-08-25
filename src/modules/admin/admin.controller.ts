@@ -14,6 +14,7 @@ import { z } from "zod";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
 import { Request } from "express";
 import { AdminService } from "./admin.service";
+import { AccessReviewService, type AccessReviewDecision } from "../../common/services/access-review.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { TenantInterceptor } from "../../common/guards/tenant.interceptor";
@@ -58,13 +59,81 @@ interface AuthenticatedRequest extends Request {
 @UseGuards(JwtAuthGuard, RbacGuard)
 @UseInterceptors(TenantInterceptor)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly accessReviews: AccessReviewService,
+  ) {}
 
   @ApiOperation({ summary: "Get users" })
   @Get("users")
   @Permissions("admin.user.read")
   async getUsers(@Req() req: AuthenticatedRequest): Promise<unknown> {
     return this.adminService.getUsers(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get a user's effective access and grant sources" })
+  @Get("users/:id/effective-access")
+  @Permissions("occ.access-governance.access")
+  async getEffectiveAccess(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") userId: string,
+  ): Promise<unknown> {
+    return this.adminService.getEffectiveAccess(req.user.tenantId, userId);
+  }
+
+  @ApiOperation({ summary: "List organization access-review campaigns" })
+  @Get("access-reviews")
+  @Permissions("occ.access-governance.access")
+  async listAccessReviews(@Req() req: AuthenticatedRequest): Promise<unknown> {
+    return this.accessReviews.listCampaigns(req.user.tenantId, "ORGANIZATION");
+  }
+
+  @ApiOperation({ summary: "Get an organization access-review campaign" })
+  @Get("access-reviews/:id")
+  @Permissions("occ.access-governance.access")
+  async getAccessReview(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ): Promise<unknown> {
+    return this.accessReviews.getCampaign(req.user.tenantId, "ORGANIZATION", id);
+  }
+
+  @ApiOperation({ summary: "Create an organization access-review campaign" })
+  @Post("access-reviews")
+  @Permissions("occ.access-governance.access")
+  async createAccessReview(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.object({ name: z.string().trim().min(1).max(200), description: z.string().max(4000).optional(), dueAt: z.string().datetime().optional(), reviewerStrategy: z.record(z.unknown()).optional() }))
+    body: { name: string; description?: string; dueAt?: string; reviewerStrategy?: Record<string, unknown> },
+  ): Promise<unknown> {
+    return this.accessReviews.createCampaign(req.user.tenantId, "ORGANIZATION", req.user.userId, body);
+  }
+
+  @ApiOperation({ summary: "Launch an organization access-review campaign" })
+  @Post("access-reviews/:id/launch")
+  @Permissions("occ.access-governance.access")
+  async launchAccessReview(@Req() req: AuthenticatedRequest, @Param("id") id: string): Promise<unknown> {
+    return this.accessReviews.launchCampaign(req.user.tenantId, "ORGANIZATION", id);
+  }
+
+  @ApiOperation({ summary: "Record an access-review decision" })
+  @Post("access-reviews/:id/items/:itemId/decision")
+  @Permissions("occ.access-governance.access")
+  async decideAccessReviewItem(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Param("itemId") itemId: string,
+    @ZodBody(z.object({ decision: z.enum(["CERTIFIED", "REVOKE", "EXCEPTION"]), reason: z.string().max(4000).optional() }))
+    body: { decision: AccessReviewDecision; reason?: string },
+  ): Promise<unknown> {
+    return this.accessReviews.decideItem(req.user.tenantId, "ORGANIZATION", id, itemId, req.user.userId, body.decision, body.reason);
+  }
+
+  @ApiOperation({ summary: "Complete an organization access-review campaign" })
+  @Post("access-reviews/:id/complete")
+  @Permissions("occ.access-governance.access")
+  async completeAccessReview(@Req() req: AuthenticatedRequest, @Param("id") id: string): Promise<unknown> {
+    return this.accessReviews.completeCampaign(req.user.tenantId, "ORGANIZATION", id);
   }
 
   @ApiOperation({ summary: "Create user" })
@@ -325,20 +394,27 @@ export class AdminController {
   @Post("access-packages/:id/assign-role")
   @Permissions("admin.access-package.update")
   async assignAccessPackageToRole(
+    @Req() req: AuthenticatedRequest,
     @Param("id") accessPackageId: string,
     @Body("roleId") roleId: string,
   ): Promise<unknown> {
-    return this.adminService.assignAccessPackageToRole(accessPackageId, roleId);
+    return this.adminService.assignAccessPackageToRole(
+      req.user.tenantId,
+      accessPackageId,
+      roleId,
+    );
   }
 
   @ApiOperation({ summary: "Unassign access package from role" })
   @Delete("access-packages/:id/unassign-role/:roleId")
   @Permissions("admin.access-package.update")
   async unassignAccessPackageFromRole(
+    @Req() req: AuthenticatedRequest,
     @Param("id") accessPackageId: string,
     @Param("roleId") roleId: string,
   ): Promise<unknown> {
     return this.adminService.unassignAccessPackageFromRole(
+      req.user.tenantId,
       accessPackageId,
       roleId,
     );

@@ -47,7 +47,7 @@ describe("ProjectSourceImportService", () => {
     const keep = Object.fromEntries(plan.conflicts.map((conflict: any) => [conflict.id, "KEEP_CURRENT"]));
     await expect(service.apply("tenant-1", "project-1", bundle, "user-1", keep)).resolves.toEqual([]);
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: "PROJECT_SOURCE_IMPORTED", actorId: "user-1", metadata: expect.objectContaining({ bundleHash: bundle.bundleHash, conflictResolutions: expect.arrayContaining([expect.objectContaining({ resolution: "KEEP_CURRENT" })]) }) }));
-    await expect(service.apply("tenant-1", "project-1", bundle, "user-1", { ...keep, [plan.conflicts[0].id]: "APPLY_INCOMING" })).rejects.toThrow(/requires governed package mappings/);
+    await expect(service.apply("tenant-1", "project-1", bundle, "user-1", { ...keep, [plan.conflicts[0].id]: "APPLY_INCOMING" })).rejects.toThrow(/requires the governed reconciliation adapter/);
   });
   it("applies only confirmed revision updates as one batch", async () => {
     const revisions = { createBatch: vi.fn(async (input: any) => input.changes) };

@@ -8,12 +8,12 @@ import {
   Optional,
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
-import { RoleAccessPackage } from "@prisma/client";
 import {
   CreateUserInput,
   UpdateUserInput,
   PERMISSION_REGISTRY,
   CONTROL_PLANE_NAMESPACES,
+  parseRolePermissions,
 } from "@kannan19302/shared";
 
 import {
@@ -673,7 +673,7 @@ export class AdminService {
    * control-plane permission. Two independent checks, unioned:
    *
    *   1. NAMESPACE (D03): any code inside `CONTROL_PLANE_NAMESPACES`
-   *      (`system.*`/`platform.*`) — the SAME constant `hasPermission()`
+   *      (`system.*`/`platform.*`/`pcc.*`) — the SAME constant `hasPermission()`
    *      and `ControlPlaneGuard` already enforce elsewhere, so a code
    *      never needs a second, manually-set flag to be structurally
    *      un-grantable to a tenant. Before this check existed, every
@@ -761,16 +761,155 @@ export class AdminService {
     return { message: "Access package deleted" };
   }
 
-  async assignAccessPackageToRole(accessPackageId: string, roleId: string) {
-    return prisma.roleAccessPackage.create({
-      data: { roleId, accessPackageId },
+  /**
+   * Resolve the permissions a tenant user receives from direct roles and from
+   * access packages attached to those roles. The response intentionally keeps
+   * provenance instead of returning only a flattened array: administrators
+   * need to know which grant to remove when access is excessive.
+   */
+  async getEffectiveAccess(tenantId: string, userId: string) {
+    const user = await idpPrisma.user.findFirst({
+      where: { id: userId, tenantId, deletedAt: null },
+      include: {
+        roles: {
+          where: { role: { tenantId } },
+          include: { role: true },
+        },
+      },
+    });
+
+    if (!user) throw new NotFoundException("User not found");
+
+    const roles = user.roles.map(({ role }) => ({
+      id: role.id,
+      name: role.name,
+      permissions: parseRolePermissions(role.permissions),
+    }));
+    const roleIds = roles.map((role) => role.id);
+
+    const assignments = roleIds.length
+      ? await prisma.roleAccessPackage.findMany({
+          where: {
+            roleId: { in: roleIds },
+            accessPackage: { tenantId },
+          },
+          include: { accessPackage: true },
+        })
+      : [];
+
+    const packages = new Map<
+      string,
+      { id: string; name: string; roleIds: Set<string>; permissions: string[] }
+    >();
+    for (const assignment of assignments) {
+      const existing = packages.get(assignment.accessPackage.id);
+      if (existing) {
+        existing.roleIds.add(assignment.roleId);
+        continue;
+      }
+      packages.set(assignment.accessPackage.id, {
+        id: assignment.accessPackage.id,
+        name: assignment.accessPackage.name,
+        roleIds: new Set([assignment.roleId]),
+        permissions: parseRolePermissions(
+          assignment.accessPackage.permissions,
+        ),
+      });
+    }
+
+    const accessPackages = Array.from(packages.values())
+      .map((pkg) => ({
+        id: pkg.id,
+        name: pkg.name,
+        roleIds: Array.from(pkg.roleIds).sort(),
+        permissions: pkg.permissions,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+
+    const effectivePermissions = Array.from(
+      new Set([
+        ...roles.flatMap((role) => role.permissions),
+        ...accessPackages.flatMap((pkg) => pkg.permissions),
+      ]),
+    ).sort();
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        status: user.status,
+      },
+      roles: roles.sort(
+        (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+      ),
+      accessPackages,
+      effectivePermissions,
+    };
+  }
+
+  /**
+   * Access packages are stored in the main database while roles are owned by
+   * the identity database. There is deliberately no cross-database foreign key,
+   * so every mutation must validate both objects against the authenticated
+   * tenant before writing the bridge row.
+   */
+  private async assertTenantAccessPackageAndRole(
+    tenantId: string,
+    accessPackageId: string,
+    roleId: string,
+  ) {
+    const [accessPackage, role] = await Promise.all([
+      prisma.accessPackage.findFirst({
+        where: { id: accessPackageId, tenantId },
+        select: { id: true },
+      }),
+      idpPrisma.role.findFirst({
+        where: { id: roleId, tenantId },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!accessPackage || !role) {
+      // One response for either miss avoids revealing whether an object ID
+      // exists in another tenant.
+      throw new NotFoundException("Access package or role not found");
+    }
+  }
+
+  async assignAccessPackageToRole(
+    tenantId: string,
+    accessPackageId: string,
+    roleId: string,
+  ) {
+    await this.assertTenantAccessPackageAndRole(
+      tenantId,
+      accessPackageId,
+      roleId,
+    );
+    return prisma.roleAccessPackage.upsert({
+      where: { roleId_accessPackageId: { roleId, accessPackageId } },
+      create: { roleId, accessPackageId },
+      update: {},
     });
   }
 
-  async unassignAccessPackageFromRole(accessPackageId: string, roleId: string) {
-    return prisma.roleAccessPackage.delete({
-      where: { roleId_accessPackageId: { roleId, accessPackageId } },
+  async unassignAccessPackageFromRole(
+    tenantId: string,
+    accessPackageId: string,
+    roleId: string,
+  ) {
+    await this.assertTenantAccessPackageAndRole(
+      tenantId,
+      accessPackageId,
+      roleId,
+    );
+    const result = await prisma.roleAccessPackage.deleteMany({
+      where: { roleId, accessPackageId },
     });
+    if (result.count === 0) {
+      throw new NotFoundException("Access package assignment not found");
+    }
+    return { message: "Access package unassigned" };
   }
 
   // ── User Groups ──

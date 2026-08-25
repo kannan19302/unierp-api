@@ -41,8 +41,12 @@ import { ForbiddenException } from "@nestjs/common";
  * Same approach as modules/admin/tests/rbac-regression-sweep.spec.ts.
  */
 vi.mock("@kannan19302/database", () => {
+  const delegate = new Proxy({}, { get: () => vi.fn() });
   const mocked = {
-    prisma: new Proxy({}, { get: () => new Proxy({}, { get: () => vi.fn() }) }),
+    prisma: new Proxy(
+      { tenant: { findFirst: vi.fn().mockResolvedValue({ id: "tnt-provider" }) } },
+      { get: (target, key) => Reflect.get(target, key) ?? delegate },
+    ),
     runWithTenantSession: vi.fn((_s: unknown, fn: () => unknown) => Promise.resolve(fn())),
   };
   return { ...mocked, idpPrisma: mocked.prisma, idpClient: mocked.prisma };
@@ -238,9 +242,10 @@ describe("M47 · every mounted plane-1 endpoint refuses a tenant-realm caller wi
   it("ADMITS a fully-qualified platform owner — proving the refusals are a boundary, not a broken guard", async () => {
     const owner = {
       userId: "platform-owner",
+      tenantId: "tnt-provider",
       realm: "provider",
       mfaVerified: true,
-      permissions: ["system.*", "platform.*"],
+      permissions: ["system.*", "platform.*", "pcc.*"],
     };
     const refused: string[] = [];
     for (const h of handlers) {

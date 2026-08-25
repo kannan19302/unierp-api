@@ -22,7 +22,8 @@ async function main() {
   const operations = new PrivacyOperationsService(gdpr);
 
   const claimed = await operations.claimEligible(1);
-  if (claimed.length !== 1 || claimed[0].request_id !== requestId || claimed[0].tenant_id !== tenantId) {
+  const claimedRequest = claimed[0];
+  if (!claimedRequest || claimed.length !== 1 || claimedRequest.request_id !== requestId || claimedRequest.tenant_id !== tenantId) {
     throw new Error(`Expected ${JSON.stringify({ requestId, tenantId })}, claimed ${JSON.stringify(claimed)}`);
   }
 

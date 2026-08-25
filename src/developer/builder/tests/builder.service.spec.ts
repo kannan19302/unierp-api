@@ -52,7 +52,8 @@ vi.mock("@kannan19302/database", () => {
       schemaRegistry: generateMock(),
       pageRegistry: generateMock(),
       customRecord: generateMock(),
-      appRelease: generateMock(),
+      devProject: generateMock(),
+      projectRelease: generateMock(),
       installedApp: generateMock(),
       auditLog: generateMock(),
       invoice: generateMock(),
@@ -116,6 +117,7 @@ describe("BuilderService", () => {
     };
 
     vi.clearAllMocks();
+    (prisma.devProject.findFirst as any).mockResolvedValue({ id: "project-m1" });
   });
 
   it("should be defined", () => {
@@ -571,8 +573,8 @@ describe("BuilderService", () => {
 
     it("creates an immutable release and bumps the patch version by default", async () => {
       (prisma.builderModule.findFirst as any).mockResolvedValue(baseModule);
-      (prisma.appRelease.findUnique as any).mockResolvedValue(null);
-      (prisma.appRelease.create as any).mockImplementation(({ data }: any) =>
+      (prisma.projectRelease.findUnique as any).mockResolvedValue(null);
+      (prisma.projectRelease.create as any).mockImplementation(({ data }: any) =>
         Promise.resolve({ id: "rel1", ...data }),
       );
       (prisma.builderModule.update as any).mockImplementation(({ data }: any) =>
@@ -593,8 +595,8 @@ describe("BuilderService", () => {
 
     it("honors an explicit minor bump", async () => {
       (prisma.builderModule.findFirst as any).mockResolvedValue(baseModule);
-      (prisma.appRelease.findUnique as any).mockResolvedValue(null);
-      (prisma.appRelease.create as any).mockImplementation(({ data }: any) =>
+      (prisma.projectRelease.findUnique as any).mockResolvedValue(null);
+      (prisma.projectRelease.create as any).mockImplementation(({ data }: any) =>
         Promise.resolve({ id: "rel2", ...data }),
       );
       (prisma.builderModule.update as any).mockImplementation(({ data }: any) =>
@@ -612,7 +614,7 @@ describe("BuilderService", () => {
 
     it("rejects a duplicate version", async () => {
       (prisma.builderModule.findFirst as any).mockResolvedValue(baseModule);
-      (prisma.appRelease.findUnique as any).mockResolvedValue({
+      (prisma.projectRelease.findUnique as any).mockResolvedValue({
         id: "existing",
       });
       await expect(
@@ -675,7 +677,7 @@ describe("BuilderService", () => {
         status: "ACTIVE",
         scope: "GLOBAL",
       });
-      (prisma.appRelease.findFirst as any).mockResolvedValue({
+      (prisma.projectRelease.findFirst as any).mockResolvedValue({
         id: "r1",
         version: "1.0.0",
         moduleId: "m1",

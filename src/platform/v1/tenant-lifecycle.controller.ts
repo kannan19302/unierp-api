@@ -22,6 +22,7 @@ import { TenantLifecycleService } from "./tenant-lifecycle.service";
 import {
   offboardTenantSchema,
   exportTenantSchema,
+  tenantLifecycleReasonSchema,
 } from "./dto/tenant-lifecycle.dto";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
@@ -78,10 +79,13 @@ export class TenantLifecycleController {
   async suspendTenant(
     @Param("id") tenantId: string,
     @Req() req: AuthenticatedRequest,
+    @Body() body: Record<string, unknown>,
   ) {
+    const dto = tenantLifecycleReasonSchema.parse(body);
     return this.tenantLifecycleService.suspendTenant(
       tenantId,
       req.user?.userId,
+      dto.reason,
     );
   }
 
@@ -92,10 +96,13 @@ export class TenantLifecycleController {
   async unsuspendTenant(
     @Param("id") tenantId: string,
     @Req() req: AuthenticatedRequest,
+    @Body() body: Record<string, unknown>,
   ) {
+    const dto = tenantLifecycleReasonSchema.parse(body);
     return this.tenantLifecycleService.unsuspendTenant(
       tenantId,
       req.user?.userId,
+      dto.reason,
     );
   }
 
@@ -113,6 +120,7 @@ export class TenantLifecycleController {
       tenantId,
       dto.retentionDays,
       req.user?.userId,
+      dto.reason,
     );
   }
 
@@ -123,10 +131,13 @@ export class TenantLifecycleController {
   async cancelOffboarding(
     @Param("id") tenantId: string,
     @Req() req: AuthenticatedRequest,
+    @Body() body: Record<string, unknown>,
   ) {
+    const dto = tenantLifecycleReasonSchema.parse(body);
     return this.tenantLifecycleService.cancelOffboarding(
       tenantId,
       req.user?.userId,
+      dto.reason,
     );
   }
 

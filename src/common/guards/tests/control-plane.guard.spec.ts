@@ -1,9 +1,17 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ForbiddenException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ControlPlaneGuard } from "../control-plane.guard";
 import { PERMISSIONS_KEY } from "../../decorators/permissions.decorator";
 import { SKIP_TENANT_SCOPE_KEY } from "../../decorators/skip-tenant-scope.decorator";
+
+const database = vi.hoisted(() => ({
+  providerRealm: vi.fn().mockResolvedValue({ id: "tnt-provider" }),
+}));
+
+vi.mock("@kannan19302/database", () => ({
+  prisma: { tenant: { findFirst: database.providerRealm } },
+}));
 
 /**
  * The control-plane boundary had no tests, despite being the second of the four
@@ -38,11 +46,14 @@ describe("ControlPlaneGuard", () => {
           user:
             opts.user === null
               ? undefined
-              : (opts.user ?? {
+              : ({
+                  tenantId: "tnt-provider",
+                  ...(opts.user ?? {
                   userId: "u1",
                   permissions: ["system.tenant.read"],
                   amr: ["pwd", "otp"],
                   realm: "provider",
+                  }),
                 }),
         }),
       }),
@@ -50,7 +61,7 @@ describe("ControlPlaneGuard", () => {
   };
 
   beforeEach(() => {
-    /* guard is constructed per-context */
+    database.providerRealm.mockResolvedValue({ id: "tnt-provider" });
   });
 
   it("ignores handlers that are not cross-tenant", async () => {
@@ -174,5 +185,21 @@ describe("ControlPlaneGuard", () => {
       },
     });
     await expect(guard.canActivate(ctx)).rejects.toThrow(/provider realm/);
+  });
+
+  it("refuses a provider claim whose identity tenant is not the reserved realm", async () => {
+    database.providerRealm.mockResolvedValue(null);
+    const ctx = contextFor({
+      permissions: ["pcc.identity-governance.access"],
+      user: {
+        userId: "customer-user",
+        tenantId: "customer-tenant",
+        permissions: ["pcc.identity-governance.access"],
+        mfaVerified: true,
+        realm: "provider",
+      },
+    });
+
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/reserved provider realm/);
   });
 });

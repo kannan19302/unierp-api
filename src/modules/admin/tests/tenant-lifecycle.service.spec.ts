@@ -24,8 +24,13 @@ vi.mock("@kannan19302/database", () => {
     },
     tenantLifecycleEvent: {
       create: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
     },
+    recordLegalHold: { count: vi.fn() },
+    legalHold: { count: vi.fn() },
+    document: { count: vi.fn() },
+    folder: { count: vi.fn() },
     user: {
       findMany: vi.fn(),
       count: vi.fn(),
@@ -71,9 +76,14 @@ vi.mock("@kannan19302/database", () => {
         deleteMany: vi.fn(),
       },
       tenantLifecycleEvent: {
+        findFirst: vi.fn(),
         findMany: vi.fn(),
         create: vi.fn(),
       },
+      recordLegalHold: { count: vi.fn() },
+      legalHold: { count: vi.fn() },
+      document: { count: vi.fn() },
+      folder: { count: vi.fn() },
       // Each test creates at most one Job (one suspend/unsuspend call), so
       // tracking "the last created row" — rather than a real id-keyed map,
       // which vi.mock's hoisting makes awkward to reset per test — is
@@ -164,6 +174,34 @@ describe("TenantLifecycleService", () => {
       expect(result.tenant.status).toBe("ACTIVE");
       expect(result.stats.users).toBe(5);
       expect(result.recentEvents).toHaveLength(1);
+      expect(result.purgeReadiness).toMatchObject({
+        eligible: false,
+        blockers: [{ code: "OFFBOARDING_REQUIRED" }],
+      });
+    });
+
+    it("should expose purge readiness from the same retention and legal-hold checks used by purge", async () => {
+      const { prisma } = await import("@kannan19302/database");
+      prisma.tenant.findUnique.mockResolvedValue({ ...mockTenant, status: "OFFBOARDING" });
+      prisma.tenantLifecycleEvent.findMany.mockResolvedValue([]);
+      prisma.tenantLifecycleEvent.findFirst.mockResolvedValue({
+        payload: { offboardDate: "2025-01-01T00:00:00.000Z" },
+      });
+      idpPrisma.user.count.mockResolvedValue(0);
+      prisma.organization.count.mockResolvedValue(0);
+      prisma.recordLegalHold.count.mockResolvedValue(0);
+      prisma.legalHold.count.mockResolvedValue(0);
+      prisma.document.count.mockResolvedValue(0);
+      prisma.folder.count.mockResolvedValue(0);
+
+      const result = await service.getLifecycleStatus("tenant-1");
+
+      expect(result.purgeReadiness).toEqual({
+        eligible: true,
+        purgeEligibleAt: "2025-01-01T00:00:00.000Z",
+        activeLegalHolds: 0,
+        blockers: [],
+      });
     });
 
     it("should throw NotFoundException for nonexistent tenant", async () => {
@@ -352,7 +390,17 @@ describe("TenantLifecycleService", () => {
   describe("purgeTenant", () => {
     it("should delete all tenant data and the tenant record", async () => {
       const { prisma } = await import("@kannan19302/database");
-      prisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      prisma.tenant.findUnique.mockResolvedValue({
+        ...mockTenant,
+        status: "OFFBOARDING",
+      });
+      prisma.tenantLifecycleEvent.findFirst.mockResolvedValue({
+        payload: { offboardDate: "2025-01-01T00:00:00.000Z" },
+      });
+      prisma.recordLegalHold.count.mockResolvedValue(0);
+      prisma.legalHold.count.mockResolvedValue(0);
+      prisma.document.count.mockResolvedValue(0);
+      prisma.folder.count.mockResolvedValue(0);
 
       const result = await service.purgeTenant("tenant-1");
 
@@ -370,6 +418,52 @@ describe("TenantLifecycleService", () => {
       await expect(service.purgeTenant("tenant-1")).rejects.toThrow(
         ConflictException,
       );
+    });
+
+    it("should refuse to purge a tenant that has not entered offboarding", async () => {
+      const { prisma } = await import("@kannan19302/database");
+      prisma.tenant.findUnique.mockResolvedValue(mockTenant);
+
+      await expect(service.purgeTenant("tenant-1")).rejects.toThrow(
+        "Tenant must complete offboarding",
+      );
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it("should refuse to purge before the retention window elapses", async () => {
+      const { prisma } = await import("@kannan19302/database");
+      prisma.tenant.findUnique.mockResolvedValue({
+        ...mockTenant,
+        status: "OFFBOARDING",
+      });
+      prisma.tenantLifecycleEvent.findFirst.mockResolvedValue({
+        payload: { offboardDate: "2999-01-01T00:00:00.000Z" },
+      });
+
+      await expect(service.purgeTenant("tenant-1")).rejects.toThrow(
+        "retention window has not elapsed",
+      );
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it("should refuse to purge while any legal hold remains active", async () => {
+      const { prisma } = await import("@kannan19302/database");
+      prisma.tenant.findUnique.mockResolvedValue({
+        ...mockTenant,
+        status: "OFFBOARDING",
+      });
+      prisma.tenantLifecycleEvent.findFirst.mockResolvedValue({
+        payload: { offboardDate: "2025-01-01T00:00:00.000Z" },
+      });
+      prisma.recordLegalHold.count.mockResolvedValue(1);
+      prisma.legalHold.count.mockResolvedValue(0);
+      prisma.document.count.mockResolvedValue(0);
+      prisma.folder.count.mockResolvedValue(0);
+
+      await expect(service.purgeTenant("tenant-1")).rejects.toThrow(
+        "blocked by 1 active legal hold",
+      );
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
   });
 

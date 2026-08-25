@@ -46,6 +46,12 @@ export class OrgStructureController {
     return this.orgStructure.listOrgUnits(req.user.tenantId);
   }
 
+  @Get("graph")
+  @Permissions("admin.org.read")
+  async getOrganizationGraph(@Req() req: AuthenticatedRequest) {
+    return this.orgStructure.getOrganizationGraph(req.user.tenantId);
+  }
+
   @Post("units")
   @Permissions("admin.org.manage")
   async createUnit(@Req() req: AuthenticatedRequest, @Body() body: CreateOrgUnitBody) {

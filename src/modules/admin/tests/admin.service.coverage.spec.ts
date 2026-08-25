@@ -4086,7 +4086,7 @@ describe("AdminService coverage", () => {
 
   it("assignAccessPackageToRole", async () => {
     try {
-      const result = await service.assignAccessPackageToRole("t1", "t1");
+      const result = await service.assignAccessPackageToRole("t1", "t1", "t1");
       expect(result).toBeDefined();
     } catch (e) {
       // Method exercised for coverage even if it throws due to incomplete mocks
@@ -4096,7 +4096,7 @@ describe("AdminService coverage", () => {
 
   it("unassignAccessPackageFromRole", async () => {
     try {
-      const result = await service.unassignAccessPackageFromRole("t1", "t1");
+      const result = await service.unassignAccessPackageFromRole("t1", "t1", "t1");
       expect(result).toBeDefined();
     } catch (e) {
       // Method exercised for coverage even if it throws due to incomplete mocks

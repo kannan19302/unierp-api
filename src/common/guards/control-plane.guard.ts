@@ -6,8 +6,12 @@ import {
   Logger,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { CONTROL_PLANE_NAMESPACES, hasPermission } from "@kannan19302/shared";
-import { prisma, runWithTenantSession } from "@kannan19302/database";
+import {
+  CONTROL_PLANE_NAMESPACES,
+  PROVIDER_REALM_TENANT_SLUG,
+  hasPermission,
+} from "@kannan19302/shared";
+import { prisma } from "@kannan19302/database";
 import { PERMISSIONS_KEY } from "../decorators/permissions.decorator";
 import { SKIP_TENANT_SCOPE_KEY } from "../decorators/skip-tenant-scope.decorator";
 
@@ -91,6 +95,35 @@ export class ControlPlaneGuard implements CanActivate {
       );
       throw new ForbiddenException(
         "Control-plane access requires a token issued by the provider realm.",
+      );
+    }
+
+    // `realm` is a signed claim, but the corresponding identity must also live
+    // in the one reserved provider tenant. This independent lookup protects
+    // OIDC and legacy session tokens alike from a provider-looking role that
+    // was accidentally attached to a customer principal.
+    const providerRealm = user.tenantId
+      ? await prisma.tenant.findFirst({
+          where: {
+            id: user.tenantId,
+            slug: PROVIDER_REALM_TENANT_SLUG,
+            status: "SYSTEM",
+          },
+          select: { id: true },
+        })
+      : null;
+    if (!providerRealm) {
+      this.logger.warn(
+        JSON.stringify({
+          event: "control_plane_access",
+          outcome: "denied_wrong_provider_tenant",
+          userId: user.userId ?? user.sub ?? null,
+          tenantId: user.tenantId ?? null,
+          path: request.url,
+        }),
+      );
+      throw new ForbiddenException(
+        "Control-plane access requires an identity in the reserved provider realm.",
       );
     }
 

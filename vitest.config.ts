@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+import { DATABASE_BACKED_SPECS } from "./test/database-backed-specs";
 
 export default defineConfig({
   // tsconfig.json declares `"@/*": ["./src/*"]`, but vitest does not read
@@ -106,6 +107,11 @@ export default defineConfig({
       "**/node_modules/**",
       "**/dist/**",
       "**/.stryker-tmp/**",
+      // These specs intentionally use the real Prisma client. A normal
+      // `pnpm test` run has no database contract, so route them to
+      // `pnpm test:integration`; when a caller explicitly supplies
+      // DATABASE_URL they remain part of this run as well.
+      ...(!process.env.DATABASE_URL ? DATABASE_BACKED_SPECS : []),
     ],
     coverage: {
       provider: "v8",

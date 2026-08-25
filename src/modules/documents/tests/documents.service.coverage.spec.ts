@@ -12,6 +12,23 @@ vi.mock("@prisma/client", () => ({
   },
 }));
 
+vi.mock("@aws-sdk/client-s3", () => {
+  class Command {
+    constructor(public readonly input: unknown) {}
+  }
+
+  return {
+    S3Client: class S3Client {
+      send = vi.fn().mockResolvedValue({});
+    },
+    PutObjectCommand: Command,
+    GetObjectCommand: Command,
+    DeleteObjectCommand: Command,
+    CreateBucketCommand: Command,
+    HeadBucketCommand: Command,
+  };
+});
+
 vi.mock("@kannan19302/database", () => ({
   prisma: {
     folder: {

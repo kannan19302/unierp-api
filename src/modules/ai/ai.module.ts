@@ -17,6 +17,9 @@ import { AiDeepController } from "./ai-deep.controller";
 import { AiEnterpriseModule } from "./ai-enterprise.module";
 import { ReportingQueryClientModule } from "../../common/integrations/reporting-query-client.module";
 
+import { TenantAiGovernanceController } from "./tenant-ai-governance.controller";
+import { TenantAiGovernanceService } from "./tenant-ai-governance.service";
+
 @Module({
   imports: [ReportingQueryClientModule, AiEnterpriseModule],
   controllers: [
@@ -24,6 +27,7 @@ import { ReportingQueryClientModule } from "../../common/integrations/reporting-
     AiAdminController,
     AiExpansionController,
     AiDeepController,
+    TenantAiGovernanceController,
   ],
   providers: [
     AiService,
@@ -37,6 +41,7 @@ import { ReportingQueryClientModule } from "../../common/integrations/reporting-
     CapabilityRegistryService,
     MutationApprovalService,
     AiAuditService,
+    TenantAiGovernanceService,
   ],
   exports: [
     AiService,
@@ -50,6 +55,7 @@ import { ReportingQueryClientModule } from "../../common/integrations/reporting-
     CapabilityRegistryService,
     MutationApprovalService,
     AiAuditService,
+    TenantAiGovernanceService,
   ],
 })
 export class AiModule {}
