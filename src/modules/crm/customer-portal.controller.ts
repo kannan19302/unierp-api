@@ -28,6 +28,8 @@ import {
 } from "./customer-portal.service";
 import { CrmPortalDocumentsService } from "./crm-portal-documents.service";
 import { Permissions } from "../../common/decorators/permissions.decorator";
+import { Public } from "../../common/decorators/public.decorator";
+import { AuthorizationBoundary } from "../../common/decorators/authorization-boundary.decorator";
 
 interface PortalRequest extends Request {
   user: {
@@ -48,6 +50,7 @@ interface PortalRequest extends Request {
  * never see another customer's quotations/orders/invoices/cases.
  */
 @ApiTags("crm-customer-portal")
+@AuthorizationBoundary("customer-portal")
 @Controller("portal")
 export class CustomerPortalController {
   constructor(
@@ -56,6 +59,7 @@ export class CustomerPortalController {
   ) {}
 
   @ApiOperation({ summary: "Customer portal login" })
+  @Public("Customer portal authentication accepts credentials and creates a portal-scoped session")
   @Permissions("crm.crm.login")
   @Post("auth/login")
   async login(@ZodBody(portalLoginSchema) dto: PortalLoginInput) {

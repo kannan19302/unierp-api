@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UseGuards, Req } from "@nestjs/common";
+import { BadRequestException, Controller, Get, Headers, Post, Req, UseGuards } from "@nestjs/common";
 import { z } from "zod";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
 import { Request } from "express";
@@ -8,6 +8,8 @@ import { Permissions } from "../../common/decorators/permissions.decorator";
 import { SaasService } from "./saas.service";
 import { StorageMeteringService } from "./storage-metering.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
+import { Public } from "../../common/decorators/public.decorator";
+import { BillingService } from "./billing.service";
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -25,9 +27,11 @@ export class SaasController {
   constructor(
     private readonly saasService: SaasService,
     private readonly storageMetering: StorageMeteringService,
+    private readonly billingService: BillingService,
   ) {}
 
   @ApiOperation({ summary: "Get plans" })
+  @UseGuards(JwtAuthGuard, RbacGuard)
   @Permissions("saas.read")
   @Get("plans")
   async getPlans(@Req() req: Request) {
@@ -52,16 +56,21 @@ export class SaasController {
   }
 
   @ApiOperation({ summary: "Stripe webhook" })
-  @Permissions("saas.create")
+  @Public("Stripe webhook validates the provider signature against the unmodified request body before processing")
   @Post("webhooks/stripe")
-  async stripeWebhook(@ZodBody(z.any()) event: unknown) {
-    return this.saasService.handleStripeWebhook(event as never);
+  async stripeWebhook(
+    @Req() req: Request & { rawBody?: Buffer },
+    @Headers("stripe-signature") signature?: string,
+  ) {
+    if (!signature) throw new BadRequestException("Missing Stripe signature");
+    if (!req.rawBody) throw new BadRequestException("Missing raw request body buffer");
+    return this.billingService.processStripeWebhook(req.rawBody.toString("utf8"), signature);
   }
 
   @ApiOperation({ summary: "Get installed apps" })
   @Permissions("saas.read")
   @Get("installed-apps")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RbacGuard)
   async getInstalledApps(@Req() req: AuthenticatedRequest) {
     return this.saasService.getInstalledApps(req.user.tenantId);
   }
@@ -72,7 +81,7 @@ export class SaasController {
   })
   @Permissions("saas.read")
   @Get("app-catalog")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RbacGuard)
   async getAppCatalog() {
     return this.saasService.getAppCatalog();
   }
@@ -80,7 +89,7 @@ export class SaasController {
   @ApiOperation({ summary: "Install app" })
   @Permissions("saas.create")
   @Post("install")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RbacGuard)
   async installApp(
     @Req() req: AuthenticatedRequest,
     @ZodBody(z.any()) body: { appId: string },
@@ -91,7 +100,7 @@ export class SaasController {
   @ApiOperation({ summary: "Uninstall app" })
   @Permissions("saas.create")
   @Post("uninstall")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RbacGuard)
   async uninstallApp(
     @Req() req: AuthenticatedRequest,
     @ZodBody(z.any()) body: { appId: string },
@@ -128,7 +137,7 @@ export class SaasController {
   @ApiOperation({ summary: "Get per-app storage usage" })
   @Permissions("saas.read")
   @Get("storage-usage")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RbacGuard)
   async getStorageUsage(@Req() req: AuthenticatedRequest) {
     return this.storageMetering.getTenantUsage(req.user.tenantId);
   }
@@ -136,7 +145,7 @@ export class SaasController {
   @ApiOperation({ summary: "Recompute storage usage now" })
   @Permissions("saas.create")
   @Post("storage-usage/recompute")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RbacGuard)
   async recomputeStorage(@Req() req: AuthenticatedRequest) {
     return this.storageMetering.recomputeTenant(req.user.tenantId);
   }

@@ -5,6 +5,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { TrackChanges } from "../../common/decorators/track-changes.decorator";
+import { Public } from "../../common/decorators/public.decorator";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
 import {
   CrmQuoteSignatureService,
@@ -89,14 +90,14 @@ export class CrmQuoteSignaturePublicController {
   constructor(private readonly svc: CrmQuoteSignatureService) {}
 
   @ApiOperation({ summary: "Look up a pending signature request by token" })
-  @Permissions("crm.signature-by-token.read")
+  @Public("External signer access is authorized by the opaque signature token in the service")
   @Get(":token")
   async getByToken(@Param("token") token: string) {
     return this.svc.getSignatureByToken(token);
   }
 
   @ApiOperation({ summary: "Sign the quotation via the emailed token" })
-  @Permissions("crm.quotation.sign")
+  @Public("External signature submission consumes and validates the opaque emailed signature token")
   @Post("sign")
   async sign(
     @ZodBody(signQuotationSchema) dto: SignQuotationInput,
@@ -113,7 +114,7 @@ export class CrmQuoteSignaturePublicController {
     summary:
       "Public: fetch the issued certificate document for a signed quotation",
   })
-  @Permissions("crm.certificate-document-public.render")
+  @Public("Public certificate document is restricted by the issued signature identifier and service lifecycle checks")
   @Get("certificates/:signatureId/document")
   async certificateDocument(@Param("signatureId") signatureId: string) {
     return this.svc.renderCertificateDocumentPublic(signatureId);

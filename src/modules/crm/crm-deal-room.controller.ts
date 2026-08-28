@@ -14,6 +14,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { TrackChanges } from "../../common/decorators/track-changes.decorator";
+import { Public } from "../../common/decorators/public.decorator";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
 import {
   CrmDealRoomService,
@@ -194,7 +195,7 @@ export class CrmDealRoomPublicController {
   constructor(private readonly svc: CrmDealRoomService) {}
 
   @ApiOperation({ summary: "Buyer: view the deal room via their access token" })
-  @Permissions("crm.by-buyer-token.read")
+  @Public("Buyer deal-room link is authenticated by the opaque access token in the route and service lookup")
   @Get(":token")
   async getByToken(@Param("token") token: string) {
     return this.svc.getByBuyerToken(token);
@@ -203,7 +204,7 @@ export class CrmDealRoomPublicController {
   @ApiOperation({
     summary: "Buyer: mark a buyer/mutual-owned milestone complete",
   })
-  @Permissions("crm.complete-milestone.buyer")
+  @Public("Buyer deal-room action is authorized by the opaque access token and milestone ownership in the service")
   @Post(":token/milestones/:milestoneId/complete")
   async completeMilestone(
     @Param("token") token: string,
@@ -213,7 +214,7 @@ export class CrmDealRoomPublicController {
   }
 
   @ApiOperation({ summary: "Buyer: record that a shared document was viewed" })
-  @Permissions("crm.view-document.buyer")
+  @Public("Buyer document-view action is authorized by the opaque access token and deal-room membership in the service")
   @Post(":token/documents/:documentId/view")
   async viewDocument(
     @Param("token") token: string,

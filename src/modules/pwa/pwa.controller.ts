@@ -29,34 +29,36 @@ interface AuthReq extends Request {
 export class PwaController {
   constructor(private readonly pwaService: PwaService) {}
 
-  // Public endpoints (no auth - served to browsers)
+  // Tenant-specific PWA configuration is protected until the platform has a
+  // host-bound public tenant resolver. A caller-controlled header must never
+  // select the tenant for an anonymous response.
   @Permissions("pwa.manifest-json.read")
+  @UseGuards(JwtAuthGuard, RbacGuard)
   @Get("pwa/manifest.json")
-  @ApiOperation({ summary: "Get PWA manifest JSON (public)" })
+  @ApiOperation({ summary: "Get PWA manifest JSON" })
   async getManifestJson(@Req() req: AuthReq, @Res() res: Response) {
-    const tenantId = (req.headers.get("x-tenant-id") as string) || "default";
-    const manifest = await this.pwaService.getManifestJson(tenantId);
+    const manifest = await this.pwaService.getManifestJson(req.user.tenantId);
     res.setHeader("Content-Type", "application/json");
     res.json(manifest);
   }
 
   @Permissions("pwa.service-worker-script.read")
+  @UseGuards(JwtAuthGuard, RbacGuard)
   @Get("pwa/sw.js")
-  @ApiOperation({ summary: "Get service worker script (public)" })
+  @ApiOperation({ summary: "Get service worker script" })
   async getServiceWorkerScript(@Req() req: AuthReq, @Res() res: Response) {
-    const tenantId = (req.headers.get("x-tenant-id") as string) || "default";
-    const script = await this.pwaService.getServiceWorkerScript(tenantId);
+    const script = await this.pwaService.getServiceWorkerScript(req.user.tenantId);
     res.setHeader("Content-Type", "application/javascript");
     res.setHeader("Service-Worker-Allowed", "/");
     res.send(script);
   }
 
   @Permissions("pwa.cache-rule-json.read")
+  @UseGuards(JwtAuthGuard, RbacGuard)
   @Get("pwa/cache-rules.json")
-  @ApiOperation({ summary: "Get cache rules JSON (public)" })
+  @ApiOperation({ summary: "Get cache rules JSON" })
   async getCacheRulesJson(@Req() req: AuthReq, @Res() res: Response) {
-    const tenantId = (req.headers.get("x-tenant-id") as string) || "default";
-    const rules = await this.pwaService.getCacheRulesJson(tenantId);
+    const rules = await this.pwaService.getCacheRulesJson(req.user.tenantId);
     res.json(rules);
   }
 

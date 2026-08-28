@@ -45,7 +45,7 @@ const ssoConfigSchema = z.object({
   name: z.string().min(1).max(255),
   clientId: z.string().optional(),
   clientSecret: z.string().optional(),
-  issuerUrl: z.string().optional(),
+  issuerUrl: z.string().url().max(2048).optional(),
   authorizationUrl: z.string().optional(),
   tokenUrl: z.string().optional(),
   userInfoUrl: z.string().optional(),

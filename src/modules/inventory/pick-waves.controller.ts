@@ -11,13 +11,14 @@ import {
 } from "@nestjs/common";
 import { PickWavesService } from "./pick-waves.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 
 interface AuthRequest {
   user: { tenantId: string; userId: string };
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RbacGuard)
 @Controller("inventory/pick-waves")
 export class PickWavesController {
   constructor(private readonly svc: PickWavesService) {}

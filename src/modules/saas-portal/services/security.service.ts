@@ -169,6 +169,9 @@ export class SaasPortalSecurityService {
       isActive?: boolean;
     },
   ) {
+    if (data.providerType === "OIDC" && data.isActive !== false) {
+      assertOidcIssuer(data.issuerUrl);
+    }
     return prisma.ssoConfig.upsert({
       where: {
         tenantId_providerType: { tenantId, providerType: data.providerType },
@@ -573,5 +576,36 @@ export class SaasPortalSecurityService {
         strongPasswordPolicy: { pass: true, weight: 20 },
       },
     };
+  }
+}
+
+function assertOidcIssuer(value: string | undefined): void {
+  if (!value || value.length > 2048) {
+    throw new BadRequestException("An active OIDC configuration requires a public HTTPS issuer URL.");
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new BadRequestException("An active OIDC configuration requires a valid issuer URL.");
+  }
+  const host = url.hostname.toLowerCase();
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    host === "::1" ||
+    host.startsWith("fc") ||
+    host.startsWith("fd") ||
+    host.startsWith("fe80:")
+  ) {
+    throw new BadRequestException("An active OIDC configuration requires a public HTTPS issuer URL.");
   }
 }
