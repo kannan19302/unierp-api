@@ -13,7 +13,7 @@ import {
   LogFixedAssetMaintenanceInput,
   DisposeFixedAssetInput,
 } from "./fixed-assets.dtos";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { FixedAssetCreatedEvent } from "./events/fixed-asset-created.event";
 import { FixedAssetDepreciatedEvent } from "./events/fixed-asset-depreciated.event";

@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FixedAssetsService } from "../fixed-assets.service";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
-vi.mock("@prisma/client", () => {
+vi.mock("@kannan19302/database/prisma", () => {
   class Decimal {
     private value: number;
     constructor(val: unknown) {

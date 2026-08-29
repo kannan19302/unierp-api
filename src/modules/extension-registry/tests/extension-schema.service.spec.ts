@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { prisma, runWithTenantSession } from "@kannan19302/database";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@kannan19302/database/prisma";
 import { ExtensionSchemaService } from "../extension-schema.service";
 import { extensionTableName } from "@kannan19302/extension-api";
 

@@ -2,8 +2,8 @@ import { BlockchainGeneratedController } from "./blockchain-generated.controller
 import { BlockchainGeneratedService } from "./blockchain-generated.service";
 import { Module, OnModuleInit, OnModuleDestroy, Logger } from "@nestjs/common";
 import { BlockchainEventListener } from "@kannan19302/blockchain";
-import { OutboxModule } from "../outbox/outbox.module";
-import { OutboxHandlerRegistry } from "../outbox/outbox-handler.registry";
+import { OutboxModule } from "../../platform/outbox/outbox.module";
+import { OutboxHandlerRegistry } from "../../platform/outbox/outbox-handler.registry";
 import { FabricGatewayProvider } from "./providers/fabric-gateway.provider";
 import { DocumentBlockchainService } from "./services/document-blockchain.service";
 import { FinanceLedgerBlockchainService } from "./services/finance-ledger-blockchain.service";

@@ -16,7 +16,7 @@ import { RbacGuard } from "../../common/guards/rbac.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { HrCompensationService } from "./hr-compensation.service";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
-import { createBonusPlanSchema, createBonusPayoutSchema, createEquityGrantSchema, createBenefitsEligibilityRuleSchema, createFlexibleBenefitCreditSchema, createCompensationReviewSchema, createCompensationBenchmarkSchema } from '../hr/shared';;
+import { createBonusPlanSchema, createBonusPayoutSchema, createEquityGrantSchema, createBenefitsEligibilityRuleSchema, createFlexibleBenefitCreditSchema, createCompensationReviewSchema, createCompensationBenchmarkSchema } from '../../common/contracts/hr';
 
 interface AuthenticatedRequest extends Request {
   user: {

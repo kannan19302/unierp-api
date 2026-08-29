@@ -10,7 +10,7 @@ import PDFDocument from "pdfkit";
  * those tokens against a real Invoice and produces a real PDF. `content` and
  * `variables` are the only two columns `SalesDocumentTemplate` has for this —
  * there is no separate database migration available in this checkout (the
- * schema lives in the `@unerp/database` package, not a repo present here) —
+ * schema lives in the `@kannan19302/database` package, not a repo present here) —
  * so version history is kept inside `variables` (a Json column) rather than
  * a new table.
  */

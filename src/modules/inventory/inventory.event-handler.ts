@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { OnEvent, EventEmitter2 } from "@nestjs/event-emitter";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 @Injectable()
 export class InventoryEventHandler {

@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@prisma/client", () => ({
+vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {
     Decimal: class Decimal {
       value: number;

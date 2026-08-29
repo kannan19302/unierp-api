@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { ZodError } from "zod";
 import { RecordNotFoundForUpdateError, StaleWriteError } from "@kannan19302/database";
 import { codeForStatus, type ErrorEnvelope } from "@kannan19302/shared";

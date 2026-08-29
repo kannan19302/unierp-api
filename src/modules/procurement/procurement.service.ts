@@ -12,7 +12,7 @@ import {
   CreateSupplierQuotationInput,
   CreatePurchaseReturnInput,
 } from "@kannan19302/shared";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import {
   buildPaginationValues,

@@ -3,7 +3,7 @@ import { Job } from "bullmq";
 import { Logger } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database";
 import { OutboxHandlerRegistry } from "./outbox-handler.registry";
 import { OutboxMetricsService } from "./outbox-metrics.service";
 

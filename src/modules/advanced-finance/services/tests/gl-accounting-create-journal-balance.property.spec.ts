@@ -24,7 +24,7 @@
  */
 import { describe, it, expect } from "vitest";
 import fc from "fast-check";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 /**
  * The ORIGINAL (pre-fix) balance check from GlAccountingService.

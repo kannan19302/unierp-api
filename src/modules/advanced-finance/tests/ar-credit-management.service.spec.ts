@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ArCreditManagementService } from "../services/ar-credit-management.service";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-vi.mock("@prisma/client", () => ({
+vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {
     Decimal: class Decimal {
       private _v: number;

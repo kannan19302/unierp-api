@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { OutboxModule } from "../outbox/outbox.module";
+import { OutboxModule } from "../../platform/outbox/outbox.module";
 import { EcommerceAdminController } from "./ecommerce-admin.controller";
 import { EcommerceAdminService } from "./ecommerce-admin.service";
 import { EcommercePublicController } from "./ecommerce-public.controller";

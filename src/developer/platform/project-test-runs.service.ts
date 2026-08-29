@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { ProjectReleasesService, releaseDigest } from "./project-releases.service";
 
 type TestCase = { id?: string; type: "ASSERT_ARTIFACT_KIND" | "ASSERT_REQUIRED_BINDING" | "ASSERT_PACKAGE_INSTALLED"; value: string };

@@ -6,9 +6,9 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { BudgetControlService } from "./budget-control.service";
-import { PeriodCloseGuardService } from "../../finance/period-close-guard.service";
+import { PeriodCloseGuardService } from "../../../common/finance/period-close-guard.service";
 
 @Injectable()
 export class GlAccountingService {

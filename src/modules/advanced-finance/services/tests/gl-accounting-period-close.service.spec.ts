@@ -44,7 +44,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { GlAccountingService } from "../gl-accounting.service";
-import { PeriodCloseGuardService } from "../../../finance/period-close-guard.service";
+import { PeriodCloseGuardService } from "../../../../common/finance/period-close-guard.service";
 
 describe("E06 · GlAccountingService is wired to the period-close guard", () => {
   let gl: GlAccountingService;

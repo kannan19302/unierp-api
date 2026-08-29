@@ -9,6 +9,11 @@ import { idpClient as idpPrisma } from "@/common/idp-client";
 import { signSessionToken } from "@kannan19302/auth";
 import { hasPermission } from "@kannan19302/shared";
 import * as crypto from "node:crypto";
+import {
+  encryptConfigurationSecret,
+  requirePublicHttpsUrl,
+  testOidcConnection,
+} from "@kannan19302/auth";
 
 /**
  * Security + API-key management as consumed from the SaaS Portal home.
@@ -147,7 +152,8 @@ export class SaasPortalSecurityService {
   /* ── SSO ────────────────────────────────────────── */
 
   async getSsoConfigs(tenantId: string) {
-    return prisma.ssoConfig.findMany({ where: { tenantId } });
+    const configs = await prisma.ssoConfig.findMany({ where: { tenantId } });
+    return configs.map(redactSsoConfig);
   }
 
   async saveSsoConfig(
@@ -169,16 +175,94 @@ export class SaasPortalSecurityService {
       isActive?: boolean;
     },
   ) {
-    if (data.providerType === "OIDC" && data.isActive !== false) {
+    const providerType = normalizeSsoProvider(data.providerType);
+    if (providerType === "OIDC") {
       assertOidcIssuer(data.issuerUrl);
     }
-    return prisma.ssoConfig.upsert({
+    const { clientSecret, ...safeData } = data;
+    const encryptedSecret = clientSecret
+      ? encryptConfigurationSecret(clientSecret)
+      : undefined;
+    const result = await prisma.ssoConfig.upsert({
       where: {
-        tenantId_providerType: { tenantId, providerType: data.providerType },
+        tenantId_providerType: { tenantId, providerType },
       },
-      update: { ...data, isActive: data.isActive ?? true },
-      create: { tenantId, ...data, isActive: data.isActive ?? true },
+      update: {
+        ...safeData,
+        providerType,
+        ...(encryptedSecret ? { clientSecret: encryptedSecret } : {}),
+        isActive: false,
+        verificationStatus: "UNVERIFIED",
+        lastVerifiedAt: null,
+        lastVerifiedBy: null,
+        lastVerificationError: null,
+      },
+      create: {
+        tenantId,
+        ...safeData,
+        providerType,
+        ...(encryptedSecret ? { clientSecret: encryptedSecret } : {}),
+        isActive: false,
+        verificationStatus: "UNVERIFIED",
+      },
     });
+    return redactSsoConfig(result);
+  }
+
+  async testSsoConnection(tenantId: string, providerTypeValue: string, verifiedBy: string) {
+    const providerType = normalizeSsoProvider(providerTypeValue);
+    const config = await prisma.ssoConfig.findUnique({
+      where: { tenantId_providerType: { tenantId, providerType } },
+    });
+    if (!config) throw new NotFoundException("SSO configuration not found");
+    if (providerType !== "OIDC") {
+      throw new BadRequestException("Only OIDC connection testing is currently supported.");
+    }
+    try {
+      const evidence = await testOidcConnection(config.issuerUrl);
+      const verified = await prisma.ssoConfig.update({
+        where: { tenantId_providerType: { tenantId, providerType } },
+        data: {
+          verificationStatus: "VERIFIED",
+          lastVerifiedAt: new Date(),
+          lastVerifiedBy: verifiedBy,
+          lastVerificationError: null,
+        },
+      });
+      return {
+        success: true,
+        config: redactSsoConfig(verified),
+        evidence,
+      };
+    } catch {
+      await prisma.ssoConfig.update({
+        where: { tenantId_providerType: { tenantId, providerType } },
+        data: {
+          isActive: false,
+          verificationStatus: "FAILED",
+          lastVerifiedAt: null,
+          lastVerifiedBy: verifiedBy,
+          lastVerificationError: "OIDC_CONNECTION_TEST_FAILED",
+        },
+      });
+      throw new BadRequestException("OIDC connection test failed.");
+    }
+  }
+
+  async setSsoActivation(tenantId: string, providerTypeValue: string, active: boolean) {
+    const providerType = normalizeSsoProvider(providerTypeValue);
+    const config = await prisma.ssoConfig.findUnique({
+      where: { tenantId_providerType: { tenantId, providerType } },
+    });
+    if (!config) throw new NotFoundException("SSO configuration not found");
+    if (active && (config.verificationStatus !== "VERIFIED" || !config.lastVerifiedAt)) {
+      throw new BadRequestException("SSO connection must pass verification before activation.");
+    }
+    const updated = await prisma.ssoConfig.update({
+      where: { tenantId_providerType: { tenantId, providerType } },
+      data: { isActive: active },
+    });
+    return redactSsoConfig(updated);
   }
 
   /* ── MFA ────────────────────────────────────────── */
@@ -580,32 +664,22 @@ export class SaasPortalSecurityService {
 }
 
 function assertOidcIssuer(value: string | undefined): void {
-  if (!value || value.length > 2048) {
-    throw new BadRequestException("An active OIDC configuration requires a public HTTPS issuer URL.");
-  }
-  let url: URL;
   try {
-    url = new URL(value);
+    requirePublicHttpsUrl(value, "OIDC issuer");
   } catch {
-    throw new BadRequestException("An active OIDC configuration requires a valid issuer URL.");
+    throw new BadRequestException("An OIDC configuration requires a public HTTPS issuer URL.");
   }
-  const host = url.hostname.toLowerCase();
-  if (
-    url.protocol !== "https:" ||
-    url.username ||
-    url.password ||
-    host === "localhost" ||
-    host.endsWith(".localhost") ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^169\.254\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    host === "::1" ||
-    host.startsWith("fc") ||
-    host.startsWith("fd") ||
-    host.startsWith("fe80:")
-  ) {
-    throw new BadRequestException("An active OIDC configuration requires a public HTTPS issuer URL.");
+}
+
+function normalizeSsoProvider(value: string): "OIDC" | "SAML" {
+  const provider = value.toUpperCase();
+  if (provider !== "OIDC" && provider !== "SAML") {
+    throw new BadRequestException("SSO provider must be OIDC or SAML.");
   }
+  return provider;
+}
+
+function redactSsoConfig<T extends { clientSecret?: string | null }>(config: T) {
+  const { clientSecret, ...safe } = config;
+  return { ...safe, hasClientSecret: Boolean(clientSecret) };
 }

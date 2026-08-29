@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 /**
  * Revenue Intelligence / deal-risk email digest (Up Next item 42).

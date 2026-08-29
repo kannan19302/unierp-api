@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CashFlowForecastService } from "../services/cash-flow-forecast.service";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { NotFoundException } from "@nestjs/common";
 
-vi.mock("@prisma/client", () => {
+vi.mock("@kannan19302/database/prisma", () => {
   return {
     Prisma: {
       Decimal: class Decimal {

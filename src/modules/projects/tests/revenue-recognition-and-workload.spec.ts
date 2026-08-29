@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ProjectsService } from "../projects.service";
 import { DocumentNumberingService } from "@/common/services/document-numbering.service";
 
-vi.mock("@prisma/client", () => ({
+vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {
     Decimal: class Decimal {
       constructor(value: unknown) {

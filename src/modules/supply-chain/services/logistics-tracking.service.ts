@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Shipment } from "@prisma/client";
+import { Shipment } from "@kannan19302/database/prisma";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 
 interface TrackingEvent {

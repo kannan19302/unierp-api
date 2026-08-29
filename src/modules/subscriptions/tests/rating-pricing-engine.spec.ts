@@ -4,7 +4,7 @@ import { SubscriptionMigrationService } from "../subscription-migration.service"
 import { PricingService } from "../../sales/pricing.service";
 import { SalesAdvancedPricingService } from "../../sales/sales-advanced-pricing.service";
 import { SalesAdvancedPricingDeepService } from "../../sales/sales-advanced-pricing-deep.service";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 describe("K06 · Rating and Pricing Engine — Comprehensive Scenarios", () => {
   let couponService: SubscriptionCouponService;

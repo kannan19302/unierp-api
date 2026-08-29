@@ -7,9 +7,9 @@ import { SalesCpqService } from "./sales-cpq.service";
 import { SalesFulfillmentService } from "./sales-fulfillment.service";
 import { SalesExpansionController } from "./sales-expansion.controller";
 import { SalesOutboxHandler } from "./sales-outbox.handler";
-import { OutboxHandlerRegistry } from "../outbox/outbox-handler.registry";
-import { OutboxService } from '../outbox/shared';;
-import { OutboxModule } from "../outbox/outbox.module";
+import { OutboxHandlerRegistry } from "../../platform/outbox/outbox-handler.registry";
+import { OutboxService } from '../../common/outbox';
+import { OutboxModule } from "../../platform/outbox/outbox.module";
 
 import { SalesPromotionsService } from "./sales-promotions.service";
 import { SalesPromotionsController } from "./sales-promotions.controller";

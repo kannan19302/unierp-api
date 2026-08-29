@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { createHash } from "crypto";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { GlAccountingService } from "./gl-accounting.service";

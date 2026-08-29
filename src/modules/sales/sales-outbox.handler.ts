@@ -1,9 +1,9 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { SalesService, CreateOnlineOrderInput } from "./sales.service";
-import type { OutboxEventPayload } from "../outbox/outbox-handler.registry";
+import type { OutboxEventPayload } from "../../platform/outbox/outbox-handler.registry";
 
 /** Shape of the payload written by the ecommerce module's checkout flow. */
 export interface EcommerceCheckoutCompletedPayload {

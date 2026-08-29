@@ -99,10 +99,10 @@ export class SsoConfigController {
   }
 
   @ApiOperation({ summary: "Test SSO connection" })
-  @Permissions("saas.sso.read")
+  @Permissions("saas.sso.create")
   @Post("test")
   async testSsoConnection(@Req() req: AuthReq) {
-    return this.ssoConfigService.testSsoConnection(req.user.tenantId);
+    return this.ssoConfigService.testSsoConnection(req.user.tenantId, req.user.userId);
   }
 
   @ApiOperation({ summary: "Get SSO login URL" })

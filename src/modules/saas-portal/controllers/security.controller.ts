@@ -41,7 +41,7 @@ const passwordPolicySchema = z.object({
 });
 
 const ssoConfigSchema = z.object({
-  providerType: z.string().min(1).max(50),
+  providerType: z.enum(["OIDC", "SAML"]),
   name: z.string().min(1).max(255),
   clientId: z.string().optional(),
   clientSecret: z.string().optional(),
@@ -220,6 +220,75 @@ export class SaasPortalSecurityController {
         providerType: body.providerType,
         name: body.name,
       },
+      req.ip,
+    );
+    return result;
+  }
+
+  @ApiOperation({ summary: "Test an SSO connection and record verification" })
+  @Post("sso/:providerType/test")
+  @Permissions("admin.security.update")
+  async testSsoConnection(
+    @Req() req: AuthenticatedRequest,
+    @Param("providerType") providerType: string,
+  ) {
+    const result = await this.securityService.testSsoConnection(
+      req.user.tenantId,
+      providerType,
+      req.user.userId,
+    );
+    await this.auditLogService.logAction(
+      req.user.tenantId,
+      "SSO_CONNECTION_VERIFIED",
+      "SsoConfig",
+      providerType.toUpperCase(),
+      { verifiedBy: req.user.userId, providerType: providerType.toUpperCase() },
+      req.ip,
+    );
+    return result;
+  }
+
+  @ApiOperation({ summary: "Activate a verified SSO connection" })
+  @Post("sso/:providerType/activate")
+  @Permissions("admin.security.update")
+  async activateSsoConnection(
+    @Req() req: AuthenticatedRequest,
+    @Param("providerType") providerType: string,
+  ) {
+    const result = await this.securityService.setSsoActivation(
+      req.user.tenantId,
+      providerType,
+      true,
+    );
+    await this.auditLogService.logAction(
+      req.user.tenantId,
+      "SSO_CONNECTION_ACTIVATED",
+      "SsoConfig",
+      providerType.toUpperCase(),
+      { activatedBy: req.user.userId, providerType: providerType.toUpperCase() },
+      req.ip,
+    );
+    return result;
+  }
+
+  @ApiOperation({ summary: "Deactivate an SSO connection" })
+  @Post("sso/:providerType/deactivate")
+  @Permissions("admin.security.update")
+  async deactivateSsoConnection(
+    @Req() req: AuthenticatedRequest,
+    @Param("providerType") providerType: string,
+  ) {
+    const result = await this.securityService.setSsoActivation(
+      req.user.tenantId,
+      providerType,
+      false,
+    );
+    await this.auditLogService.logAction(
+      req.user.tenantId,
+      "SSO_CONNECTION_DEACTIVATED",
+      "SsoConfig",
+      providerType.toUpperCase(),
+      { deactivatedBy: req.user.userId, providerType: providerType.toUpperCase() },
       req.ip,
     );
     return result;

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { IDENTIFIER, type FieldType } from "@kannan19302/extension-api";
 import { prisma } from "@kannan19302/database";
 import { randomUUID } from "node:crypto";

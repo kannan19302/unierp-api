@@ -11,7 +11,7 @@ import {
   Shipment,
   AsnDiscrepancyType,
   ShipmentExceptionStatus,
-} from "@prisma/client";
+} from "@kannan19302/database/prisma";
 import {
   CreateCarrierDto,
   CreateCarrierServiceLevelDto,

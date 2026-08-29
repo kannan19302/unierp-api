@@ -9,7 +9,7 @@ import { OutboxProcessorService } from "./outbox-processor.service";
 import { OutboxMetricsService } from "./outbox-metrics.service";
 import { OutboxDeepService } from "./outbox-deep.service";
 import { OutboxHandlerRegistry } from "./outbox-handler.registry";
-import { OutboxService } from './shared';;
+import { OutboxService } from '../../common/outbox';
 
 /**
  * OutboxService must be a singleton shared by every module that writes or

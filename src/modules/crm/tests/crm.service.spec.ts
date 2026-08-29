@@ -20,7 +20,7 @@ import { CrmIntelligenceService } from "../crm-intelligence.service";
 import { CrmIntegrationsService } from "../crm-integrations.service";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 // Hoist mock object to resolve Vitest order-of-initialization hoisting
 const mockPrisma = vi.hoisted(() => ({

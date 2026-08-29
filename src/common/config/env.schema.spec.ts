@@ -21,6 +21,10 @@ const validProd = {
   S3_SECRET_KEY: "e".repeat(32),
   STRIPE_SECRET_KEY: "f".repeat(32),
   STRIPE_WEBHOOK_SECRET: "g".repeat(32),
+  SSO_CONFIG_ENCRYPTION_KEYS: JSON.stringify({
+    "test-key-2026-08": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+  }),
+  SSO_CONFIG_ENCRYPTION_ACTIVE_KEY_ID: "test-key-2026-08",
 };
 
 describe("checkEnv (Track G.6 boot validation)", () => {

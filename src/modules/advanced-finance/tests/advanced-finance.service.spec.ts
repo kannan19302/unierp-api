@@ -16,7 +16,7 @@ import {
   PeriodManagementService,
 } from "../services";
 
-vi.mock("@prisma/client", () => {
+vi.mock("@kannan19302/database/prisma", () => {
   class Decimal {
     value: number;
     constructor(value: unknown) {

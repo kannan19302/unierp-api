@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma, CrossDockStatus, CrossDockType } from "@prisma/client";
+import { Prisma, CrossDockStatus, CrossDockType } from "@kannan19302/database/prisma";
 import {
   CreateCrossDockStationDto,
   CreateCrossDockOrderDto,

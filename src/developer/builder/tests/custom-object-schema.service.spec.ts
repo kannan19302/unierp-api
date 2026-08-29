@@ -1,7 +1,7 @@
 import { describe, it, expect, afterAll, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { prisma, runWithTenantSession } from "@kannan19302/database";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@kannan19302/database/prisma";
 import { CustomObjectSchemaService } from "../services/custom-object-schema.service";
 import { BuilderDataObjectsService } from "../services/builder-data-objects.service";
 import { PreviewSubmissionsService } from "../../platform/preview-submissions.service";

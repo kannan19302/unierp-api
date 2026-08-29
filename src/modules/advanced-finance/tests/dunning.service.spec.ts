@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TaxEngineService } from "../services/tax-engine.service";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 
-vi.mock("@prisma/client", () => {
+vi.mock("@kannan19302/database/prisma", () => {
   return {
     Prisma: {
       Decimal: class Decimal {

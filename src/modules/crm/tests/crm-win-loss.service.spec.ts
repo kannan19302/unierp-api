@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CrmWinLossService } from "../crm-win-loss.service";
 import { NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

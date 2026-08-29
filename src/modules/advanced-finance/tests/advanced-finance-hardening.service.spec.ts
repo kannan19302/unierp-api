@@ -8,7 +8,7 @@ import {
   ConsolidationDeepService,
 } from "../services";
 
-vi.mock("@prisma/client", () => {
+vi.mock("@kannan19302/database/prisma", () => {
   return {
     Prisma: {
       Decimal: class Decimal {

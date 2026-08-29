@@ -21,7 +21,7 @@ import { randomBytes, createCipheriv, createDecipheriv, scryptSync } from "node:
  * The key is DERIVED per tenant from a server-side master secret
  * (PII_ENCRYPTION_MASTER_KEY) via scrypt — nothing is stored in the
  * database, so no schema migration is needed (none is available in this
- * checkout; the schema lives in the separate `@unerp/database` package).
+ * checkout; the schema lives in the separate `@kannan19302/database` package).
  */
 const ALGORITHM = "aes-256-gcm";
 

@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common";
 import { ShipmentTrackingService } from "./shipment-tracking.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { ShipmentDirection, ShipmentExceptionStatus } from "@prisma/client";
+import { ShipmentDirection, ShipmentExceptionStatus } from "@kannan19302/database/prisma";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 

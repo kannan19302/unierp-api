@@ -11,7 +11,7 @@ import { RevenueBillingService } from "../services/revenue-billing.service";
 import { ComplianceControlsService } from "../services/compliance-controls.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@prisma/client", () => {
+vi.mock("@kannan19302/database/prisma", () => {
   return {
     Prisma: {
       Decimal: class Decimal {

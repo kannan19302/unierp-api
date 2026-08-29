@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { TRACKED_MODELS, ownerForModel } from "../../common/app-data-ownership";
 
 interface TableStat {

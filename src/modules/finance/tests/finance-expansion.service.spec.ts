@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { FinanceExpansionService } from "../finance-expansion.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@prisma/client", () => ({
+vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {
     Decimal: class Decimal {
       toNumber() {

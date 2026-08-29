@@ -341,7 +341,7 @@ export class TenantAnalyticsService {
       prisma.tenant.count({ where: { status: "ACTIVE" } }),
       prisma.tenantApiKey.groupBy({ by: ["tenantId"], _count: true }),
       prisma.tenantDomain.groupBy({ by: ["tenantId"], _count: true }),
-      prisma.tenantSsoConfig.groupBy({ by: ["tenantId"], _count: true }),
+      prisma.ssoConfig.groupBy({ by: ["tenantId"], _count: true }),
       prisma.tenantWebhookEndpoint.groupBy({ by: ["tenantId"], _count: true }),
       prisma.tenantBranding.groupBy({ by: ["tenantId"], _count: true }),
     ]);

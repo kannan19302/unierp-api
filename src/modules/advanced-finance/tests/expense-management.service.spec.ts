@@ -6,7 +6,7 @@ import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-vi.mock("@prisma/client", () => {
+vi.mock("@kannan19302/database/prisma", () => {
   return {
     Prisma: {
       Decimal: class Decimal {

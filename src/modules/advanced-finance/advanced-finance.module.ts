@@ -26,7 +26,7 @@ import { AiAnalyticsController } from "./ai-analytics.controller";
 import { ArCreditManagementController } from "./ar-credit-management.controller";
 import { AdvancedFinanceService } from "./advanced-finance.service";
 import { FinanceExpansionDeepService } from "./services/finance-expansion-deep.service";
-import { PeriodCloseGuardService } from "../finance/period-close-guard.service";
+import { PeriodCloseGuardService } from "../../common/finance/period-close-guard.service";
 import {
   GlAccountingService,
   BudgetingService,

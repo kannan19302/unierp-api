@@ -16,7 +16,7 @@ const mkColl = () => ({
   aggregate: vi.fn(),
 });
 
-vi.mock("@prisma/client", () => ({
+vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {
     Decimal: class Decimal {
       private _v: number;

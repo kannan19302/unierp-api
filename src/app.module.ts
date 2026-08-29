@@ -114,7 +114,7 @@ import { SaasPortalEnterpriseModule } from "./modules/saas-portal/saas-portal-en
 import { RealEstateModule } from "./modules/real-estate/real-estate.module";
 import { FieldServiceModule } from "./modules/field-service/field-service.module";
 import { BlockchainModule } from "./modules/blockchain/blockchain.module";
-import { OutboxModule } from "./modules/outbox/outbox.module";
+import { OutboxModule } from "./platform/outbox/outbox.module";
 import { IdempotencyInterceptor } from "./common/idempotency/idempotency.interceptor";
 import {
   InMemoryIdempotencyStore,

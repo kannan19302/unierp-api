@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { GlAccountingService } from "./gl-accounting.service";
 
 interface AllocationTargetInput {

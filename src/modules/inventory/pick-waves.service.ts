@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { PickTaskStatus } from "@prisma/client";
+import { PickTaskStatus } from "@kannan19302/database/prisma";
 
 @Injectable()
 export class PickWavesService {

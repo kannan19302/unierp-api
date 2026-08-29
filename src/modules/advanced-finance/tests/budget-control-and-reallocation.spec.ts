@@ -4,10 +4,10 @@ import { BudgetReallocationService } from "../services/budget-reallocation.servi
 import { BudgetingService } from "../services/budgeting.service";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
-vi.mock("@prisma/client", () => {
+vi.mock("@kannan19302/database/prisma", () => {
   return {
     Prisma: {
       Decimal: class Decimal {

@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { prisma } from "@kannan19302/database";
 import { assertReleaseManifestV1, builderManifestForKind, type CanonicalArtifactKind, type ReleaseManifestV1 } from "@kannan19302/contracts";
 import { createHash, createPublicKey, randomUUID, verify } from "node:crypto";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { isUniqueViolation } from "./prisma-errors";
 import { ProjectGovernorService } from "./project-governor.service";
 import { findArtifactDependencyCycles } from "./dependency-graph";

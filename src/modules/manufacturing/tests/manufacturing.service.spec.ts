@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ManufacturingService } from "../manufacturing.service";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 // Mock all Prisma delegates
 vi.mock("@kannan19302/database", () => ({

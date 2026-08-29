@@ -11,7 +11,7 @@ let journalEntries: any[];
 let seq = 0;
 const nextId = (p: string) => `${p}-${++seq}`;
 
-vi.mock("@prisma/client", () => ({
+vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {
     Decimal: class Decimal {
       value: number;

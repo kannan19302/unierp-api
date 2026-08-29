@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { prisma } from '@kannan19302/database';
 import { ControlPlaneAuditService } from './control-plane-audit.service';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@kannan19302/database/prisma';
 
 export interface CreatePlanDto {
   name: string;

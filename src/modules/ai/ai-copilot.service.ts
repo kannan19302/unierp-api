@@ -8,7 +8,7 @@ import { ReportingQueryClient } from "../../common/integrations/reporting-query-
  * Deliberately NOT imported from `@kannan19302/auth`'s own
  * `hasPermission` (which `RbacGuard` uses) — that package currently
  * fails to resolve at all in this environment (`Cannot find package
- * '@unerp/shared'`, a pre-existing issue affecting every test file
+ * '@kannan19302/shared'`, a pre-existing issue affecting every test file
  * that imports it, unrelated to this phase). A minimal, exact-match
  * local check is sufficient for this call site's own semantics: the
  * caller already resolved a specific `requiredPermission` string, not

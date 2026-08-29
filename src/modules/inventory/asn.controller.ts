@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common";
 import { AsnService } from "./asn.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { AsnDiscrepancyType } from "@prisma/client";
+import { AsnDiscrepancyType } from "@kannan19302/database/prisma";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 

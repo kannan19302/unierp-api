@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { ShipmentDirection, ShipmentExceptionStatus } from "@prisma/client";
+import { ShipmentDirection, ShipmentExceptionStatus } from "@kannan19302/database/prisma";
 
 @Injectable()
 export class ShipmentTrackingService {

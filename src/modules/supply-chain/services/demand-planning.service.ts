@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { InventoryItem, Product, Warehouse } from "@prisma/client";
+import { InventoryItem, Product, Warehouse } from "@kannan19302/database/prisma";
 
 @Injectable()
 export class DemandPlanningService {

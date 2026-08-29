@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common";
 import { CrossDockService } from "./cross-dock.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { CrossDockStatus, CrossDockType, DockDoorStatus } from "@prisma/client";
+import { CrossDockStatus, CrossDockType, DockDoorStatus } from "@kannan19302/database/prisma";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 

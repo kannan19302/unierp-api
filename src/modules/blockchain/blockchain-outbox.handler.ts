@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import type { OutboxEventPayload } from "../outbox/outbox-handler.registry";
+import type { OutboxEventPayload } from "../../platform/outbox/outbox-handler.registry";
 import { BlockchainAnchorService } from "./services/blockchain-anchor.service";
 
 @Injectable()

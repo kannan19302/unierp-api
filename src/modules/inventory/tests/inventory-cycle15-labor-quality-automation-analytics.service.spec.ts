@@ -4,7 +4,7 @@ import { SupplierQualityService } from "../supplier-quality.service";
 import { InventoryAutomationService } from "../inventory-automation.service";
 import { InventoryAnalyticsService } from "../inventory-analytics.service";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

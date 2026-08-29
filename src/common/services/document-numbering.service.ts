@@ -1,6 +1,6 @@
 import { Injectable, ConflictException } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@kannan19302/database/prisma";
 
 type TxClient = Prisma.TransactionClient | PrismaClient;
 

@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 // Seeded reference thresholds for US states with economic nexus laws (post-Wayfair, 2018+).
 // Most states use $100,000 revenue OR 200 transactions in the trailing 12 months / prior or

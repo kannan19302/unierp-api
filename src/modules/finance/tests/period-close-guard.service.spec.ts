@@ -23,7 +23,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { PeriodCloseGuardService } from "../period-close-guard.service";
+import { PeriodCloseGuardService } from "../../../common/finance/period-close-guard.service";
 
 describe("E06 · period-close guard — documents become provably immutable once their period closes", () => {
   let guard: PeriodCloseGuardService;

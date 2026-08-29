@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CrmMarketingDeepService } from "../crm-marketing-deep.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

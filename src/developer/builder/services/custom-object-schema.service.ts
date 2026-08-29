@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@kannan19302/database/prisma";
 import { IDENTIFIER, PG_TYPE, type FieldType } from "@kannan19302/extension-api";
 
 /** A field as declared through the Data Object Builder — already Zod-validated by the caller. */

@@ -5,7 +5,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@kannan19302/database/prisma";
 import { prisma } from "@kannan19302/database";
 
 /**

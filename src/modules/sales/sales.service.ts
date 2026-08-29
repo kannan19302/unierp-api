@@ -19,7 +19,7 @@ import {
   Invoice,
   SalesReturn,
   Prisma,
-} from "@prisma/client";
+} from "@kannan19302/database/prisma";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 
 /**

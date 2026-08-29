@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "@/common/idp-client";
-import { AsnDiscrepancyType } from "@prisma/client";
+import { AsnDiscrepancyType } from "@kannan19302/database/prisma";
 
 @Injectable()
 export class AsnService {
