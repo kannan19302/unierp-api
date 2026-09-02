@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
-import { HealthcareController } from "./healthcare.controller";
-import { HealthcareService } from "./healthcare.service";
-import { HealthcareDeepController } from "./healthcare-deep.controller";
+import { HealthcareController } from "./controllers/healthcare.controller";
+import { HealthcareService } from "./services/healthcare.service";
+import { HealthcareDeepController } from "./controllers/healthcare-deep.controller";
 import { HealthcareEnterpriseModule } from "./healthcare-enterprise.module";
 import { HealthcarePatientsService } from "./services/patients.service";
 import { HealthcareAppointmentsService } from "./services/appointments.service";
@@ -11,10 +11,13 @@ import { HealthcareInsuranceService } from "./services/insurance.service";
 import { HealthcarePharmacyService } from "./services/pharmacy.service";
 import { HealthcareSchedulesService } from "./services/schedules.service";
 
+import { HealthcareRepository } from "./repositories/healthcare.repository";
+
 @Module({
   imports: [HealthcareEnterpriseModule],
   controllers: [HealthcareController, HealthcareDeepController],
   providers: [
+    HealthcareRepository,
     HealthcareService,
     HealthcarePatientsService,
     HealthcareAppointmentsService,
@@ -24,6 +27,6 @@ import { HealthcareSchedulesService } from "./services/schedules.service";
     HealthcarePharmacyService,
     HealthcareSchedulesService,
   ],
-  exports: [HealthcareService],
+  exports: [HealthcareRepository, HealthcareService],
 })
 export class HealthcareModule {}

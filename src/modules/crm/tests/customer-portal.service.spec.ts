@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CustomerPortalService } from "../customer-portal.service";
+import { CustomerPortalService } from "../services/customer-portal.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
@@ -38,7 +38,7 @@ vi.mock("@kannan19302/auth", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 const CUSTOMER = "cust-1";

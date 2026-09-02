@@ -38,8 +38,8 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { SalesPartnersService } from "../sales-partners.service";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { SalesPartnersService } from "../services/sales-partners.service";
 
 describe("SalesPartnersService", () => {
   let service: SalesPartnersService;

@@ -10,8 +10,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { OnboardingWizardService } from "../onboarding-wizard.service";
-import { MasterDataImportService } from "../master-data-import.service";
+import { OnboardingWizardService } from "../services/onboarding-wizard.service";
+import { MasterDataImportService } from "../services/master-data-import.service";
 
 const { mockDb, mockIdp } = vi.hoisted(() => {
   const db = {

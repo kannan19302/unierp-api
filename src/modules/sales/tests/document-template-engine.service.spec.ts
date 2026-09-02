@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { DocumentTemplateEngineService } from "../document-template-engine.service";
+import { DocumentTemplateEngineService } from "../services/document-template-engine.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

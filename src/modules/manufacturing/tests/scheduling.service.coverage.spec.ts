@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { SchedulingService } from "../scheduling.service";
+import { SchedulingService } from "../services/scheduling.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

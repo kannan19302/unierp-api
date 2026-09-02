@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AiCopilotService } from "../ai-copilot.service";
-import { AiService } from "../ai.service";
-import { ReportingEngineService } from "../../reporting/reporting-engine.service";
+import { AiCopilotService } from "../services/ai-copilot.service";
+import { AiService } from "../services/ai.service";
+import { ReportingEngineService } from "../../analytics/services/reporting-engine.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ContainerPalletService } from "../container-pallet.service";
+import { ContainerPalletService } from "../services/container-pallet.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({

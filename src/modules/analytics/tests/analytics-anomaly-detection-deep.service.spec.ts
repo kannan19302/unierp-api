@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { AnalyticsAnomalyDetectionDeepService } from "../analytics-anomaly-detection-deep.service";
+import { AnalyticsAnomalyDetectionDeepService } from "../services/analytics-anomaly-detection-deep.service";
 
 describe("AnalyticsAnomalyDetectionDeepService", () => {
   let service: AnalyticsAnomalyDetectionDeepService;

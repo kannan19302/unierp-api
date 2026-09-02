@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
-import { EducationController } from "./education.controller";
-import { EducationService } from "./education.service";
-import { EducationDeepController } from "./education-deep.controller";
+import { EducationController } from "./controllers/education.controller";
+import { EducationService } from "./services/education.service";
+import { EducationDeepController } from "./controllers/education-deep.controller";
 import { EducationEnterpriseModule } from "./education-enterprise.module";
 import { EducationStudentsService } from "./services/students.service";
 import { EducationCoursesService } from "./services/courses.service";
@@ -12,10 +12,13 @@ import { EducationLibraryService } from "./services/library.service";
 import { EducationTimetableService } from "./services/timetable.service";
 import { EducationExamsService } from "./services/exams.service";
 
+import { EducationRepository } from "./repositories/education.repository";
+
 @Module({
   imports: [EducationEnterpriseModule],
   controllers: [EducationController, EducationDeepController],
   providers: [
+    EducationRepository,
     EducationService,
     EducationStudentsService,
     EducationCoursesService,
@@ -26,6 +29,6 @@ import { EducationExamsService } from "./services/exams.service";
     EducationTimetableService,
     EducationExamsService,
   ],
-  exports: [EducationService],
+  exports: [EducationRepository, EducationService],
 })
 export class EducationModule {}

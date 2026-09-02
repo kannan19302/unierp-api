@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { BulkOperationsService } from "../bulk-operations.service";
+import { BulkOperationsService } from "../services/bulk-operations.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

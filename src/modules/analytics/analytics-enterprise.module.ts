@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { AnalyticsEnterpriseController } from "./analytics-enterprise.controller";
-import { AnalyticsEnterpriseService } from "./analytics-enterprise.service";
+import { AnalyticsEnterpriseController } from "./controllers/analytics-enterprise.controller";
+import { AnalyticsEnterpriseService } from "./services/analytics-enterprise.service";
 
 @Module({
   controllers: [AnalyticsEnterpriseController],

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { withTenantSession } from "../../../../test/tenant-session";
-import { DocumentsDeepService } from "../documents-deep.service";
+import { DocumentsDeepService } from "../services/documents-deep.service";
 
 describe("DocumentsDeepService", () => {
   let service: DocumentsDeepService;

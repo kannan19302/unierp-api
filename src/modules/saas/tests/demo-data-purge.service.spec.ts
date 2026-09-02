@@ -82,7 +82,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { DemoDataService } from "../demo-data.service";
+import { DemoDataService } from "../services/demo-data.service";
 
 describe("D07 · sample data is tracked on seed and removable in one action with no residue", () => {
   let demoData: DemoDataService;

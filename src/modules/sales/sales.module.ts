@@ -1,65 +1,66 @@
 import { Module, OnModuleInit } from "@nestjs/common";
-import { SalesController } from "./sales.controller";
-import { SalesService } from "./sales.service";
-import { PricingService } from "./pricing.service";
-import { PricingController } from "./pricing.controller";
-import { SalesCpqService } from "./sales-cpq.service";
-import { SalesFulfillmentService } from "./sales-fulfillment.service";
-import { SalesExpansionController } from "./sales-expansion.controller";
-import { SalesOutboxHandler } from "./sales-outbox.handler";
+import { SalesController } from "./controllers/sales.controller";
+import { SalesService } from "./services/sales.service";
+import { PricingService } from "./services/pricing.service";
+import { PricingController } from "./controllers/pricing.controller";
+import { SalesCpqService } from "./services/sales-cpq.service";
+import { SalesFulfillmentService } from "./services/sales-fulfillment.service";
+import { SalesExpansionController } from "./controllers/sales-expansion.controller";
+import { SalesOutboxHandler } from "./services/sales-outbox.handler";
 import { OutboxHandlerRegistry } from "../../platform/outbox/outbox-handler.registry";
-import { OutboxService } from '../../common/outbox';
+import { OutboxService } from "../../common/outbox";
 import { OutboxModule } from "../../platform/outbox/outbox.module";
+import { SalesRepository } from "./repositories/sales.repository";
 
-import { SalesPromotionsService } from "./sales-promotions.service";
-import { SalesPromotionsController } from "./sales-promotions.controller";
-import { SalesPartnersService } from "./sales-partners.service";
-import { SalesPartnersController } from "./sales-partners.controller";
-import { SalesContractsService } from "./sales-contracts.service";
-import { SalesContractsController } from "./sales-contracts.controller";
-import { SalesCommissionsService } from "./sales-commissions.service";
-import { SalesCommissionsController } from "./sales-commissions.controller";
-import { SalesAnalyticsService } from "./sales-analytics.service";
-import { SalesAnalyticsController } from "./sales-analytics.controller";
-import { SalesForecastingService } from "./sales-forecasting.service";
-import { SalesForecastingController } from "./sales-forecasting.controller";
-import { SalesSubscriptionService } from "./sales-subscription.service";
-import { SalesSubscriptionController } from "./sales-subscription.controller";
-import { SalesSpiffService } from "./sales-spiff.service";
-import { SalesSpiffController } from "./sales-spiff.controller";
-import { SalesAdvancedPricingService } from "./sales-advanced-pricing.service";
-import { SalesAdvancedPricingController } from "./sales-advanced-pricing.controller";
-import { SalesCpqController } from "./sales-cpq.controller";
-import { SalesCpqExtensionService } from "./sales-cpq-extension.service";
-import { SalesTerritoryService } from "./sales-territory.service";
-import { SalesTerritoryController } from "./sales-territory.controller";
-import { SalesCustomerSuccessService } from "./sales-customer-success.service";
-import { SalesCustomerSuccessController } from "./sales-customer-success.controller";
-import { SalesPlaybooksDeepService } from "./sales-playbooks-deep.service";
-import { SalesPlaybooksDeepController } from "./sales-playbooks-deep.controller";
-import { SalesIntelligenceSignalsService } from "./sales-intelligence-signals.service";
-import { SalesIntelligenceSignalsController } from "./sales-intelligence-signals.controller";
-import { SalesDocumentsDeepService } from "./sales-documents-deep.service";
-import { SalesDocumentsDeepController } from "./sales-documents-deep.controller";
-import { DocumentTemplateEngineService } from "./document-template-engine.service";
-import { SalesReturnsService } from "./sales-returns.service";
-import { SalesReturnsController } from "./sales-returns.controller";
-import { SalesGamificationDeepService } from "./sales-gamification-deep.service";
-import { SalesGamificationDeepController } from "./sales-gamification-deep.controller";
-import { SalesAdvancedPricingDeepService } from "./sales-advanced-pricing-deep.service";
-import { SalesAdvancedPricingDeepController } from "./sales-advanced-pricing-deep.controller";
-import { SalesEnterpriseExecutionDeepService } from "./sales-enterprise-execution-deep.service";
-import { SalesEnterpriseExecutionDeepController } from "./sales-enterprise-execution-deep.controller";
-import { SalesQuoteCpqMasterDeepService } from "./sales-quote-cpq-master-deep.service";
-import { SalesQuoteCpqMasterDeepController } from "./sales-quote-cpq-master-deep.controller";
-import { SalesOmnichannelDealsDeepService } from "./sales-omnichannel-deals-deep.service";
-import { SalesOmnichannelDealsDeepController } from "./sales-omnichannel-deals-deep.controller";
-import { SalesGlobalRevenueOpsDeepService } from "./sales-global-revenue-ops-deep.service";
-import { SalesGlobalRevenueOpsDeepController } from "./sales-global-revenue-ops-deep.controller";
-import { SalesAdvancedEnterpriseCoreDeepService } from "./sales-advanced-enterprise-core-deep.service";
-import { SalesAdvancedEnterpriseCoreDeepController } from "./sales-advanced-enterprise-core-deep.controller";
-import { SalesEnterpriseController } from "./sales-enterprise.controller";
-import { SalesEnterpriseService } from "./sales-enterprise.service";
+import { SalesPromotionsService } from "./services/sales-promotions.service";
+import { SalesPromotionsController } from "./controllers/sales-promotions.controller";
+import { SalesPartnersService } from "./services/sales-partners.service";
+import { SalesPartnersController } from "./controllers/sales-partners.controller";
+import { SalesContractsService } from "./services/sales-contracts.service";
+import { SalesContractsController } from "./controllers/sales-contracts.controller";
+import { SalesCommissionsService } from "./services/sales-commissions.service";
+import { SalesCommissionsController } from "./controllers/sales-commissions.controller";
+import { SalesAnalyticsService } from "./services/sales-analytics.service";
+import { SalesAnalyticsController } from "./controllers/sales-analytics.controller";
+import { SalesForecastingService } from "./services/sales-forecasting.service";
+import { SalesForecastingController } from "./controllers/sales-forecasting.controller";
+import { SalesSubscriptionService } from "./services/sales-subscription.service";
+import { SalesSubscriptionController } from "./controllers/sales-subscription.controller";
+import { SalesSpiffService } from "./services/sales-spiff.service";
+import { SalesSpiffController } from "./controllers/sales-spiff.controller";
+import { SalesAdvancedPricingService } from "./services/sales-advanced-pricing.service";
+import { SalesAdvancedPricingController } from "./controllers/sales-advanced-pricing.controller";
+import { SalesCpqController } from "./controllers/sales-cpq.controller";
+import { SalesCpqExtensionService } from "./services/sales-cpq-extension.service";
+import { SalesTerritoryService } from "./services/sales-territory.service";
+import { SalesTerritoryController } from "./controllers/sales-territory.controller";
+import { SalesCustomerSuccessService } from "./services/sales-customer-success.service";
+import { SalesCustomerSuccessController } from "./controllers/sales-customer-success.controller";
+import { SalesPlaybooksDeepService } from "./services/sales-playbooks-deep.service";
+import { SalesPlaybooksDeepController } from "./controllers/sales-playbooks-deep.controller";
+import { SalesIntelligenceSignalsService } from "./services/sales-intelligence-signals.service";
+import { SalesIntelligenceSignalsController } from "./controllers/sales-intelligence-signals.controller";
+import { SalesDocumentsDeepService } from "./services/sales-documents-deep.service";
+import { SalesDocumentsDeepController } from "./controllers/sales-documents-deep.controller";
+import { DocumentTemplateEngineService } from "./services/document-template-engine.service";
+import { SalesReturnsService } from "./services/sales-returns.service";
+import { SalesReturnsController } from "./controllers/sales-returns.controller";
+import { SalesGamificationDeepService } from "./services/sales-gamification-deep.service";
+import { SalesGamificationDeepController } from "./controllers/sales-gamification-deep.controller";
+import { SalesAdvancedPricingDeepService } from "./services/sales-advanced-pricing-deep.service";
+import { SalesAdvancedPricingDeepController } from "./controllers/sales-advanced-pricing-deep.controller";
+import { SalesEnterpriseExecutionDeepService } from "./services/sales-enterprise-execution-deep.service";
+import { SalesEnterpriseExecutionDeepController } from "./controllers/sales-enterprise-execution-deep.controller";
+import { SalesQuoteCpqMasterDeepService } from "./services/sales-quote-cpq-master-deep.service";
+import { SalesQuoteCpqMasterDeepController } from "./controllers/sales-quote-cpq-master-deep.controller";
+import { SalesOmnichannelDealsDeepService } from "./services/sales-omnichannel-deals-deep.service";
+import { SalesOmnichannelDealsDeepController } from "./controllers/sales-omnichannel-deals-deep.controller";
+import { SalesGlobalRevenueOpsDeepService } from "./services/sales-global-revenue-ops-deep.service";
+import { SalesGlobalRevenueOpsDeepController } from "./controllers/sales-global-revenue-ops-deep.controller";
+import { SalesAdvancedEnterpriseCoreDeepService } from "./services/sales-advanced-enterprise-core-deep.service";
+import { SalesAdvancedEnterpriseCoreDeepController } from "./controllers/sales-advanced-enterprise-core-deep.controller";
+import { SalesEnterpriseController } from "./controllers/sales-enterprise.controller";
+import { SalesEnterpriseService } from "./services/sales-enterprise.service";
 import { SalesEnterpriseModule } from "./sales-enterprise.module";
 
 @Module({
@@ -68,7 +69,6 @@ import { SalesEnterpriseModule } from "./sales-enterprise.module";
     SalesController,
     PricingController,
     SalesExpansionController,
-
     SalesPromotionsController,
     SalesPartnersController,
     SalesContractsController,
@@ -95,6 +95,7 @@ import { SalesEnterpriseModule } from "./sales-enterprise.module";
     SalesEnterpriseController,
   ],
   providers: [
+    SalesRepository,
     SalesService,
     PricingService,
     SalesCpqService,
@@ -127,6 +128,7 @@ import { SalesEnterpriseModule } from "./sales-enterprise.module";
     SalesEnterpriseService,
   ],
   exports: [
+    SalesRepository,
     SalesService,
     PricingService,
     SalesCpqService,

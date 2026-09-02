@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { CustomerReturnsController } from "./customer-returns.controller";
-import { CustomerReturnsService } from "./customer-returns.service";
+import { CustomerReturnsController } from "./controllers/customer-returns.controller";
+import { CustomerReturnsService } from "./services/customer-returns.service";
 
 @Module({
   controllers: [CustomerReturnsController],

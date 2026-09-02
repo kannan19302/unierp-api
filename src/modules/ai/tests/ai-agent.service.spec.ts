@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { AiAgentService } from "../ai-agent.service";
-import { AiService } from "../ai.service";
-import { AiCopilotService } from "../ai-copilot.service";
-import { ReportingEngineService } from "../../reporting/reporting-engine.service";
+import { AiAgentService } from "../services/ai-agent.service";
+import { AiService } from "../services/ai.service";
+import { AiCopilotService } from "../services/ai-copilot.service";
+import { ReportingEngineService } from "../../analytics/services/reporting-engine.service";
 
 function ollamaResponse(message: Record<string, unknown>) {
   return {

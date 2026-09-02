@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { AutomationRuleEngineService } from "../automation-rule-engine.service";
+import { AutomationRuleEngineService } from "../services/automation-rule-engine.service";
 
 /**
  * QA independent verification of P0-2 gaps NOT covered by

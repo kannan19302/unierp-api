@@ -33,7 +33,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { ShipmentTrackingService } from "../shipment-tracking.service";
+import { ShipmentTrackingService } from "../services/shipment-tracking.service";
 import { ShipmentDirection, ShipmentExceptionStatus } from "@kannan19302/database/prisma";
 
 describe("ShipmentTrackingService", () => {

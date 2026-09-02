@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { PackagingGs1Controller } from "./packaging-gs1.controller";
-import { PackagingGs1Service } from "./packaging-gs1.service";
+import { PackagingGs1Controller } from "./controllers/packaging-gs1.controller";
+import { PackagingGs1Service } from "./services/packaging-gs1.service";
 
 @Module({
   controllers: [PackagingGs1Controller],

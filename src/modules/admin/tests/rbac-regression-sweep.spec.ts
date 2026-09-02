@@ -3,9 +3,9 @@ import { Reflector } from "@nestjs/core";
 import { ForbiddenException } from "@nestjs/common";
 import { RbacGuard } from "../../../common/guards/rbac.guard";
 import { PERMISSIONS_KEY } from "../../../common/decorators/permissions.decorator";
-import { SaasPortalSecurityController as SecurityController } from "../../saas-portal/controllers/security.controller";
-import { AdminController } from "../admin.controller";
-import { AutomationRulesController } from "../automation-rules.controller";
+import { SaasPortalSecurityController as SecurityController } from "../../saas/controllers/saas-portal-security.controller";
+import { AdminController } from "../controllers/admin.controller";
+import { AutomationRulesController } from "../controllers/automation-rules.controller";
 import { SuperAdminController } from "../../../platform/v1/super-admin.controller";
 import { OperationsController } from "../../../platform/v1/operations.controller";
 
@@ -48,7 +48,7 @@ vi.mock("@kannan19302/database", () => {
 });
 
 import { prisma, runWithTenantSession } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 function buildContext(
   user: unknown,

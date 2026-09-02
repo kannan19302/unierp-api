@@ -1,36 +1,37 @@
 import { Module } from "@nestjs/common";
-import { InventoryController } from "./inventory.controller";
-import { InventoryService } from "./inventory.service";
-import { InventoryWarehousesService } from "./inventory-warehouses.service";
-import { InventoryProductsService } from "./inventory-products.service";
-import { InventoryQaService } from "./inventory-qa.service";
-import { InventoryEventHandler } from "./inventory.event-handler";
-import { CostingService } from "./costing.service";
-import { CostingController } from "./costing.controller";
+import { InventoryController } from "./controllers/inventory.controller";
+import { InventoryService } from "./services/inventory.service";
+import { InventoryWarehousesService } from "./services/inventory-warehouses.service";
+import { InventoryProductsService } from "./services/inventory-products.service";
+import { InventoryQaService } from "./services/inventory-qa.service";
+import { InventoryEventHandler } from "./events/inventory.event-handler";
+import { CostingService } from "./services/costing.service";
+import { CostingController } from "./controllers/costing.controller";
+import { InventoryRepository } from "./repositories/inventory.repository";
 import { InventoryEnterpriseModule } from "./inventory-enterprise.module";
 
-import { RtvService } from "./rtv.service";
-import { RtvController } from "./rtv.controller";
-import { InventoryLaborService } from "./inventory-labor.service";
-import { InventoryLaborController } from "./inventory-labor.controller";
-import { SupplierQualityService } from "./supplier-quality.service";
-import { SupplierQualityController } from "./supplier-quality.controller";
-import { InventoryAutomationService } from "./inventory-automation.service";
-import { InventoryAutomationController } from "./inventory-automation.controller";
-import { InventoryAnalyticsService } from "./inventory-analytics.service";
-import { InventoryAnalyticsController } from "./inventory-analytics.controller";
-import { InventoryRmaService } from "./inventory-rma.service";
-import { InventoryRmaController } from "./inventory-rma.controller";
-import { InventoryWavePlanningService } from "./inventory-wave-planning.service";
-import { InventoryWavePlanningController } from "./inventory-wave-planning.controller";
-import { InventoryWarehouseSlottingDeepService } from "./inventory-warehouse-slotting-deep.service";
-import { InventoryWarehouseSlottingDeepController } from "./inventory-warehouse-slotting-deep.controller";
-import { InventoryLpnTrackingDeepService } from "./inventory-lpn-tracking-deep.service";
-import { InventoryLpnTrackingDeepController } from "./inventory-lpn-tracking-deep.controller";
-import { InventorySerialBatchGenealogyDeepService } from "./inventory-serial-batch-genealogy-deep.service";
-import { InventorySerialBatchGenealogyDeepController } from "./inventory-serial-batch-genealogy-deep.controller";
-import { InventoryCycleCountingDeepService } from "./inventory-cycle-counting-deep.service";
-import { InventoryCycleCountingDeepController } from "./inventory-cycle-counting-deep.controller";
+import { RtvService } from "./services/rtv.service";
+import { RtvController } from "./controllers/rtv.controller";
+import { InventoryLaborService } from "./services/inventory-labor.service";
+import { InventoryLaborController } from "./controllers/inventory-labor.controller";
+import { SupplierQualityService } from "./services/supplier-quality.service";
+import { SupplierQualityController } from "./controllers/supplier-quality.controller";
+import { InventoryAutomationService } from "./services/inventory-automation.service";
+import { InventoryAutomationController } from "./controllers/inventory-automation.controller";
+import { InventoryAnalyticsService } from "./services/inventory-analytics.service";
+import { InventoryAnalyticsController } from "./controllers/inventory-analytics.controller";
+import { InventoryRmaService } from "./services/inventory-rma.service";
+import { InventoryRmaController } from "./controllers/inventory-rma.controller";
+import { InventoryWavePlanningService } from "./services/inventory-wave-planning.service";
+import { InventoryWavePlanningController } from "./controllers/inventory-wave-planning.controller";
+import { InventoryWarehouseSlottingDeepService } from "./services/inventory-warehouse-slotting-deep.service";
+import { InventoryWarehouseSlottingDeepController } from "./controllers/inventory-warehouse-slotting-deep.controller";
+import { InventoryLpnTrackingDeepService } from "./services/inventory-lpn-tracking-deep.service";
+import { InventoryLpnTrackingDeepController } from "./controllers/inventory-lpn-tracking-deep.controller";
+import { InventorySerialBatchGenealogyDeepService } from "./services/inventory-serial-batch-genealogy-deep.service";
+import { InventorySerialBatchGenealogyDeepController } from "./controllers/inventory-serial-batch-genealogy-deep.controller";
+import { InventoryCycleCountingDeepService } from "./services/inventory-cycle-counting-deep.service";
+import { InventoryCycleCountingDeepController } from "./controllers/inventory-cycle-counting-deep.controller";
 // Phase 2 — Deep Feature Packs (Push Inventory to 1500+)
 
 @Module({
@@ -51,6 +52,7 @@ import { InventoryCycleCountingDeepController } from "./inventory-cycle-counting
     InventoryCycleCountingDeepController,
   ],
   providers: [
+    InventoryRepository,
     InventoryService,
     InventoryWarehousesService,
     InventoryProductsService,
@@ -70,6 +72,7 @@ import { InventoryCycleCountingDeepController } from "./inventory-cycle-counting
     InventoryCycleCountingDeepService,
   ],
   exports: [
+    InventoryRepository,
     InventoryService,
     InventoryWarehousesService,
     InventoryProductsService,

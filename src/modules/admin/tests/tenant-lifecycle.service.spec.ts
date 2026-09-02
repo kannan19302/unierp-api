@@ -1,5 +1,5 @@
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TenantLifecycleService } from "../../../platform/v1/tenant-lifecycle.service";
 import { DurableExecutorService } from "../../../platform/operation-pipeline/durable-executor.service";

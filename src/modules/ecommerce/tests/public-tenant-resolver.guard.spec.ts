@@ -3,7 +3,7 @@ import { NotFoundException, ExecutionContext } from "@nestjs/common";
 import {
   PublicTenantResolverGuard,
   STOREFRONT_GUEST_USER_ID,
-} from "../guards/public-tenant-resolver.guard";
+} from "../services/public-tenant-resolver.guard";
 
 vi.mock("@kannan19302/database", () => {
   return {

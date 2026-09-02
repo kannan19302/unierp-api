@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { RecycleBinService } from "../recycle-bin.service";
+import { RecycleBinService } from "../services/recycle-bin.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

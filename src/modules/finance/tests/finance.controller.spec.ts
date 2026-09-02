@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FinanceController } from "../finance.controller";
-import { FinanceService } from "../finance.service";
+import { FinanceController } from "../controllers/finance.controller";
+import { FinanceService } from "../services/finance.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

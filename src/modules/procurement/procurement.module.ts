@@ -1,31 +1,32 @@
 import { Module } from "@nestjs/common";
-import { ProcurementController } from "./procurement.controller";
-import { ProcurementPublicController } from "./procurement.public.controller";
-import { ProcurementService } from "./procurement.service";
-import { ContractsService } from "./contracts.service";
-import { ContractsController } from "./contracts.controller";
-import { VendorPortalService } from "./vendor-portal.service";
+import { ProcurementController } from "./controllers/procurement.controller";
+import { ProcurementPublicController } from "./controllers/procurement.public.controller";
+import { ProcurementService } from "./services/procurement.service";
+import { ContractsService } from "./services/contracts.service";
+import { ContractsController } from "./controllers/contracts.controller";
+import { VendorPortalService } from "./services/vendor-portal.service";
 
-import { ProcurementExpansionController } from "./procurement-expansion.controller";
-import { ProcurementIntelligenceController } from "./procurement-intelligence.controller";
-import { ProcurementSchedulingController } from "./procurement-scheduling.controller";
-import { SubcontractingService } from "./subcontracting.service";
-import { DebitNotesService } from "./debit-notes.service";
-import { VendorRmaService } from "./vendor-rma.service";
-import { SupplierNcrCarService } from "./supplier-ncr-car.service";
-import { RfqAuctionsService } from "./rfq-auctions.service";
-import { PaymentSchedulesService } from "./payment-schedules.service";
-import { SupplierScorecardService } from "./supplier-scorecard.service";
-import { ProcurementAnalyticsService } from "./procurement-analytics.service";
-import { ProcurementApprovalsService } from "./procurement-approvals.service";
-import { ProcurementSourcingService } from "./procurement-sourcing.service";
-import { ProcurementSourcingController } from "./procurement-sourcing.controller";
-import { ProcurementSettingsController } from "./settings.controller";
-import { ProcurementEnterpriseController } from "./procurement-enterprise.controller";
-import { ProcurementEnterpriseService } from "./procurement-enterprise.service";
+import { ProcurementExpansionController } from "./controllers/procurement-expansion.controller";
+import { ProcurementIntelligenceController } from "./controllers/procurement-intelligence.controller";
+import { ProcurementSchedulingController } from "./controllers/procurement-scheduling.controller";
+import { SubcontractingService } from "./services/subcontracting.service";
+import { DebitNotesService } from "./services/debit-notes.service";
+import { VendorRmaService } from "./services/vendor-rma.service";
+import { SupplierNcrCarService } from "./services/supplier-ncr-car.service";
+import { RfqAuctionsService } from "./services/rfq-auctions.service";
+import { PaymentSchedulesService } from "./services/payment-schedules.service";
+import { SupplierScorecardService } from "./services/supplier-scorecard.service";
+import { ProcurementAnalyticsService } from "./services/procurement-analytics.service";
+import { ProcurementApprovalsService } from "./services/procurement-approvals.service";
+import { ProcurementSourcingService } from "./services/procurement-sourcing.service";
+import { ProcurementSourcingController } from "./controllers/procurement-sourcing.controller";
+import { ProcurementSettingsController } from "./controllers/settings.controller";
+import { ProcurementEnterpriseController } from "./controllers/procurement-enterprise.controller";
+import { ProcurementEnterpriseService } from "./services/procurement-enterprise.service";
+import { ProcurementRepository } from "./repositories/procurement.repository";
 import { ProcurementEnterpriseModule } from "./procurement-enterprise.module";
 import { SupplierPerformanceService } from "./services/supplier-performance.service";
-import { ProcurementSupplierPerformanceController } from "./procurement-supplier-performance.controller";
+import { ProcurementSupplierPerformanceController } from "./controllers/procurement-supplier-performance.controller";
 
 @Module({
   imports: [ProcurementEnterpriseModule],
@@ -43,6 +44,7 @@ import { ProcurementSupplierPerformanceController } from "./procurement-supplier
     ProcurementSupplierPerformanceController,
   ],
   providers: [
+    ProcurementRepository,
     ProcurementService,
     ContractsService,
     VendorPortalService,
@@ -60,6 +62,7 @@ import { ProcurementSupplierPerformanceController } from "./procurement-supplier
     SupplierPerformanceService,
   ],
   exports: [
+    ProcurementRepository,
     ProcurementService,
     ContractsService,
     VendorPortalService,

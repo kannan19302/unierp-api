@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BadRequestException } from "@nestjs/common";
-import { SsoConfigService } from "../sso-config.service";
+import { SsoConfigService } from "../services/sso-config.service";
 
 const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),

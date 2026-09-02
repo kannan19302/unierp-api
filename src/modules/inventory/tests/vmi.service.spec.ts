@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { VmiService } from "../vmi.service";
+import { VmiService } from "../services/vmi.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({

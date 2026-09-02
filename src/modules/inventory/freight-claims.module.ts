@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { FreightClaimsService } from "./freight-claims.service";
-import { FreightClaimsController } from "./freight-claims.controller";
+import { FreightClaimsService } from "./services/freight-claims.service";
+import { FreightClaimsController } from "./controllers/freight-claims.controller";
 
 @Module({
   providers: [FreightClaimsService],

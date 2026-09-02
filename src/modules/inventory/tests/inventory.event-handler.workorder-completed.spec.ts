@@ -41,7 +41,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { InventoryEventHandler } from "../inventory.event-handler";
+import { InventoryEventHandler } from "../events/inventory.event-handler";
 import { prisma } from "@kannan19302/database";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 

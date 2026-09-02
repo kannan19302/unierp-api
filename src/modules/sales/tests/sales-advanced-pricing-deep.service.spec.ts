@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { SalesAdvancedPricingDeepService } from "../sales-advanced-pricing-deep.service";
+import { SalesAdvancedPricingDeepService } from "../services/sales-advanced-pricing-deep.service";
 
 describe("SalesAdvancedPricingDeepService", () => {
   let service: SalesAdvancedPricingDeepService;

@@ -14,8 +14,8 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { AnalyticsFunnelConversionDeepService } from "../analytics-funnel-conversion-deep.service";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { AnalyticsFunnelConversionDeepService } from "../services/analytics-funnel-conversion-deep.service";
 
 describe("AnalyticsFunnelConversionDeepService", () => {
   let service: AnalyticsFunnelConversionDeepService;

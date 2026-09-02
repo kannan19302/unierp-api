@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { DevopsService } from "../devops.service";
+import { DevopsService } from "../services/devops.service";
 import { NotFoundException } from "@nestjs/common";
 
 const mockDeployment = vi.hoisted(() => ({

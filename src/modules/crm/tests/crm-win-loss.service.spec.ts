@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CrmWinLossService } from "../crm-win-loss.service";
+import { CrmWinLossService } from "../services/crm-win-loss.service";
 import { NotFoundException } from "@nestjs/common";
 import { Prisma } from "@kannan19302/database/prisma";
 
@@ -26,7 +26,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 

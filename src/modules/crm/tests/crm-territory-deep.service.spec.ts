@@ -33,7 +33,7 @@ import {
   createTerritoryPlanSchema,
   createAccountTeamMemberSchema,
   createNamedAccountSchema,
-} from "../crm-territory-deep.service";
+} from "../services/crm-territory-deep.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
 describe("CrmTerritoryDeepService", () => {

@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { AssetInsuranceService } from "../asset-insurance.service";
-import { AssetRevaluationService } from "../asset-revaluation.service";
-import { AssetPhysicalAuditService } from "../asset-physical-audit.service";
-import { AssetWarrantyService } from "../asset-warranty.service";
-import { AssetComponentService } from "../asset-component.service";
-import { AssetImpairmentService } from "../asset-impairment.service";
-import { AssetConditionService } from "../asset-condition.service";
-import { AssetUtilizationService } from "../asset-utilization.service";
-import { AssetGroupService } from "../asset-group.service";
-import { AssetBudgetService } from "../asset-budget.service";
-import { AssetDocumentService } from "../asset-document.service";
+import { AssetInsuranceService } from "../services/asset-insurance.service";
+import { AssetRevaluationService } from "../services/asset-revaluation.service";
+import { AssetPhysicalAuditService } from "../services/asset-physical-audit.service";
+import { AssetWarrantyService } from "../services/asset-warranty.service";
+import { AssetComponentService } from "../services/asset-component.service";
+import { AssetImpairmentService } from "../services/asset-impairment.service";
+import { AssetConditionService } from "../services/asset-condition.service";
+import { AssetUtilizationService } from "../services/asset-utilization.service";
+import { AssetGroupService } from "../services/asset-group.service";
+import { AssetBudgetService } from "../services/asset-budget.service";
+import { AssetDocumentService } from "../services/asset-document.service";
 
 describe("FixedAssetsDeepServices", () => {
   let warrantyService: AssetWarrantyService;

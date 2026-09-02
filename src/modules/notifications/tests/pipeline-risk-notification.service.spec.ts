@@ -1,8 +1,8 @@
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { PipelineRiskNotificationService } from "../pipeline-risk-notification.service";
+import { PipelineRiskNotificationService } from "../services/pipeline-risk-notification.service";
 
 /**
  * Closes MODULE_REGISTRY.md Up Next item 39: `pipeline.deal.at_risk` was

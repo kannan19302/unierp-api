@@ -83,7 +83,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { FinanceService } from "../finance.service";
+import { FinanceService } from "../services/finance.service";
 
 describe("E10 · FinanceService.createPayment() paid-in-full detection is exact, not float-tolerant", () => {
   let service: FinanceService;

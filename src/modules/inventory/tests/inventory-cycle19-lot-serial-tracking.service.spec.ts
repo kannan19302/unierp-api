@@ -1,7 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { LotSerialTrackingService } from "../lot-serial-tracking.service";
+import { LotSerialTrackingService } from "../services/lot-serial-tracking.service";
 
 vi.mock("@kannan19302/database", () => ({
   PrismaService: vi.fn(),

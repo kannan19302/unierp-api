@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
-import { CrmGuidedSellingService } from "../crm-guided-selling.service";
+import { CrmGuidedSellingService } from "../services/crm-guided-selling.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
@@ -37,7 +37,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 

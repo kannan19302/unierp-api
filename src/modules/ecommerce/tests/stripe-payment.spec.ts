@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import * as crypto from "crypto";
-import { StripePaymentGatewayService } from "../payments/stripe-payment-gateway.service";
-import { MockPaymentGatewayService } from "../payments/mock-payment-gateway.service";
-import { EcommerceCheckoutService } from "../ecommerce-checkout.service";
+import { StripePaymentGatewayService } from "../services/stripe-payment-gateway.service";
+import { MockPaymentGatewayService } from "../services/mock-payment-gateway.service";
+import { EcommerceCheckoutService } from "../services/ecommerce-checkout.service";
 
 vi.mock("@kannan19302/database", () => {
   const mockPrisma = {

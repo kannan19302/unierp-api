@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { prisma } from "@kannan19302/database";
-import { PayoutService, ManualPayoutProvider } from "../payout.service";
+import { PayoutService, ManualPayoutProvider } from "../services/payout.service";
 
 /**
  * The payout ledger — § 8, Phase 5.

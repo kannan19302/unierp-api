@@ -1,17 +1,20 @@
 import { Module } from "@nestjs/common";
-import { RealEstateController } from "./real-estate.controller";
-import { RealEstatePropertiesService } from "./real-estate-properties.service";
-import { RealEstateLeasingService } from "./real-estate-leasing.service";
-import { RealEstateOperationsService } from "./real-estate-operations.service";
-import { RealEstateMaintenanceService } from "./real-estate-maintenance.service";
-import { RealEstateLeaseRenewalService } from "./real-estate-lease-renewal.service";
-import { RealEstateFinancialsService } from "./real-estate-financials.service";
+import { RealEstateController } from "./controllers/real-estate.controller";
+import { RealEstatePropertiesService } from "./services/real-estate-properties.service";
+import { RealEstateLeasingService } from "./services/real-estate-leasing.service";
+import { RealEstateOperationsService } from "./services/real-estate-operations.service";
+import { RealEstateMaintenanceService } from "./services/real-estate-maintenance.service";
+import { RealEstateLeaseRenewalService } from "./services/real-estate-lease-renewal.service";
+import { RealEstateFinancialsService } from "./services/real-estate-financials.service";
 import { RealEstateEnterpriseModule } from "./real-estate-enterprise.module";
+
+import { RealEstateRepository } from "./repositories/real-estate.repository";
 
 @Module({
   imports: [RealEstateEnterpriseModule],
   controllers: [RealEstateController],
   providers: [
+    RealEstateRepository,
     RealEstatePropertiesService,
     RealEstateLeasingService,
     RealEstateOperationsService,
@@ -20,6 +23,7 @@ import { RealEstateEnterpriseModule } from "./real-estate-enterprise.module";
     RealEstateFinancialsService,
   ],
   exports: [
+    RealEstateRepository,
     RealEstatePropertiesService,
     RealEstateLeasingService,
     RealEstateOperationsService,

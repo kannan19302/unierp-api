@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { EcommerceCheckoutService } from "../ecommerce-checkout.service";
-import { MockPaymentGatewayService } from "../payments/mock-payment-gateway.service";
+import { EcommerceCheckoutService } from "../services/ecommerce-checkout.service";
+import { MockPaymentGatewayService } from "../services/mock-payment-gateway.service";
 
 vi.mock("@kannan19302/database", () => {
   const mockPrisma = {

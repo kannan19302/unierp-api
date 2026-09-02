@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AnalyticsDeepService } from "../analytics-deep.service";
+import { AnalyticsDeepService } from "../services/analytics-deep.service";
 import { NotFoundException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({

@@ -19,9 +19,9 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { SalesDocumentsDeepService } from "../sales-documents-deep.service";
-import { DocumentTemplateEngineService } from "../document-template-engine.service";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { SalesDocumentsDeepService } from "../services/sales-documents-deep.service";
+import { DocumentTemplateEngineService } from "../services/document-template-engine.service";
 
 describe("SalesDocumentsDeepService", () => {
   let service: SalesDocumentsDeepService;

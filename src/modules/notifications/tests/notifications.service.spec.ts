@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NotificationsService } from "../notifications.service";
+import { NotificationsService } from "../services/notifications.service";
 
 vi.mock("@kannan19302/database", () => {
   return {

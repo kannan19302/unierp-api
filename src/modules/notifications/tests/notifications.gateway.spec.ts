@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NotificationsGateway } from "../notifications.gateway";
+import { NotificationsGateway } from "../controllers/notifications.gateway";
 
 describe("NotificationsGateway — Connect real-time wiring (US-A3/US-A4/US-A5)", () => {
   let gateway: NotificationsGateway;

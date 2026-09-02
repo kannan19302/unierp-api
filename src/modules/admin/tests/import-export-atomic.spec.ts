@@ -55,7 +55,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { ImportExportService } from "../import-export.service";
+import { ImportExportService } from "../services/import-export.service";
 
 describe("D08 · import framework — all-or-nothing, actionable errors, re-runnable", () => {
   let importSvc: ImportExportService;

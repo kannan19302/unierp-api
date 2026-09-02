@@ -30,7 +30,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { SaasMeteringEngineDeepService } from "../metering-engine.service";
+import { SaasMeteringEngineDeepService } from "../services/metering-engine.service";
 
 describe("SaasMeteringEngineDeepService.processUsageBatch", () => {
   let service: SaasMeteringEngineDeepService;

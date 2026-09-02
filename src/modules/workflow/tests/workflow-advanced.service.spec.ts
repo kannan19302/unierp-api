@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { withTenantSession } from "../../../../test/tenant-session";
-import { WorkflowAdvancedService } from "../workflow-advanced.service";
+import { WorkflowAdvancedService } from "../services/workflow-advanced.service";
 
 describe("WorkflowAdvancedService", () => {
   let service: WorkflowAdvancedService;

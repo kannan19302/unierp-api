@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CrmQuoteSignatureService } from "../crm-quote-signature.service";
+import { CrmQuoteSignatureService } from "../services/crm-quote-signature.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
@@ -16,7 +16,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 

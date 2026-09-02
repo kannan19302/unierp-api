@@ -26,7 +26,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { CloseOpsService } from "../close-ops.service";
+import { CloseOpsService } from "../services/close-ops.service";
 
 describe("E06 · reopening a closed period requires an approver — not a bare status flip", () => {
   let service: CloseOpsService;

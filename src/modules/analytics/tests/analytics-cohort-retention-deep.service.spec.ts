@@ -14,8 +14,8 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { AnalyticsCohortRetentionDeepService } from "../analytics-cohort-retention-deep.service";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { AnalyticsCohortRetentionDeepService } from "../services/analytics-cohort-retention-deep.service";
 
 describe("AnalyticsCohortRetentionDeepService", () => {
   let service: AnalyticsCohortRetentionDeepService;

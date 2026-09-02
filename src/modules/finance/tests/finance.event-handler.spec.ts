@@ -1,8 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FinanceEventHandler } from "../finance.event-handler";
-import { FinanceService } from "../finance.service";
+import { FinanceEventHandler } from "../events/finance.event-handler";
+import { FinanceService } from "../services/finance.service";
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+
+vi.mock("@kannan19302/database/prisma", () => ({
+  Prisma: {
+    Decimal: class Decimal {
+      value: number;
+      constructor(value: unknown) {
+        this.value = value instanceof Decimal ? value.value : Number(value);
+      }
+      plus(other: any) {
+        return new Decimal((this.value + Number(other?.value ?? other)).toFixed(4));
+      }
+      greaterThan(other: any) {
+        return this.value > Number(other?.value ?? other);
+      }
+      equals(other: any) {
+        return this.value === Number(other?.value ?? other);
+      }
+      toString() {
+        return String(this.value);
+      }
+      valueOf() {
+        return this.value;
+      }
+    },
+  },
+}));
 
 vi.mock("@kannan19302/database", () => {
   return {

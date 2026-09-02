@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { FabricGatewayProvider } from "../providers/fabric-gateway.provider";
+import { FabricGatewayProvider } from "./fabric-gateway.provider";
 import {
   SupplyChainTraceabilityContract,
   BlockchainTxStatus,

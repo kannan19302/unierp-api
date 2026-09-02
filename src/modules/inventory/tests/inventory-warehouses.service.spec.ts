@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { InventoryWarehousesService } from "../inventory-warehouses.service";
+import { InventoryWarehousesService } from "../services/inventory-warehouses.service";
 import { Warehouse } from "@kannan19302/database/prisma";
 
 vi.mock("@kannan19302/database", () => {

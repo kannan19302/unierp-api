@@ -1,11 +1,11 @@
 import { Module } from "@nestjs/common";
-import { CommunicationController } from "./communication.controller";
-import { CommunicationService } from "./communication.service";
-import { CommunicationAdminService } from "./communication-admin.service";
-import { CommunicationBotsService } from "./communication-bots.service";
-import { CommunicationExpansionController } from "./communication-expansion.controller";
-import { CommunicationExpansionService } from "./communication-expansion.service";
-import { CommunicationSettingsController } from "./settings.controller";
+import { CommunicationController } from "./controllers/communication.controller";
+import { CommunicationService } from "./services/communication.service";
+import { CommunicationAdminService } from "./services/communication-admin.service";
+import { CommunicationBotsService } from "./services/communication-bots.service";
+import { CommunicationExpansionController } from "./controllers/communication-expansion.controller";
+import { CommunicationExpansionService } from "./services/communication-expansion.service";
+import { CommunicationSettingsController } from "./controllers/settings.controller";
 import { KnowledgeBaseController } from "./controllers/knowledge-base.controller";
 import { HelpdeskController } from "./controllers/helpdesk.controller";
 import { OmnichannelController } from "./controllers/omnichannel.controller";
@@ -29,8 +29,10 @@ import { AppSettingsService } from "../../common/settings/settings.service";
 import { CommDeepExpansionController } from "./controllers/comm-deep-expansion.controller";
 import { CommDeepExpansionService } from "./services/comm-deep-expansion.service";
 import { CommunicationEnterpriseModule } from "./communication-enterprise.module";
-import { CommunicationEnterpriseController } from "./communication-enterprise.controller";
-import { CommunicationEnterpriseService } from "./communication-enterprise.service";
+import { CommunicationEnterpriseController } from "./controllers/communication-enterprise.controller";
+import { CommunicationEnterpriseService } from "./services/communication-enterprise.service";
+
+import { CommunicationRepository } from "./repositories/communication.repository";
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { CommunicationEnterpriseService } from "./communication-enterprise.servi
     CommunicationEnterpriseController,
   ],
   providers: [
+    CommunicationRepository,
     CommDeepExpansionService,
     CommunicationService,
     CommunicationAdminService,
@@ -71,6 +74,7 @@ import { CommunicationEnterpriseService } from "./communication-enterprise.servi
     CommunicationEnterpriseService,
   ],
   exports: [
+    CommunicationRepository,
     CommDeepExpansionService,
     CommunicationService,
     CommunicationAdminService,

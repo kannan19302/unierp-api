@@ -31,7 +31,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 vi.mock("@/common/idp-client", () => ({ idpClient: {} }));
 
-import { WebhooksService } from "../webhooks.service";
+import { WebhooksService } from "../services/webhooks.service";
 
 describe("D20 · webhook credentials are never rendered after save", () => {
   let webhooks: WebhooksService;

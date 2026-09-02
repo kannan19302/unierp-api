@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { SupplyChainEnterpriseController } from "./supply-chain-enterprise.controller";
-import { SupplyChainEnterpriseService } from "./supply-chain-enterprise.service";
+import { SupplyChainEnterpriseController } from "./controllers/supply-chain-enterprise.controller";
+import { SupplyChainEnterpriseService } from "./services/supply-chain-enterprise.service";
 
 @Module({
   controllers: [SupplyChainEnterpriseController],

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FreightClaimsService } from "../freight-claims.service";
+import { FreightClaimsService } from "../services/freight-claims.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({

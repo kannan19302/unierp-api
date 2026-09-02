@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CrmCustomerJourneyService } from "../crm-customer-journey.service";
+import { CrmCustomerJourneyService } from "../services/crm-customer-journey.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
@@ -60,7 +60,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 const ORG = "org-1";

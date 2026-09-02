@@ -1,7 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { WarehouseOpsService } from "../warehouse-ops.service";
+import { WarehouseOpsService } from "../services/warehouse-ops.service";
 import { PrismaService } from "@kannan19302/database";
 
 vi.mock("@kannan19302/database", () => ({

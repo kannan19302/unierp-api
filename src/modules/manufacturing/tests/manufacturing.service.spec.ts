@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ManufacturingService } from "../manufacturing.service";
+import { ManufacturingService } from "../services/manufacturing.service";
 import { Prisma } from "@kannan19302/database/prisma";
 
 // Mock all Prisma delegates
@@ -160,7 +160,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("ManufacturingService", () => {
   let service: ManufacturingService;

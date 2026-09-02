@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { promises as fs } from "fs";
 import { prisma, runWithTenantSession } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { BundleStoreService } from "../bundle-store.service";
-import { AppProvisioningService } from "../app-provisioning.service";
-import { VendorService } from "../vendor.service";
-import { MarketplaceService } from "../marketplace.service";
-import { validateManifest } from "../manifest";
-import { ServiceRegistryService } from "../../ext-gateway/service-registry.service";
-import { ExtProxyService } from "../../ext-gateway/ext-proxy.service";
-import { CircuitBreakerService } from "../../ext-gateway/circuit-breaker.service";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { BundleStoreService } from "../services/bundle-store.service";
+import { AppProvisioningService } from "../services/app-provisioning.service";
+import { VendorService } from "../services/vendor.service";
+import { MarketplaceService } from "../services/marketplace.service";
+import { validateManifest } from "../services/manifest";
+import { ServiceRegistryService } from "../../extensions/services/service-registry.service";
+import { ExtProxyService } from "../../extensions/services/ext-proxy.service";
+import { CircuitBreakerService } from "../../extensions/services/circuit-breaker.service";
 
 /**
  * End-to-end proof of the bundle lifecycle: publishing a third-party bundle, then

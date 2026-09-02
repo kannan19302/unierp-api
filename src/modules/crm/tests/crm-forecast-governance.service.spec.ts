@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CrmForecastGovernanceService } from "../crm-forecast-governance.service";
+import { CrmForecastGovernanceService } from "../services/crm-forecast-governance.service";
 
 vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
@@ -25,7 +25,7 @@ vi.mock("@kannan19302/database", () => {
 });
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 const ORG = "org-1";

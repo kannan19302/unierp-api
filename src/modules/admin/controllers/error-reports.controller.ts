@@ -1,0 +1,22 @@
+import { Controller, Post, HttpCode, HttpStatus } from "@nestjs/common";
+import { ZodBody } from "../../../common/decorators/zod-body.decorator";
+import { errorReportSchema, ErrorReportInput } from "../services/error-reports.schemas";
+import { ErrorReportsService } from "../services/error-reports.service";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
+import { Public } from "../../../common/decorators/public.decorator";
+
+@ApiTags("admin")
+@Controller("public/error-reports")
+export class ErrorReportsController {
+  constructor(private readonly errorReportsService: ErrorReportsService) {}
+
+  @ApiOperation({ summary: "Submit client-side error report" })
+  @Public(
+    "Client-side error telemetry posted by browsers before a session may exist. Zod-validated and covered by the global tenant throttler.",
+  )
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async submitReport(@ZodBody(errorReportSchema) dto: ErrorReportInput) {
+    return this.errorReportsService.createReport(dto);
+  }
+}

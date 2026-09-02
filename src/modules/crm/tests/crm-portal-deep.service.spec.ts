@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CrmPortalDeepService } from "../crm-portal-deep.service";
+import { CrmPortalDeepService } from "../services/crm-portal-deep.service";
 import { NotFoundException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({
@@ -45,7 +45,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 const CUSTOMER = "cust-1";

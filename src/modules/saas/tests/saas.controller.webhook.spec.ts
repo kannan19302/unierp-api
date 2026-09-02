@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
-import { SaasController } from "../saas.controller";
+import { SaasController } from "../controllers/saas.controller";
 
 describe("SaasController legacy Stripe webhook", () => {
   const controller = (billingService = { processStripeWebhook: vi.fn() }) =>

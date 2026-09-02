@@ -1,20 +1,21 @@
-import { BlockchainGeneratedController } from "./blockchain-generated.controller";
-import { BlockchainGeneratedService } from "./blockchain-generated.service";
+import { BlockchainGeneratedController } from "./controllers/blockchain-generated.controller";
+import { BlockchainGeneratedService } from "./services/blockchain-generated.service";
 import { Module, OnModuleInit, OnModuleDestroy, Logger } from "@nestjs/common";
 import { BlockchainEventListener } from "@kannan19302/blockchain";
 import { OutboxModule } from "../../platform/outbox/outbox.module";
 import { OutboxHandlerRegistry } from "../../platform/outbox/outbox-handler.registry";
-import { FabricGatewayProvider } from "./providers/fabric-gateway.provider";
+import { FabricGatewayProvider } from "./services/fabric-gateway.provider";
 import { DocumentBlockchainService } from "./services/document-blockchain.service";
 import { FinanceLedgerBlockchainService } from "./services/finance-ledger-blockchain.service";
 import { SupplyChainBlockchainService } from "./services/supply-chain-blockchain.service";
 import { ProcurementBlockchainService } from "./services/procurement-blockchain.service";
 import { BlockchainSyncService } from "./services/blockchain-sync.service";
 import { BlockchainAnchorService } from "./services/blockchain-anchor.service";
-import { BlockchainOutboxHandler } from "./blockchain-outbox.handler";
-import { BlockchainController } from "./blockchain.controller";
-import { BlockchainDeepController } from "./blockchain-deep.controller";
-import { BlockchainDeepService } from "./blockchain-deep.service";
+import { BlockchainOutboxHandler } from "./services/blockchain-outbox.handler";
+import { BlockchainController } from "./controllers/blockchain.controller";
+import { BlockchainDeepController } from "./controllers/blockchain-deep.controller";
+import { BlockchainDeepService } from "./services/blockchain-deep.service";
+import { BlockchainRepository } from "./repositories/blockchain.repository";
 
 @Module({
   imports: [OutboxModule],
@@ -24,6 +25,7 @@ import { BlockchainDeepService } from "./blockchain-deep.service";
     BlockchainDeepController,
   ],
   providers: [
+    BlockchainRepository,
     BlockchainGeneratedService,
     FabricGatewayProvider,
     BlockchainEventListener,
@@ -37,6 +39,7 @@ import { BlockchainDeepService } from "./blockchain-deep.service";
     BlockchainDeepService,
   ],
   exports: [
+    BlockchainRepository,
     BlockchainGeneratedService,
     DocumentBlockchainService,
     FinanceLedgerBlockchainService,

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { WorkflowService } from "../workflow.service";
+import { WorkflowService } from "../services/workflow.service";
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

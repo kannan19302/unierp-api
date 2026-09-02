@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PackagingGs1Service } from "../packaging-gs1.service";
+import { PackagingGs1Service } from "../services/packaging-gs1.service";
 import { NotFoundException, ConflictException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({

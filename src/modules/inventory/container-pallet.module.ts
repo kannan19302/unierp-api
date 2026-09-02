@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { ContainerPalletController } from "./container-pallet.controller";
-import { ContainerPalletService } from "./container-pallet.service";
+import { ContainerPalletController } from "./controllers/container-pallet.controller";
+import { ContainerPalletService } from "./services/container-pallet.service";
 
 @Module({
   controllers: [ContainerPalletController],

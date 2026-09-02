@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { FabricGatewayProvider } from "../providers/fabric-gateway.provider";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { FabricGatewayProvider } from "./fabric-gateway.provider";
 import {
   DocumentRegistryContract,
   FinanceLedgerContract,

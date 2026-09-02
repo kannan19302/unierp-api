@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isSafeUrl } from "../communication-ssrf.util";
+import { isSafeUrl } from "../services/communication-ssrf.util";
 
 describe("communication-ssrf.util", () => {
   describe("isSafeUrl", () => {

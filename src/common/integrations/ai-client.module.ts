@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AiModule } from "../../modules/ai/ai.module";
-import { AiService } from "../../modules/ai/ai.service";
+import { AiService } from "../../modules/ai/services/ai.service";
 import { AiClient } from "./ai-client";
 
 /**

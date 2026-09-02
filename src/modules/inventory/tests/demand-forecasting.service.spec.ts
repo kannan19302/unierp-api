@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
-import { DemandForecastingService } from "../demand-forecasting.service";
+import { DemandForecastingService } from "../services/demand-forecasting.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

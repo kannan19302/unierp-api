@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FixedAssetsController } from "../fixed-assets.controller";
-import { FixedAssetsService } from "../fixed-assets.service";
+import { FixedAssetsController } from "../controllers/fixed-assets.controller";
+import { FixedAssetsService } from "../services/fixed-assets.service";
 
 describe("FixedAssetsController", () => {
   let controller: FixedAssetsController;

@@ -32,6 +32,9 @@ export default defineConfig({
       // ../data). Anything importing it failed to collect with "Failed to load
       // url @kannan19302/database". ../data is the same version the manifest
       // asks for (1.0.14) and carries a built dist.
+      "@kannan19302/database/prisma": fileURLToPath(
+        new URL("../data/dist/prisma.js", import.meta.url),
+      ),
       "@kannan19302/database": fileURLToPath(
         new URL("../data/dist/index.js", import.meta.url),
       ),

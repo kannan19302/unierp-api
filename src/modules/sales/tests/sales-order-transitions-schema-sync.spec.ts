@@ -15,7 +15,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { updateSalesOrderStatusSchema } from "@kannan19302/shared";
-import { ORDER_STATUS_TRANSITIONS } from "../sales.service";
+import { ORDER_STATUS_TRANSITIONS } from "../services/sales.service";
 
 describe("sales order status transitions — schema sync", () => {
   it("J12: every status in updateSalesOrderStatusSchema has a corresponding ORDER_STATUS_TRANSITIONS entry", () => {

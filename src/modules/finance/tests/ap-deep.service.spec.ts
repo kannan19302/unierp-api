@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ApDeepService } from "../ap-deep.service";
+import { ApDeepService } from "../services/ap-deep.service";
 
 const mockTx = {
   paymentBatch: {
@@ -43,7 +43,7 @@ vi.mock("@kannan19302/database", () => {
 });
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("ApDeepService", () => {
   let service: ApDeepService;

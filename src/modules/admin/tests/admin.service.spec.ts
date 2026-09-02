@@ -1,7 +1,7 @@
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AdminService } from "../admin.service";
+import { AdminService } from "../services/admin.service";
 
 // Mock database package
 vi.mock("@kannan19302/database", () => {

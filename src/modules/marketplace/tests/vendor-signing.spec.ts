@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { prisma } from "@kannan19302/database";
 import { bundleDigestInput } from "@kannan19302/extension-api";
-import { VendorService } from "../vendor.service";
-import { BundleStoreService } from "../bundle-store.service";
+import { VendorService } from "../services/vendor.service";
+import { BundleStoreService } from "../services/bundle-store.service";
 
 /**
  * § 8.2 / § 10 — approving a bundle makes it installable by every tenant on the

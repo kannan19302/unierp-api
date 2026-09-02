@@ -1,24 +1,25 @@
 import { Module } from "@nestjs/common";
-import { FinanceController } from "./finance.controller";
-import { FinanceSettingsController } from "./settings.controller";
-import { FinanceService } from "./finance.service";
-import { FinanceEventHandler } from "./finance.event-handler";
-import { LeaseAccountingService } from "./lease-accounting.service";
-import { LeasesController } from "./leases.controller";
+import { FinanceController } from "./controllers/finance.controller";
+import { FinanceSettingsController } from "./controllers/settings.controller";
+import { FinanceService } from "./services/finance.service";
+import { FinanceEventHandler } from "./events/finance.event-handler";
+import { LeaseAccountingService } from "./services/lease-accounting.service";
+import { LeasesController } from "./controllers/leases.controller";
 import { AppSettingsService } from "../../common/settings/settings.service";
-import { FinanceDemoDataService } from "./finance-demo-data.service";
-import { ArDeepService } from "./ar-deep.service";
-import { ArDeepController } from "./ar-deep.controller";
-import { ApDeepService } from "./ap-deep.service";
-import { ApDeepController } from "./ap-deep.controller";
-import { CloseOpsService } from "./close-ops.service";
-import { CloseOpsController } from "./close-ops.controller";
-import { ProjectAccountingService } from "./project-accounting.service";
-import { ProjectAccountingController } from "./project-accounting.controller";
-import { FinanceExpansionService } from "./finance-expansion.service";
-import { FinanceExpansionController } from "./finance-expansion.controller";
-import { FinanceOperationsService } from "./finance-operations.service";
-import { FinanceOperationsController } from "./finance-operations.controller";
+import { FinanceDemoDataService } from "./services/finance-demo-data.service";
+import { ArDeepService } from "./services/ar-deep.service";
+import { ArDeepController } from "./controllers/ar-deep.controller";
+import { ApDeepService } from "./services/ap-deep.service";
+import { ApDeepController } from "./controllers/ap-deep.controller";
+import { CloseOpsService } from "./services/close-ops.service";
+import { CloseOpsController } from "./controllers/close-ops.controller";
+import { ProjectAccountingService } from "./services/project-accounting.service";
+import { ProjectAccountingController } from "./controllers/project-accounting.controller";
+import { FinanceExpansionService } from "./services/finance-expansion.service";
+import { FinanceExpansionController } from "./controllers/finance-expansion.controller";
+import { FinanceOperationsService } from "./services/finance-operations.service";
+import { FinanceOperationsController } from "./controllers/finance-operations.controller";
+import { FinanceRepository } from "./repositories/finance.repository";
 import { FinanceEnterpriseModule } from "./finance-enterprise.module";
 
 @Module({
@@ -35,6 +36,7 @@ import { FinanceEnterpriseModule } from "./finance-enterprise.module";
     FinanceOperationsController,
   ],
   providers: [
+    FinanceRepository,
     FinanceService,
     FinanceEventHandler,
     LeaseAccountingService,
@@ -47,6 +49,6 @@ import { FinanceEnterpriseModule } from "./finance-enterprise.module";
     FinanceExpansionService,
     FinanceOperationsService,
   ],
-  exports: [FinanceService, LeaseAccountingService, FinanceDemoDataService],
+  exports: [FinanceRepository, FinanceService, LeaseAccountingService, FinanceDemoDataService],
 })
 export class FinanceModule {}

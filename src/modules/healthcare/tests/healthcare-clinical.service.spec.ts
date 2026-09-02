@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { HealthcareClinicalService } from "../healthcare-clinical.service";
+import { HealthcareClinicalService } from "../services/healthcare-clinical.service";
 
 describe("HealthcareClinicalService", () => {
   let service: HealthcareClinicalService;

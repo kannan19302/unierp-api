@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { GUARDS_METADATA } from "@nestjs/common/constants";
+import { GUARDS_METADATA } from "../../../common/constants";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../pwa.service", () => ({ PwaService: class PwaService {} }));
@@ -13,7 +13,7 @@ vi.mock("../../../common/guards/rbac.guard", () => ({
 import { PERMISSIONS_KEY } from "../../../common/decorators/permissions.decorator";
 import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../../common/guards/rbac.guard";
-import { PwaController } from "../pwa.controller";
+import { PwaController } from "../controllers/pwa.controller";
 
 describe("PwaController tenant configuration boundaries", () => {
   it.each([

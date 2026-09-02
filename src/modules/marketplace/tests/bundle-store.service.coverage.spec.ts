@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { BundleStoreService } from "../bundle-store.service";
+import { BundleStoreService } from "../services/bundle-store.service";
 
 describe("BundleStoreService coverage", () => {
   let service: BundleStoreService;

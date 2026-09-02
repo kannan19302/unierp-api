@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { InventoryService } from "../inventory.service";
+import { InventoryService } from "../services/inventory.service";
 
 const { db } = vi.hoisted(() => {
   const db: Record<string, Record<string, ReturnType<typeof vi.fn>>> = {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CrmGamificationService } from "../crm-gamification.service";
+import { CrmGamificationService } from "../services/crm-gamification.service";
 
 vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through
@@ -36,7 +36,7 @@ vi.mock("@kannan19302/database", () => {
 });
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 const emit = vi.fn();

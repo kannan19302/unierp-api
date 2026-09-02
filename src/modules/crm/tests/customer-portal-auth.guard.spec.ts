@@ -5,7 +5,7 @@ const verifyToken = vi.hoisted(() => vi.fn());
 
 vi.mock("@kannan19302/auth", () => ({ verifyToken }));
 
-import { CustomerPortalAuthGuard } from "../customer-portal-auth.guard";
+import { CustomerPortalAuthGuard } from "../services/customer-portal-auth.guard";
 
 function contextFor(request: Record<string, unknown>) {
   return {

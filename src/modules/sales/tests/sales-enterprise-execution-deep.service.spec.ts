@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { SalesEnterpriseExecutionDeepService } from "../sales-enterprise-execution-deep.service";
-import { SalesQuoteCpqMasterDeepService } from "../sales-quote-cpq-master-deep.service";
+import { SalesEnterpriseExecutionDeepService } from "../services/sales-enterprise-execution-deep.service";
+import { SalesQuoteCpqMasterDeepService } from "../services/sales-quote-cpq-master-deep.service";
 import { PrismaService } from "@kannan19302/database";
 
 describe("Sales Deepening Services", () => {

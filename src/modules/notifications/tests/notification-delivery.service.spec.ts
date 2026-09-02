@@ -1,7 +1,7 @@
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NotificationDeliveryService } from "../notification-delivery.service";
+import { NotificationDeliveryService } from "../services/notification-delivery.service";
 
 vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through

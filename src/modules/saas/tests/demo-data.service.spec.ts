@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { DemoDataService } from "../demo-data.service";
+import { DemoDataService } from "../services/demo-data.service";
 
 // These tests came across with the service. They previously lived in the IdP's
 // onboarding spec and were orphaned when the platform split deleted

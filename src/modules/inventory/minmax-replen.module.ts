@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { MinMaxReplenController } from "./minmax-replen.controller";
-import { MinMaxReplenService } from "./minmax-replen.service";
+import { MinMaxReplenController } from "./controllers/minmax-replen.controller";
+import { MinMaxReplenService } from "./services/minmax-replen.service";
 
 @Module({
   controllers: [MinMaxReplenController],

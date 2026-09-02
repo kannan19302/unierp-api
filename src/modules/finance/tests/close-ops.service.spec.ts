@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CloseOpsService } from "../close-ops.service";
+import { CloseOpsService } from "../services/close-ops.service";
 
 vi.mock("@kannan19302/database", () => {
   return {
@@ -27,7 +27,7 @@ vi.mock("@kannan19302/database", () => {
 });
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("CloseOpsService", () => {
   let service: CloseOpsService;

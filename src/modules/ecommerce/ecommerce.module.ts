@@ -1,16 +1,18 @@
 import { Module } from "@nestjs/common";
 import { OutboxModule } from "../../platform/outbox/outbox.module";
-import { EcommerceAdminController } from "./ecommerce-admin.controller";
-import { EcommerceAdminService } from "./ecommerce-admin.service";
-import { EcommercePublicController } from "./ecommerce-public.controller";
-import { EcommercePublicService } from "./ecommerce-public.service";
-import { EcommerceCheckoutService } from "./ecommerce-checkout.service";
-import { EcommerceExpansionController } from "./ecommerce-expansion.controller";
-import { EcommerceExpansionService } from "./ecommerce-expansion.service";
+import { EcommerceAdminController } from "./controllers/ecommerce-admin.controller";
+import { EcommerceAdminService } from "./services/ecommerce-admin.service";
+import { EcommercePublicController } from "./controllers/ecommerce-public.controller";
+import { EcommercePublicService } from "./services/ecommerce-public.service";
+import { EcommerceCheckoutService } from "./services/ecommerce-checkout.service";
+import { EcommerceExpansionController } from "./controllers/ecommerce-expansion.controller";
+import { EcommerceExpansionService } from "./services/ecommerce-expansion.service";
 import { EcommerceEnterpriseModule } from "./ecommerce-enterprise.module";
-import { MockPaymentGatewayService } from "./payments/mock-payment-gateway.service";
-import { StripePaymentGatewayService } from "./payments/stripe-payment-gateway.service";
+import { MockPaymentGatewayService } from "./services/mock-payment-gateway.service";
+import { StripePaymentGatewayService } from "./services/stripe-payment-gateway.service";
 import { PlatformCredentialsModule } from "../../common/platform-credentials/platform-credentials.module";
+
+import { EcommerceRepository } from "./repositories/ecommerce.repository";
 
 /**
  * E-Commerce Storefront module (module #33). See
@@ -29,6 +31,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     EcommerceExpansionController,
   ],
   providers: [
+    EcommerceRepository,
     EcommerceAdminService,
     EcommercePublicService,
     EcommerceCheckoutService,
@@ -51,6 +54,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     },
   ],
   exports: [
+    EcommerceRepository,
     EcommerceAdminService,
     EcommercePublicService,
     EcommerceExpansionService,

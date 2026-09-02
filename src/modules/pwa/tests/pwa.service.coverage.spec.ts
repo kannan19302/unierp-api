@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PwaService } from "../pwa.service";
+import { PwaService } from "../services/pwa.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

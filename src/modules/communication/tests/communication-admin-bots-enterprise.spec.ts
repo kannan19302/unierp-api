@@ -1,9 +1,9 @@
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CommunicationAdminService } from "../communication-admin.service";
-import { CommunicationBotsService } from "../communication-bots.service";
-import { CommunicationEnterpriseService } from "../communication-enterprise.service";
+import { CommunicationAdminService } from "../services/communication-admin.service";
+import { CommunicationBotsService } from "../services/communication-bots.service";
+import { CommunicationEnterpriseService } from "../services/communication-enterprise.service";
 
 /* â”€â”€ CommunicationAdminService â”€â”€ */
 vi.mock("@kannan19302/database", () => {

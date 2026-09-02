@@ -18,7 +18,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { BillingService } from "../billing.service";
+import { BillingService } from "../services/billing.service";
 
 /**
  * Regression coverage for the billing webhook signature bypass: the original

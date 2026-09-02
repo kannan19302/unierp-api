@@ -1,14 +1,16 @@
 import { Module } from "@nestjs/common";
-import { DriveController } from "./drive.controller";
-import { DocumentsService } from "./documents.service";
-import { DocumentsDeepController } from "./documents-deep.controller";
-import { DocumentsDeepService } from "./documents-deep.service";
-import { DocumentsAdvancedController } from "./documents-advanced.controller";
-import { DocumentsAdvancedService } from "./documents-advanced.service";
-import { DocumentsExpansionController } from "./documents-expansion.controller";
-import { DocumentsExtController } from "./documents-ext.controller";
+import { DriveController } from "./controllers/drive.controller";
+import { DocumentsService } from "./services/documents.service";
+import { DocumentsDeepController } from "./controllers/documents-deep.controller";
+import { DocumentsDeepService } from "./services/documents-deep.service";
+import { DocumentsAdvancedController } from "./controllers/documents-advanced.controller";
+import { DocumentsAdvancedService } from "./services/documents-advanced.service";
+import { DocumentsExpansionController } from "./controllers/documents-expansion.controller";
+import { DocumentsExtController } from "./controllers/documents-ext.controller";
 import { SignatureWorkflowService } from "./services/signature-workflow.service";
 import { PlatformCredentialsModule } from "../../common/platform-credentials/platform-credentials.module";
+
+import { DocumentsRepository } from "./repositories/documents.repository";
 
 @Module({
   imports: [PlatformCredentialsModule],
@@ -20,12 +22,14 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     DocumentsExtController,
   ],
   providers: [
+    DocumentsRepository,
     DocumentsService,
     DocumentsDeepService,
     DocumentsAdvancedService,
     SignatureWorkflowService,
   ],
   exports: [
+    DocumentsRepository,
     DocumentsService,
     DocumentsDeepService,
     DocumentsAdvancedService,

@@ -1,16 +1,18 @@
-import { ApiPlatformGeneratedController } from "./api-platform-generated.controller";
-import { ApiPlatformGeneratedService } from "./api-platform-generated.service";
+import { ApiPlatformGeneratedController } from "./controllers/api-platform-generated.controller";
+import { ApiPlatformGeneratedService } from "./services/api-platform-generated.service";
 import { Module } from "@nestjs/common";
-import { ApiPlatformController } from "./api-platform.controller";
-import { ApiPlatformService } from "./api-platform.service";
-import { ApiRateLimitsService } from "./api-rate-limits.service";
-import { ApiQuotasService } from "./api-quotas.service";
-import { ApiPlatformDeepController } from "./api-platform-deep.controller";
-import { ApiPlatformDeepService } from "./api-platform-deep.service";
-import { ApiPlatformDeepV2Controller } from "./api-platform-deep-v2.controller";
-import { ApiPlatformDeepV2Service } from "./api-platform-deep-v2.service";
-import { ApiPlatformDeepV3Controller } from "./api-platform-deep-v3.controller";
-import { ApiPlatformDeepV3Service } from "./api-platform-deep-v3.service";
+import { ApiPlatformController } from "./controllers/api-platform.controller";
+import { ApiPlatformService } from "./services/api-platform.service";
+import { ApiRateLimitsService } from "./services/api-rate-limits.service";
+import { ApiQuotasService } from "./services/api-quotas.service";
+import { ApiPlatformDeepController } from "./controllers/api-platform-deep.controller";
+import { ApiPlatformDeepService } from "./services/api-platform-deep.service";
+import { ApiPlatformDeepV2Controller } from "./controllers/api-platform-deep-v2.controller";
+import { ApiPlatformDeepV2Service } from "./services/api-platform-deep-v2.service";
+import { ApiPlatformDeepV3Controller } from "./controllers/api-platform-deep-v3.controller";
+import { ApiPlatformDeepV3Service } from "./services/api-platform-deep-v3.service";
+
+import { ApiPlatformRepository } from "./repositories/api-platform.repository";
 
 @Module({
   controllers: [
@@ -21,6 +23,7 @@ import { ApiPlatformDeepV3Service } from "./api-platform-deep-v3.service";
     ApiPlatformDeepV3Controller,
   ],
   providers: [
+    ApiPlatformRepository,
     ApiPlatformGeneratedService,
     ApiPlatformService,
     ApiRateLimitsService,
@@ -30,6 +33,7 @@ import { ApiPlatformDeepV3Service } from "./api-platform-deep-v3.service";
     ApiPlatformDeepV3Service,
   ],
   exports: [
+    ApiPlatformRepository,
     ApiPlatformGeneratedService,
     ApiPlatformService,
     ApiRateLimitsService,

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { ProcurementService } from "../procurement.service";
+import { ProcurementService } from "../services/procurement.service";
 
 // Mock @kannan19302/database/prisma
 vi.mock("@kannan19302/database/prisma", () => ({
@@ -96,7 +96,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("ProcurementService", () => {
   let service: ProcurementService;

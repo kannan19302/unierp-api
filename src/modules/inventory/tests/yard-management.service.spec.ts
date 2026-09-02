@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
-import { YardManagementService } from "../yard-management.service";
+import { YardManagementService } from "../services/yard-management.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

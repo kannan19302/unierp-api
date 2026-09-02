@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ApiPlatformService } from "../api-platform.service";
+import { ApiPlatformService } from "../services/api-platform.service";
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 vi.mock("@kannan19302/database", () => {
   // Identity models (user, role, userSession, ...) are read through

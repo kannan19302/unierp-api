@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { BlockchainDeepService } from "../blockchain-deep.service";
+import { BlockchainDeepService } from "../services/blockchain-deep.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {

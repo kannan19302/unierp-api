@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { SupplyChainService } from "../supply-chain.service";
+import { SupplyChainService } from "../services/supply-chain.service";
 
 // Mock @kannan19302/database
 vi.mock("@kannan19302/database", () => {
@@ -68,7 +68,7 @@ vi.mock("@kannan19302/database", () => {
 });
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("SupplyChainService", () => {
   let service: SupplyChainService;

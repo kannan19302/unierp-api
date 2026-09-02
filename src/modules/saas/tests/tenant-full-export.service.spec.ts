@@ -28,7 +28,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { TenantFullExportService } from "../tenant-full-export.service";
+import { TenantFullExportService } from "../services/tenant-full-export.service";
 
 describe("D10 · complete tenant export — round-trips into a clean instance, reconciles record-for-record", () => {
   let exportSvc: TenantFullExportService;

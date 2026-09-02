@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AiDeepService } from "../ai-deep.service";
+import { AiDeepService } from "../services/ai-deep.service";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({

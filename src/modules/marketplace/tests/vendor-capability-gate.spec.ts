@@ -16,8 +16,8 @@ vi.mock("@kannan19302/shared", () => ({
 vi.mock("@kannan19302/database", () => ({ prisma: {} }));
 vi.mock("@kannan19302/extension-api", () => ({ bundleDigestInput: vi.fn() }));
 
-import { VendorService } from "../vendor.service";
-import type { AppManifest } from "../manifest";
+import { VendorService } from "../services/vendor.service";
+import type { AppManifest } from "../services/manifest";
 
 describe("M44 · C25 review queue refuses an extension with an unsatisfied declared capability", () => {
   let service: VendorService;

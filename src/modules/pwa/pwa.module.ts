@@ -1,14 +1,16 @@
-import { PwaGeneratedController } from "./pwa-generated.controller";
-import { PwaGeneratedService } from "./pwa-generated.service";
+import { PwaGeneratedController } from "./controllers/pwa-generated.controller";
+import { PwaGeneratedService } from "./services/pwa-generated.service";
 import { Module } from "@nestjs/common";
-import { PwaController } from "./pwa.controller";
-import { PwaService } from "./pwa.service";
-import { PwaPushService } from "./pwa-push.service";
-import { PwaSyncService } from "./pwa-sync.service";
+import { PwaController } from "./controllers/pwa.controller";
+import { PwaService } from "./services/pwa.service";
+import { PwaPushService } from "./services/pwa-push.service";
+import { PwaSyncService } from "./services/pwa-sync.service";
+
+import { PwaRepository } from "./repositories/pwa.repository";
 
 @Module({
   controllers: [PwaGeneratedController, PwaController],
-  providers: [PwaGeneratedService, PwaService, PwaPushService, PwaSyncService],
-  exports: [PwaGeneratedService, PwaService, PwaPushService, PwaSyncService],
+  providers: [PwaRepository, PwaGeneratedService, PwaService, PwaPushService, PwaSyncService],
+  exports: [PwaRepository, PwaGeneratedService, PwaService, PwaPushService, PwaSyncService],
 })
 export class PwaModule {}

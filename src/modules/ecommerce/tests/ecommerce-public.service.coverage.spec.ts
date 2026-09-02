@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
-import { EcommercePublicService } from "../ecommerce-public.service";
+import { EcommercePublicService } from "../services/ecommerce-public.service";
 
 vi.mock("@kannan19302/database", () => {
   return {

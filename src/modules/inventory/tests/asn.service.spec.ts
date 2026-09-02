@@ -27,7 +27,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { AsnService } from "../asn.service";
+import { AsnService } from "../services/asn.service";
 
 describe("AsnService", () => {
   let svc: AsnService;

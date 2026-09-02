@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { WarehouseOpsController } from "./warehouse-ops.controller";
-import { WarehouseOpsService } from "./warehouse-ops.service";
+import { WarehouseOpsController } from "./controllers/warehouse-ops.controller";
+import { WarehouseOpsService } from "./services/warehouse-ops.service";
 
 @Module({
   controllers: [WarehouseOpsController],

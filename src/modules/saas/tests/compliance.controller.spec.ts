@@ -34,7 +34,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { ComplianceController } from "../compliance.controller";
+import { ComplianceController } from "../controllers/compliance.controller";
 
 describe("K04 · ComplianceController's evidence endpoints reflect real state, not hardcoded certification claims", () => {
   let controller: ComplianceController;

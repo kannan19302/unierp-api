@@ -1,17 +1,19 @@
 import { Module } from "@nestjs/common";
 import { ExtensionGatewayClientModule } from "../../common/integrations/extension-gateway-client.module";
-import { AppProvisioningService } from "./app-provisioning.service";
-import { BundleStoreService } from "./bundle-store.service";
-import { DeveloperController } from "./developer.controller";
-import { MarketplaceController } from "./marketplace.controller";
-import { MarketplaceDeepController } from "./marketplace-deep.controller";
-import { MarketplaceDeepService } from "./marketplace-deep.service";
-import { MarketplaceService } from "./marketplace.service";
+import { AppProvisioningService } from "./services/app-provisioning.service";
+import { BundleStoreService } from "./services/bundle-store.service";
+import { DeveloperController } from "./controllers/developer.controller";
+import { MarketplaceController } from "./controllers/marketplace.controller";
+import { MarketplaceDeepController } from "./controllers/marketplace-deep.controller";
+import { MarketplaceDeepService } from "./services/marketplace-deep.service";
+import { MarketplaceService } from "./services/marketplace.service";
 import { MarketplaceEnterpriseModule } from "./marketplace-enterprise.module";
-import { StorefrontController } from "./storefront.controller";
-import { StorefrontService } from "./storefront.service";
-import { VendorService } from "./vendor.service";
-import { PayoutService } from "./payout.service";
+import { StorefrontController } from "./controllers/storefront.controller";
+import { StorefrontService } from "./services/storefront.service";
+import { VendorService } from "./services/vendor.service";
+import { PayoutService } from "./services/payout.service";
+
+import { MarketplaceRepository } from "./repositories/marketplace.repository";
 
 @Module({
   imports: [ExtensionGatewayClientModule, MarketplaceEnterpriseModule],
@@ -22,6 +24,7 @@ import { PayoutService } from "./payout.service";
     StorefrontController,
   ],
   providers: [
+    MarketplaceRepository,
     PayoutService,
     BundleStoreService,
     AppProvisioningService,
@@ -31,6 +34,7 @@ import { PayoutService } from "./payout.service";
     MarketplaceDeepService,
   ],
   exports: [
+    MarketplaceRepository,
     MarketplaceService,
     BundleStoreService,
     AppProvisioningService,

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { InventoryLaborService } from "../inventory-labor.service";
-import { SupplierQualityService } from "../supplier-quality.service";
-import { InventoryAutomationService } from "../inventory-automation.service";
-import { InventoryAnalyticsService } from "../inventory-analytics.service";
+import { InventoryLaborService } from "../services/inventory-labor.service";
+import { SupplierQualityService } from "../services/supplier-quality.service";
+import { InventoryAutomationService } from "../services/inventory-automation.service";
+import { InventoryAnalyticsService } from "../services/inventory-analytics.service";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@kannan19302/database/prisma";
 

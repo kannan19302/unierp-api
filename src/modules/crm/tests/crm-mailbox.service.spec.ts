@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { CrmMailboxService } from "../crm-mailbox.service";
-import { CrmMailboxProviderClientService } from "../crm-mailbox-provider-client.service";
+import { CrmMailboxService } from "../services/crm-mailbox.service";
+import { CrmMailboxProviderClientService } from "../services/crm-mailbox-provider-client.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
@@ -23,7 +23,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 const TENANT = "tenant-1";
 const USER = "user-1";

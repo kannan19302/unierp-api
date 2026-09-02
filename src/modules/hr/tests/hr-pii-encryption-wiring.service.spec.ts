@@ -27,8 +27,8 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { HrService } from "../hr.service";
-import { EmployeePiiEncryptionService } from "../employee-pii-encryption.service";
+import { HrService } from "../services/hr.service";
+import { EmployeePiiEncryptionService } from "../services/employee-pii-encryption.service";
 
 describe("E20 · HrService is wired to encrypt bankDetails, not store it plaintext", () => {
   let service: HrService;

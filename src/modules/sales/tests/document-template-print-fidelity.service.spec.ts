@@ -18,7 +18,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { DocumentTemplateEngineService } from "../document-template-engine.service";
+import { DocumentTemplateEngineService } from "../services/document-template-engine.service";
 
 function makeLineItems(count: number) {
   return Array.from({ length: count }, (_, i) => ({

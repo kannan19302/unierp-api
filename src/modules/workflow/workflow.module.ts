@@ -1,13 +1,14 @@
 import { Module } from "@nestjs/common";
-import { WorkflowController } from "./workflow.controller";
-import { WorkflowService } from "./workflow.service";
-import { WorkflowEngineService } from "./workflow-engine.service";
-import { WorkflowEngineController } from "./workflow-engine.controller";
+import { WorkflowController } from "./controllers/workflow.controller";
+import { WorkflowService } from "./services/workflow.service";
+import { WorkflowEngineService } from "./services/workflow-engine.service";
+import { WorkflowEngineController } from "./controllers/workflow-engine.controller";
 import { WorkflowEnterpriseModule } from "./workflow-enterprise.module";
-import { WorkflowAdvancedController } from "./workflow-advanced.controller";
-import { WorkflowAdvancedService } from "./workflow-advanced.service";
-import { WorkflowExpansionController } from "./workflow-expansion.controller";
-import { WorkflowExtController } from "./workflow-ext.controller";
+import { WorkflowAdvancedController } from "./controllers/workflow-advanced.controller";
+import { WorkflowAdvancedService } from "./services/workflow-advanced.service";
+import { WorkflowExpansionController } from "./controllers/workflow-expansion.controller";
+import { WorkflowExtController } from "./controllers/workflow-ext.controller";
+import { WorkflowRepository } from "./repositories/workflow.repository";
 import { AiClientModule } from "../../common/integrations/ai-client.module";
 
 @Module({
@@ -19,7 +20,7 @@ import { AiClientModule } from "../../common/integrations/ai-client.module";
     WorkflowExpansionController,
     WorkflowExtController,
   ],
-  providers: [WorkflowService, WorkflowEngineService, WorkflowAdvancedService],
-  exports: [WorkflowService, WorkflowEngineService, WorkflowAdvancedService],
+  providers: [WorkflowRepository, WorkflowService, WorkflowEngineService, WorkflowAdvancedService],
+  exports: [WorkflowRepository, WorkflowService, WorkflowEngineService, WorkflowAdvancedService],
 })
 export class WorkflowModule {}

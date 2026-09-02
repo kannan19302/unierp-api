@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ManufacturingMpsService } from "../manufacturing-mps.service";
+import { ManufacturingMpsService } from "../services/manufacturing-mps.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
@@ -17,7 +17,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("ManufacturingMpsService", () => {
   let service: ManufacturingMpsService;

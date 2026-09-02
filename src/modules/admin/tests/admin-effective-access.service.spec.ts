@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@kannan19302/database", () => mocks);
 
-import { AdminService } from "../admin.service";
+import { AdminService } from "../services/admin.service";
 
 describe("AdminService effective access tenant boundary", () => {
   let service: AdminService;

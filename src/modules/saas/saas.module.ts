@@ -1,88 +1,89 @@
 import { Module } from "@nestjs/common";
-import { SaasController } from "./saas.controller";
-import { SaasService } from "./saas.service";
-import { BillingService } from "./billing.service";
-import { BillingController } from "./billing.controller";
-import { BillingWebhookController } from "./billing-webhook.controller";
-import { StorageMeteringService } from "./storage-metering.service";
-import { PlanEngineService } from "./plan-engine.service";
-import { PlanEngineController } from "./plan-engine.controller";
-import { InvoiceEngineService } from "./invoice-engine.service";
-import { InvoiceEngineController } from "./invoice-engine.controller";
-import { PaymentMethodsService } from "./payment-methods.service";
-import { PaymentMethodsController } from "./payment-methods.controller";
-import { UsageAlertsService } from "./usage-alerts.service";
-import { UsageAlertsController } from "./usage-alerts.controller";
-import { ApiKeysService } from "./api-keys.service";
-import { ApiKeysController } from "./api-keys.controller";
-import { AuditLogService } from "./audit-log.service";
-import { SupportTicketsService } from "./support-tickets.service";
-import { SupportTicketsController } from "./support-tickets.controller";
-import { DomainService } from "./domain-service";
-import { DomainsController } from "./domains.controller";
-import { SsoConfigService } from "./sso-config.service";
-import { SsoConfigController } from "./sso-config.controller";
-import { BrandingService } from "./branding.service";
-import { BrandingController } from "./branding.controller";
-import { DataExportService } from "./data-export.service";
-import { DataExportController } from "./data-export.controller";
-import { TenantFullExportService } from "./tenant-full-export.service";
-import { WebhooksService } from "./webhooks.service";
-import { WebhooksController } from "./webhooks.controller";
-import { TenantAnalyticsService } from "./tenant-analytics.service";
-import { TenantAdminController } from "./tenant-admin.controller";
-import { AddonsController } from "./addons.controller";
-import { AnnouncementsController } from "./announcements.controller";
-import { SubscriptionLifecycleController } from "./subscription-lifecycle.controller";
-import { BillingPortalController } from "./billing-portal.controller";
-import { CustomerBillingController } from "./customer-billing.controller";
-import { UsageAnalyticsController } from "./usage-analytics.controller";
-import { MarketplaceController } from "./marketplace.controller";
-import { ComplianceController } from "./compliance.controller";
-import { SecurityController } from "./security.controller";
-import { NotificationPrefsController } from "./notification-prefs.controller";
-import { ReportsController } from "./reports.controller";
-import { SupportAdminController } from "./support-admin.controller";
-import { CouponsAdminController } from "./coupons-admin.controller";
-import { AddonAdminController } from "./addon-admin.controller";
-import { TenantProvisioningController } from "./tenant-provisioning.controller";
-import { BillingAdminController } from "./billing-admin.controller";
-import { MigrationController } from "./migration.controller";
-import { SystemAdminController } from "./system-admin.controller";
-import { InvoiceTemplatesController } from "./invoice-templates.controller";
-import { FeatureFlagsController } from "./feature-flags.controller";
-import { AnalyticsExtController } from "./analytics-ext.controller";
-import { IntegrationsController } from "./integrations.controller";
-import { OnboardingController } from "./onboarding.controller";
-import { DemoDataService } from "./demo-data.service";
-import { ContractsController } from "./contracts.controller";
-import { PaymentsExtController } from "./payments-ext.controller";
-import { ProfileController } from "./profile.controller";
-import { ActivityFeedController } from "./activity-feed.controller";
-import { HealthController } from "./health.controller";
-import { SaasGateway } from "./saas.gateway";
-import { RealtimeEmitterService } from "./realtime-emitter.service";
-import { SaasExpansionController } from "./saas-expansion.controller";
-import { SaasExpansionService } from "./saas-expansion.service";
-import { SaasMeteringEngineDeepService } from "./metering-engine.service";
-import { SaasMeteringEngineDeepController } from "./metering-engine.controller";
+import { SaasController } from "./controllers/saas.controller";
+import { SaasService } from "./services/saas.service";
+import { BillingService } from "./services/billing.service";
+import { BillingController } from "./controllers/billing.controller";
+import { BillingWebhookController } from "./controllers/billing-webhook.controller";
+import { StorageMeteringService } from "./services/storage-metering.service";
+import { PlanEngineService } from "./services/plan-engine.service";
+import { PlanEngineController } from "./controllers/plan-engine.controller";
+import { InvoiceEngineService } from "./services/invoice-engine.service";
+import { InvoiceEngineController } from "./controllers/invoice-engine.controller";
+import { PaymentMethodsService } from "./services/payment-methods.service";
+import { PaymentMethodsController } from "./controllers/payment-methods.controller";
+import { UsageAlertsService } from "./services/usage-alerts.service";
+import { UsageAlertsController } from "./controllers/usage-alerts.controller";
+import { ApiKeysService } from "./services/api-keys.service";
+import { ApiKeysController } from "./controllers/api-keys.controller";
+import { AuditLogService } from "./services/audit-log.service";
+import { SupportTicketsService } from "./services/support-tickets.service";
+import { SupportTicketsController } from "./controllers/support-tickets.controller";
+import { DomainService } from "./services/domain-service";
+import { DomainsController } from "./controllers/domains.controller";
+import { SsoConfigService } from "./services/sso-config.service";
+import { SsoConfigController } from "./controllers/sso-config.controller";
+import { BrandingService } from "./services/branding.service";
+import { BrandingController } from "./controllers/branding.controller";
+import { DataExportService } from "./services/data-export.service";
+import { DataExportController } from "./controllers/data-export.controller";
+import { TenantFullExportService } from "./services/tenant-full-export.service";
+import { WebhooksService } from "./services/webhooks.service";
+import { WebhooksController } from "./controllers/webhooks.controller";
+import { TenantAnalyticsService } from "./services/tenant-analytics.service";
+import { TenantAdminController } from "./controllers/tenant-admin.controller";
+import { AddonsController } from "./controllers/addons.controller";
+import { AnnouncementsController } from "./controllers/announcements.controller";
+import { SubscriptionLifecycleController } from "./controllers/subscription-lifecycle.controller";
+import { BillingPortalController } from "./controllers/billing-portal.controller";
+import { CustomerBillingController } from "./controllers/customer-billing.controller";
+import { UsageAnalyticsController } from "./controllers/usage-analytics.controller";
+import { MarketplaceController } from "./controllers/marketplace.controller";
+import { ComplianceController } from "./controllers/compliance.controller";
+import { SecurityController } from "./controllers/security.controller";
+import { NotificationPrefsController } from "./controllers/notification-prefs.controller";
+import { ReportsController } from "./controllers/reports.controller";
+import { SupportAdminController } from "./controllers/support-admin.controller";
+import { CouponsAdminController } from "./controllers/coupons-admin.controller";
+import { AddonAdminController } from "./controllers/addon-admin.controller";
+import { TenantProvisioningController } from "./controllers/tenant-provisioning.controller";
+import { BillingAdminController } from "./controllers/billing-admin.controller";
+import { MigrationController } from "./controllers/migration.controller";
+import { SystemAdminController } from "./controllers/system-admin.controller";
+import { InvoiceTemplatesController } from "./controllers/invoice-templates.controller";
+import { FeatureFlagsController } from "./controllers/feature-flags.controller";
+import { AnalyticsExtController } from "./controllers/analytics-ext.controller";
+import { IntegrationsController } from "./controllers/integrations.controller";
+import { OnboardingController } from "./controllers/onboarding.controller";
+import { DemoDataService } from "./services/demo-data.service";
+import { ContractsController } from "./controllers/contracts.controller";
+import { PaymentsExtController } from "./controllers/payments-ext.controller";
+import { ProfileController } from "./controllers/profile.controller";
+import { ActivityFeedController } from "./controllers/activity-feed.controller";
+import { HealthController } from "./controllers/health.controller";
+import { SaasGateway } from "./controllers/saas.gateway";
+import { RealtimeEmitterService } from "./services/realtime-emitter.service";
+import { SaasExpansionController } from "./controllers/saas-expansion.controller";
+import { SaasExpansionService } from "./services/saas-expansion.service";
+import { SaasMeteringEngineDeepService } from "./services/metering-engine.service";
+import { SaasMeteringEngineDeepController } from "./controllers/metering-engine.controller";
 
-import { SaasQuotaGuardDeepService } from "./quota-guard.service";
-import { SaasQuotaGuardDeepController } from "./quota-guard.controller";
-import { SaasOnboardingFlowDeepService } from "./onboarding-flow.service";
-import { SaasOnboardingFlowDeepController } from "./onboarding-flow.controller";
+import { SaasQuotaGuardDeepService } from "./services/quota-guard.service";
+import { SaasQuotaGuardDeepController } from "./controllers/quota-guard.controller";
+import { SaasOnboardingFlowDeepService } from "./services/onboarding-flow.service";
+import { SaasOnboardingFlowDeepController } from "./controllers/onboarding-flow.controller";
 
-import { SaasRevenueChurnHealthDeepService } from "./revenue-churn-health.service";
-import { SaasRevenueChurnHealthDeepController } from "./revenue-churn-health.controller";
-import { SaasIntegrationsComplianceDeepService } from "./integrations-compliance.service";
-import { SaasIntegrationsComplianceDeepController } from "./integrations-compliance.controller";
-import { SaasMarketplaceLifecycleDeepService } from "./marketplace-lifecycle.service";
-import { SaasMarketplaceLifecycleDeepController } from "./marketplace-lifecycle.controller";
-import { OnboardingWizardController } from "./onboarding-wizard.controller";
-import { OnboardingWizardService } from "./onboarding-wizard.service";
-import { MasterDataImportService } from "./master-data-import.service";
+import { SaasRevenueChurnHealthDeepService } from "./services/revenue-churn-health.service";
+import { SaasRevenueChurnHealthDeepController } from "./controllers/revenue-churn-health.controller";
+import { SaasIntegrationsComplianceDeepService } from "./services/integrations-compliance.service";
+import { SaasIntegrationsComplianceDeepController } from "./controllers/integrations-compliance.controller";
+import { SaasMarketplaceLifecycleDeepService } from "./services/marketplace-lifecycle.service";
+import { SaasMarketplaceLifecycleDeepController } from "./controllers/marketplace-lifecycle.controller";
+import { OnboardingWizardController } from "./controllers/onboarding-wizard.controller";
+import { OnboardingWizardService } from "./services/onboarding-wizard.service";
+import { MasterDataImportService } from "./services/master-data-import.service";
 
 import { PlatformCredentialsModule } from "../../common/platform-credentials/platform-credentials.module";
+import { SaasRepository } from "./repositories/saas.repository";
 
 @Module({
   imports: [PlatformCredentialsModule],
@@ -142,6 +143,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     OnboardingWizardController,
   ],
   providers: [
+    SaasRepository,
     SaasService,
     DemoDataService,
     SaasExpansionService,
@@ -175,6 +177,7 @@ import { PlatformCredentialsModule } from "../../common/platform-credentials/pla
     MasterDataImportService,
   ],
   exports: [
+    SaasRepository,
     SaasService,
     SaasExpansionService,
     BillingService,

@@ -1,7 +1,7 @@
 import { Injectable, Module } from "@nestjs/common";
-import { ExtGatewayModule } from "../../modules/ext-gateway/ext-gateway.module";
-import { ExtProxyService } from "../../modules/ext-gateway/ext-proxy.service";
-import { ServiceRegistryService } from "../../modules/ext-gateway/service-registry.service";
+import { ExtGatewayModule } from "../../modules/extensions/ext-gateway.module";
+import { ExtProxyService } from "../../modules/extensions/services/ext-proxy.service";
+import { ServiceRegistryService } from "../../modules/extensions/services/service-registry.service";
 import {
   ExtensionGatewayClient,
   ExtensionServiceEndpoint,

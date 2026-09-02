@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { EcommerceEnterpriseService } from "./ecommerce-enterprise.service";
-import { EcommerceEnterpriseController } from "./ecommerce-enterprise.controller";
+import { EcommerceEnterpriseService } from "./services/ecommerce-enterprise.service";
+import { EcommerceEnterpriseController } from "./controllers/ecommerce-enterprise.controller";
 
 @Module({
   controllers: [EcommerceEnterpriseController],

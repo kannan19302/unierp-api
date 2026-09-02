@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AutomationRulesService } from "../automation-rules.service";
+import { AutomationRulesService } from "../services/automation-rules.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

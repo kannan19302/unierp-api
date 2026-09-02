@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { HrEnterpriseService } from "./hr-enterprise.service";
-import { HrEnterpriseController } from "./hr-enterprise.controller";
+import { HrEnterpriseService } from "./services/hr-enterprise.service";
+import { HrEnterpriseController } from "./controllers/hr-enterprise.controller";
 
 @Module({
   controllers: [HrEnterpriseController],

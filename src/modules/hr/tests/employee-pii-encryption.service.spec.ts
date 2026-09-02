@@ -27,7 +27,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { EmployeePiiEncryptionService } from "../employee-pii-encryption.service";
+import { EmployeePiiEncryptionService } from "../services/employee-pii-encryption.service";
 
 describe("E20 · Employee.bankDetails is encrypted at rest, not stored as plaintext JSON", () => {
   let svc: EmployeePiiEncryptionService;

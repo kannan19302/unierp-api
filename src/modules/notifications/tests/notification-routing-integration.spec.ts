@@ -12,14 +12,14 @@
  * actually wired in.
  */
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NotificationDeliveryService } from "../notification-delivery.service";
-import { ProviderRegistryService } from "@/platform/provider-registry/provider-registry.service";
-import { RoutingService } from "@/platform/provider-registry/routing.service";
-import { NotificationRoutingService, EMAIL_CAPABILITY } from "@/platform/v1/notification-routing.service";
-import type { CapabilityAdapter, ExecutionResult, HealthProbeResult } from "@/platform/provider-registry/adapter-contract";
-import type { DiscoveredCapability } from "@/platform/provider-registry/provider-adapter.interface";
+import { NotificationDeliveryService } from "../services/notification-delivery.service";
+import { ProviderRegistryService } from "../../../platform/provider-registry/provider-registry.service";
+import { RoutingService } from "../../../platform/provider-registry/routing.service";
+import { NotificationRoutingService, EMAIL_CAPABILITY } from "../../../platform/v1/notification-routing.service";
+import type { CapabilityAdapter, ExecutionResult, HealthProbeResult } from "../../../platform/provider-registry/adapter-contract";
+import type { DiscoveredCapability } from "../../../platform/provider-registry/provider-adapter.interface";
 
 let providers: any[];
 let bindings: any[];

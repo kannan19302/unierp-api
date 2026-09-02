@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { RealEstatePropertyService } from "../real-estate-property.service";
+import { RealEstatePropertyService } from "../services/real-estate-property.service";
 
 describe("RealEstatePropertyService", () => {
   let service: RealEstatePropertyService;

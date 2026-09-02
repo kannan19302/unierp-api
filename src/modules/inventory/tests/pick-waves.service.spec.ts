@@ -34,7 +34,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { PickWavesService } from "../pick-waves.service";
+import { PickWavesService } from "../services/pick-waves.service";
 
 describe("PickWavesService", () => {
   let svc: PickWavesService;

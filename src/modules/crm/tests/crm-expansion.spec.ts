@@ -141,17 +141,17 @@ vi.mock("@kannan19302/database", () => {
 });
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { CrmForecastingService } from "../crm-forecasting.service";
-import { CrmAccountManagementService } from "../crm-account-management.service";
-import { CrmCampaignManagementService } from "../crm-campaign-management.service";
-import { SalesCpqService } from "../../sales/sales-cpq.service";
-import { SalesFulfillmentService } from "../../sales/sales-fulfillment.service";
-import { CrmSupportService } from "../crm-support.service";
-import { CrmEnablementService } from "../crm-enablement.service";
-import { CrmRevOpsService } from "../crm-revops.service";
-import { CrmPartnersService } from "../crm-partners.service";
-import { CrmAutomationService } from "../crm-automation.service";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { CrmForecastingService } from "../services/crm-forecasting.service";
+import { CrmAccountManagementService } from "../services/crm-account-management.service";
+import { CrmCampaignManagementService } from "../services/crm-campaign-management.service";
+import { SalesCpqService } from "../../sales/services/sales-cpq.service";
+import { SalesFulfillmentService } from "../../sales/services/sales-fulfillment.service";
+import { CrmSupportService } from "../services/crm-support.service";
+import { CrmEnablementService } from "../services/crm-enablement.service";
+import { CrmRevOpsService } from "../services/crm-revops.service";
+import { CrmPartnersService } from "../services/crm-partners.service";
+import { CrmAutomationService } from "../services/crm-automation.service";
 
 const TENANT = "tenant-1";
 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { withTenantSession } from "../../../../test/tenant-session";
-import { DocumentsAdvancedService } from "../documents-advanced.service";
+import { DocumentsAdvancedService } from "../services/documents-advanced.service";
 
 describe("DocumentsAdvancedService", () => {
   let service: DocumentsAdvancedService;

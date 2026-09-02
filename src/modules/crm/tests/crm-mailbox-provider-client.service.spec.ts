@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { CrmMailboxProviderClientService } from "../crm-mailbox-provider-client.service";
+import { CrmMailboxProviderClientService } from "../services/crm-mailbox-provider-client.service";
 
 /**
  * L08 — dedicated tests for the responsibility extracted from

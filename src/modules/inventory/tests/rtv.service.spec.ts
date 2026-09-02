@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { RtvService } from "../rtv.service";
+import { RtvService } from "../services/rtv.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 
 vi.mock("@kannan19302/database", () => ({

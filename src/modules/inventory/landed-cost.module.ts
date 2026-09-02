@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { LandedCostController } from "./landed-cost.controller";
-import { LandedCostService } from "./landed-cost.service";
+import { LandedCostController } from "./controllers/landed-cost.controller";
+import { LandedCostService } from "./services/landed-cost.service";
 
 @Module({
   controllers: [LandedCostController],

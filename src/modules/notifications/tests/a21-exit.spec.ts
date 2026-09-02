@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NotificationDeliveryService } from "../notification-delivery.service";
+import { NotificationDeliveryService } from "../services/notification-delivery.service";
 
 /**
  * A21 exit criterion — the command is:

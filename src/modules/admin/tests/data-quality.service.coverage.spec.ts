@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { DataQualityService } from "../data-quality.service";
+import { DataQualityService } from "../services/data-quality.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

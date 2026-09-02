@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { AslController } from "./asl.controller";
-import { AslService } from "./asl.service";
+import { AslController } from "./controllers/asl.controller";
+import { AslService } from "./services/asl.service";
 
 @Module({
   controllers: [AslController],

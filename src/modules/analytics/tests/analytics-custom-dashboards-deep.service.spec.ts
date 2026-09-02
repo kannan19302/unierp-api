@@ -14,8 +14,8 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { AnalyticsCustomDashboardsDeepService } from "../analytics-custom-dashboards-deep.service";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { AnalyticsCustomDashboardsDeepService } from "../services/analytics-custom-dashboards-deep.service";
 
 describe("AnalyticsCustomDashboardsDeepService", () => {
   let service: AnalyticsCustomDashboardsDeepService;

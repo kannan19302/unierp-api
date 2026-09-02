@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { DocumentsService } from "../documents.service";
+import { DocumentsService } from "../services/documents.service";
 
 vi.mock("@kannan19302/database", () => {
   return {

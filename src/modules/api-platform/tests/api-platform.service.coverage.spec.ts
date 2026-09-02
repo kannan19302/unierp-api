@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ApiPlatformService } from "../api-platform.service";
+import { ApiPlatformService } from "../services/api-platform.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

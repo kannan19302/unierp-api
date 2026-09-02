@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PricingService } from "../pricing.service";
+import { PricingService } from "../services/pricing.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

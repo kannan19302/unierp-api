@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { ProcurementAnalyticsService } from "../procurement-analytics.service";
+import { ProcurementAnalyticsService } from "../services/procurement-analytics.service";
 
 vi.mock("@kannan19302/database", () => ({
   prisma: {
@@ -12,7 +12,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("ProcurementAnalyticsService", () => {
   let service: ProcurementAnalyticsService;

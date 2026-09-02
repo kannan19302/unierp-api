@@ -1,24 +1,26 @@
-import { FixedAssetsGeneratedController } from "./fixed-assets-generated.controller";
-import { FixedAssetsGeneratedService } from "./fixed-assets-generated.service";
+import { FixedAssetsGeneratedController } from "./controllers/fixed-assets-generated.controller";
+import { FixedAssetsGeneratedService } from "./services/fixed-assets-generated.service";
 import { Module } from "@nestjs/common";
-import { FixedAssetsController } from "./fixed-assets.controller";
-import { FixedAssetsDeepController } from "./fixed-assets-deep.controller";
-import { FixedAssetsBulkController } from "./fixed-assets-bulk.controller";
-import { FixedAssetsService } from "./fixed-assets.service";
-import { AssetDepreciationService } from "./asset-depreciation.service";
-import { AssetMaintenanceService } from "./asset-maintenance.service";
-import { AssetInsuranceService } from "./asset-insurance.service";
-import { AssetRevaluationService } from "./asset-revaluation.service";
-import { AssetPhysicalAuditService } from "./asset-physical-audit.service";
-import { AssetWarrantyService } from "./asset-warranty.service";
-import { AssetComponentService } from "./asset-component.service";
-import { AssetImpairmentService } from "./asset-impairment.service";
-import { AssetConditionService } from "./asset-condition.service";
-import { AssetUtilizationService } from "./asset-utilization.service";
-import { AssetGroupService } from "./asset-group.service";
-import { AssetBudgetService } from "./asset-budget.service";
-import { AssetDocumentService } from "./asset-document.service";
-import { AssetOperationsService } from "./asset-operations.service";
+import { FixedAssetsController } from "./controllers/fixed-assets.controller";
+import { FixedAssetsDeepController } from "./controllers/fixed-assets-deep.controller";
+import { FixedAssetsBulkController } from "./controllers/fixed-assets-bulk.controller";
+import { FixedAssetsService } from "./services/fixed-assets.service";
+import { AssetDepreciationService } from "./services/asset-depreciation.service";
+import { AssetMaintenanceService } from "./services/asset-maintenance.service";
+import { AssetInsuranceService } from "./services/asset-insurance.service";
+import { AssetRevaluationService } from "./services/asset-revaluation.service";
+import { AssetPhysicalAuditService } from "./services/asset-physical-audit.service";
+import { AssetWarrantyService } from "./services/asset-warranty.service";
+import { AssetComponentService } from "./services/asset-component.service";
+import { AssetImpairmentService } from "./services/asset-impairment.service";
+import { AssetConditionService } from "./services/asset-condition.service";
+import { AssetUtilizationService } from "./services/asset-utilization.service";
+import { AssetGroupService } from "./services/asset-group.service";
+import { AssetBudgetService } from "./services/asset-budget.service";
+import { AssetDocumentService } from "./services/asset-document.service";
+import { AssetOperationsService } from "./services/asset-operations.service";
+
+import { FixedAssetsRepository } from "./repositories/fixed-assets.repository";
 
 @Module({
   controllers: [
@@ -28,6 +30,7 @@ import { AssetOperationsService } from "./asset-operations.service";
     FixedAssetsBulkController,
   ],
   providers: [
+    FixedAssetsRepository,
     FixedAssetsGeneratedService,
     FixedAssetsService,
     AssetDepreciationService,
@@ -46,6 +49,7 @@ import { AssetOperationsService } from "./asset-operations.service";
     AssetOperationsService,
   ],
   exports: [
+    FixedAssetsRepository,
     FixedAssetsGeneratedService,
     FixedAssetsService,
     AssetDepreciationService,

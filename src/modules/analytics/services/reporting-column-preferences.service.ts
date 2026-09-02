@@ -1,0 +1,54 @@
+import { Injectable } from "@nestjs/common";
+import { prisma } from "@kannan19302/database";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { Prisma } from "@kannan19302/database/prisma";
+
+@Injectable()
+export class ReportingColumnPreferencesService {
+  async getPreferences(tenantId: string, userId: string, reportId: string) {
+    return prisma.reportColumnPreference.findMany({
+      where: { tenantId, userId, reportId },
+    });
+  }
+
+  async upsertPreferences(
+    tenantId: string,
+    userId: string,
+    reportId: string,
+    columns: Array<{
+      field: string;
+      label?: string;
+      visible?: boolean;
+      width?: number;
+      sortOrder?: number;
+      pinned?: string;
+    }>,
+  ) {
+    await prisma.reportColumnPreference.deleteMany({
+      where: { tenantId, userId, reportId },
+    });
+    return prisma.reportColumnPreference.create({
+      data: {
+        tenantId,
+        userId,
+        reportId,
+        columnConfig: columns as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  async resetPreferences(tenantId: string, userId: string, reportId: string) {
+    await prisma.reportColumnPreference.deleteMany({
+      where: { tenantId, userId, reportId },
+    });
+    return { success: true };
+  }
+
+  async upsertPreferencesSimple(tenantId: string, userId: string, body: any) {
+    return prisma.reportColumnPreference.upsert({
+      where: { userId_reportId: { userId, reportId: body.reportId } } as any,
+      create: { ...body, userId, tenantId },
+      update: { columns: body.columns },
+    } as any);
+  }
+}

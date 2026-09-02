@@ -29,8 +29,8 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { AiConfigService } from "../ai-config.service";
-import { AiService } from "../ai.service";
+import { AiConfigService } from "../services/ai-config.service";
+import { AiService } from "../services/ai.service";
 
 describe("E45 · AiConfigService per-tenant model pinning", () => {
   let service: AiConfigService;

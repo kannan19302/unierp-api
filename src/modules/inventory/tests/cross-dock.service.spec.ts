@@ -26,7 +26,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { CrossDockService } from "../cross-dock.service";
+import { CrossDockService } from "../services/cross-dock.service";
 
 describe("CrossDockService", () => {
   let svc: CrossDockService;

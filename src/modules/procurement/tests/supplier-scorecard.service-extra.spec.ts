@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { SupplierScorecardService } from "../supplier-scorecard.service";
+import { SupplierScorecardService } from "../services/supplier-scorecard.service";
 import { NotFoundException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({
@@ -18,7 +18,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("SupplierScorecardService (extra)", () => {
   let service: SupplierScorecardService;

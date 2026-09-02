@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ArDeepService } from "../ar-deep.service";
+import { ArDeepService } from "../services/ar-deep.service";
 
 vi.mock("@kannan19302/database", () => {
   return {
@@ -33,7 +33,7 @@ vi.mock("@kannan19302/database", () => {
 });
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("ArDeepService", () => {
   let service: ArDeepService;

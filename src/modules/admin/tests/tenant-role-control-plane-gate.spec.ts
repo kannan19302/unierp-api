@@ -31,7 +31,7 @@ vi.mock("@/common/idp-client", () => ({
   },
 }));
 
-import { AdminService } from "../admin.service";
+import { AdminService } from "../services/admin.service";
 
 describe("D03 · tenant custom roles cannot grant a control-plane permission", () => {
   let service: AdminService;

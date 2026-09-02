@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ActivityFeedService } from "../activity-feed.service";
+import { ActivityFeedService } from "../services/activity-feed.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

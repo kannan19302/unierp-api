@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { SalesService } from "../sales.service";
+import { SalesService } from "../services/sales.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {
@@ -55,7 +55,7 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 
 describe("SalesService — read/transition coverage", () => {
   let service: SalesService;

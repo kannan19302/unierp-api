@@ -16,8 +16,8 @@ vi.mock("@kannan19302/database", () => ({
 }));
 
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
-import { SalesGamificationDeepService } from "../sales-gamification-deep.service";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { SalesGamificationDeepService } from "../services/sales-gamification-deep.service";
 
 describe("SalesGamificationDeepService", () => {
   let service: SalesGamificationDeepService;

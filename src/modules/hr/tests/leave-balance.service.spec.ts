@@ -50,7 +50,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { HrService } from "../hr.service";
+import { HrService } from "../services/hr.service";
 
 const DAY = 24 * 60 * 60 * 1000;
 

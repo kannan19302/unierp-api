@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ColdChainController } from "./controllers/cold-chain.controller";
 import { ColdChainService } from "./services/cold-chain.service";
-import { SupplyChainController } from "./supply-chain.controller";
-import { SupplyChainService } from "./supply-chain.service";
+import { SupplyChainController } from "./controllers/supply-chain.controller";
+import { SupplyChainService } from "./services/supply-chain.service";
 import { DemandPlanningService } from "./services/demand-planning.service";
 import { LogisticsTrackingService } from "./services/logistics-tracking.service";
 import { RouteOptimizationService } from "./services/route-optimization.service";
@@ -72,12 +72,14 @@ import { AdvancedAnalyticsController } from "./controllers/advanced-analytics.co
 import { SupplierPortalController } from "./controllers/supplier-portal.controller";
 import { DigitalTwinController } from "./controllers/digital-twin.controller";
 import { SupplyChainEventsService } from "./events/supply-chain-events.service";
-import { SupplyChainSettingsController } from "./settings.controller";
+import { SupplyChainSettingsController } from "./controllers/settings.controller";
 import { ScmDeepExpansionController } from "./controllers/scm-deep-expansion.controller";
 import { ScmDeepExpansionService } from "./services/scm-deep-expansion.service";
-import { SupplyChainEnterpriseController } from "./supply-chain-enterprise.controller";
-import { SupplyChainEnterpriseService } from "./supply-chain-enterprise.service";
+import { SupplyChainEnterpriseController } from "./controllers/supply-chain-enterprise.controller";
+import { SupplyChainEnterpriseService } from "./services/supply-chain-enterprise.service";
 import { SupplyChainEnterpriseModule } from "./supply-chain-enterprise.module";
+
+import { SupplyChainRepository } from "./repositories/supply-chain.repository";
 
 @Module({
   imports: [SupplyChainEnterpriseModule],
@@ -121,6 +123,7 @@ import { SupplyChainEnterpriseModule } from "./supply-chain-enterprise.module";
     SupplyChainEnterpriseController,
   ],
   providers: [
+    SupplyChainRepository,
     ColdChainService,
     ScmDeepExpansionService,
     SupplyChainService,
@@ -160,6 +163,7 @@ import { SupplyChainEnterpriseModule } from "./supply-chain-enterprise.module";
     SupplyChainEnterpriseService,
   ],
   exports: [
+    SupplyChainRepository,
     ColdChainService,
     ScmDeepExpansionService,
     SupplyChainService,

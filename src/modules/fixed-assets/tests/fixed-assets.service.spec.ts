@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FixedAssetsService } from "../fixed-assets.service";
+import { FixedAssetsService } from "../services/fixed-assets.service";
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { Prisma } from "@kannan19302/database/prisma";
 
 vi.mock("@kannan19302/database/prisma", () => {

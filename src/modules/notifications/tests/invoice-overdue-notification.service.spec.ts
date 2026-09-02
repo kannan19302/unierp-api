@@ -1,8 +1,8 @@
 import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "@/common/idp-client";
+import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { InvoiceOverdueNotificationService } from "../invoice-overdue-notification.service";
+import { InvoiceOverdueNotificationService } from "../services/invoice-overdue-notification.service";
 
 /**
  * Closes MODULE_REGISTRY.md Up Next 25d: `finance.invoice.overdue` was emitted

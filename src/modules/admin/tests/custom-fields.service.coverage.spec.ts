@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CustomFieldsService } from "../custom-fields.service";
+import { CustomFieldsService } from "../services/custom-fields.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

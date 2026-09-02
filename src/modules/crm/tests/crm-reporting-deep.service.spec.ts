@@ -31,7 +31,7 @@ import {
   createCrmSavedReportSchema,
   createReportScheduleSchema,
   createDashboardTemplateSchema,
-} from "../crm-reporting-deep.service";
+} from "../services/crm-reporting-deep.service";
 import { NotFoundException } from "@nestjs/common";
 
 describe("CrmReportingDeepService", () => {

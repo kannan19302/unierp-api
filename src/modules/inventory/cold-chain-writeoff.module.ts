@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { ColdChainWriteoffController } from "./cold-chain-writeoff.controller";
-import { ColdChainWriteoffService } from "./cold-chain-writeoff.service";
+import { ColdChainWriteoffController } from "./controllers/cold-chain-writeoff.controller";
+import { ColdChainWriteoffService } from "./services/cold-chain-writeoff.service";
 
 @Module({
   controllers: [ColdChainWriteoffController],

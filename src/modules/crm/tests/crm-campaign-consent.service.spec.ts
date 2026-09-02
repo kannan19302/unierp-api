@@ -26,7 +26,7 @@ vi.mock("@kannan19302/database", () => ({
   },
 }));
 
-import { CrmCampaignManagementService } from "../crm-campaign-management.service";
+import { CrmCampaignManagementService } from "../services/crm-campaign-management.service";
 
 describe("E23 · campaign audience-building excludes opted-out leads/contacts — consented communication via A21", () => {
   let service: CrmCampaignManagementService;

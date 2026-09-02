@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { FieldServiceEnterpriseService } from "./field-service-enterprise.service";
-import { FieldServiceEnterpriseController } from "./field-service-enterprise.controller";
+import { FieldServiceEnterpriseService } from "./services/field-service-enterprise.service";
+import { FieldServiceEnterpriseController } from "./controllers/field-service-enterprise.controller";
 
 @Module({
   controllers: [FieldServiceEnterpriseController],

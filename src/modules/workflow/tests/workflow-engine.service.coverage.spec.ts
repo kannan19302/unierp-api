@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { WorkflowEngineService } from "../workflow-engine.service";
+import { WorkflowEngineService } from "../services/workflow-engine.service";
 
 vi.mock("@kannan19302/database/prisma", () => ({
   Prisma: {

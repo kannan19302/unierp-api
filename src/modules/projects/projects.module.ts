@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { ProjectsController } from "./projects.controller";
-import { ProjectsService } from "./projects.service";
-import { ProjectSchedulingService } from "./project-scheduling.service";
-import { ProjectsExpansionController } from "./projects-expansion.controller";
-import { ProjectsExpansionService } from "./projects-expansion.service";
+import { ProjectsController } from "./controllers/projects.controller";
+import { ProjectsService } from "./services/projects.service";
+import { ProjectSchedulingService } from "./services/project-scheduling.service";
+import { ProjectsExpansionController } from "./controllers/projects-expansion.controller";
+import { ProjectsExpansionService } from "./services/projects-expansion.service";
 import { ProgramManagementController } from "./controllers/program-management.controller";
 import { ProjectsProgramService } from "./services/projects-program.service";
 import { AgileController } from "./controllers/agile.controller";
@@ -24,8 +24,8 @@ import { ProjectsCollaborationService } from "./services/projects-collaboration.
 import { PpmDeepExpansionController } from "./controllers/ppm-deep-expansion.controller";
 import { PpmDeepExpansionService } from "./services/ppm-deep-expansion.service";
 import { ProjectsEnterpriseModule } from "./projects-enterprise.module";
-import { ProjectsEnterpriseController } from "./projects-enterprise.controller";
-import { ProjectsEnterpriseService } from "./projects-enterprise.service";
+import { ProjectsEnterpriseController } from "./controllers/projects-enterprise.controller";
+import { ProjectsEnterpriseService } from "./services/projects-enterprise.service";
 
 import { WbsController } from "./controllers/wbs.controller";
 import { ProjectsWbsService } from "./services/projects-wbs.service";
@@ -35,6 +35,8 @@ import { RiskRegisterController } from "./controllers/risk-register.controller";
 import { ProjectsRiskRegisterService } from "./services/projects-risk-register.service";
 import { TimesheetApprovalController } from "./controllers/timesheet-approval.controller";
 import { ProjectsTimesheetService } from "./services/projects-timesheet.service";
+
+import { ProjectsRepository } from "./repositories/projects.repository";
 
 @Module({
   imports: [ProjectsEnterpriseModule],
@@ -57,6 +59,7 @@ import { ProjectsTimesheetService } from "./services/projects-timesheet.service"
     TimesheetApprovalController,
   ],
   providers: [
+    ProjectsRepository,
     PpmDeepExpansionService,
     ProjectsService,
     ProjectSchedulingService,
@@ -77,7 +80,7 @@ import { ProjectsTimesheetService } from "./services/projects-timesheet.service"
     ProjectsTimesheetService,
   ],
   exports: [
-    PpmDeepExpansionService,
+    ProjectsRepository,
     PpmDeepExpansionService,
     ProjectsService,
     ProjectSchedulingService,

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { describe, it, expect } from "vitest";
-import { EcommercePublicController } from "../ecommerce-public.controller";
-import { PublicTenantResolverGuard } from "../guards/public-tenant-resolver.guard";
+import { EcommercePublicController } from "../controllers/ecommerce-public.controller";
+import { PublicTenantResolverGuard } from "../services/public-tenant-resolver.guard";
 import { PERMISSIONS_KEY } from "../../../common/decorators/permissions.decorator";
 import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../../common/guards/rbac.guard";

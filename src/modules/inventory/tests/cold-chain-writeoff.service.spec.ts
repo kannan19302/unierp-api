@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ColdChainWriteoffService } from "../cold-chain-writeoff.service";
+import { ColdChainWriteoffService } from "../services/cold-chain-writeoff.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
 vi.mock("@kannan19302/database", () => ({

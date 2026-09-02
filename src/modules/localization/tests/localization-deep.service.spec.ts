@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { LocalizationContextService } from "../localization-context.service";
-import { LocalizationGlossaryService } from "../localization-glossary.service";
-import { LocalizationMemoryService } from "../localization-memory.service";
-import { LocalizationMachineTranslationService } from "../localization-mt.service";
-import { LocalizationReviewService } from "../localization-review.service";
-import { LocalizationFallbackService } from "../localization-fallback.service";
-import { LocalizationContentScheduleService } from "../localization-content-schedule.service";
-import { LocalizationRegionValidationService } from "../localization-region-validation.service";
+import { LocalizationContextService } from "../services/localization-context.service";
+import { LocalizationGlossaryService } from "../services/localization-glossary.service";
+import { LocalizationMemoryService } from "../services/localization-memory.service";
+import { LocalizationMachineTranslationService } from "../services/localization-mt.service";
+import { LocalizationReviewService } from "../services/localization-review.service";
+import { LocalizationFallbackService } from "../services/localization-fallback.service";
+import { LocalizationContentScheduleService } from "../services/localization-content-schedule.service";
+import { LocalizationRegionValidationService } from "../services/localization-region-validation.service";
 
 describe("LocalizationDeepServices", () => {
   let ctxService: LocalizationContextService;
