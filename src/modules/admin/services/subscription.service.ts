@@ -69,8 +69,8 @@ export class SubscriptionService {
         tenantId,
         planId,
         status: "ACTIVE",
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 86400000),
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 86400000),
       },
       update: {
         planId,
@@ -81,10 +81,10 @@ export class SubscriptionService {
   }
 
   async updateSeats(tenantId: string, seats: number) {
-    return prisma.tenantSubscription.update({
-      where: { tenantId },
-      data: { customSeats: seats },
-      include: { plan: true },
+    return prisma.usageRecord.upsert({
+      where: { tenantId_metric: { tenantId, metric: "USERS_COUNT" } },
+      create: { tenantId, metric: "USERS_COUNT", currentValue: 0, limitValue: seats },
+      update: { limitValue: seats },
     });
   }
 

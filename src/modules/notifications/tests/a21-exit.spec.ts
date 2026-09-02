@@ -42,9 +42,9 @@ const MODULE_FILES = walk(MODULES_ROOT).filter((f) => {
   return true;
 });
 
-const ENGINE_FILE = join(MODULES_ROOT, "notifications", "notification-delivery.service.ts");
-const DEEP_SERVICE_FILE = join(MODULES_ROOT, "notifications", "notifications-deep.service.ts");
-const DEEP_CONTROLLER_FILE = join(MODULES_ROOT, "notifications", "notifications-deep.controller.ts");
+const ENGINE_FILE = join(MODULES_ROOT, "notifications", "services", "notification-delivery.service.ts");
+const DEEP_SERVICE_FILE = join(MODULES_ROOT, "notifications", "services", "notifications-deep.service.ts");
+const DEEP_CONTROLLER_FILE = join(MODULES_ROOT, "notifications", "controllers", "notifications-deep.controller.ts");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared prisma mock (inlined so vitest's hoisted vi.mock factory is
@@ -103,11 +103,11 @@ describe("A21 exit criterion — unified notification & delivery engine", () => 
 
     it("modules from across the platform emit `notification.send` through the event bus", () => {
       const emitters = [
-        "workflow/workflow-engine.service.ts",
-        "admin/automation-rule-engine.service.ts",
+        "workflow/services/workflow-engine.service.ts",
+        "admin/services/automation-rule-engine.service.ts",
         "supply-chain/services/logistics-tracking.service.ts",
-        "advanced-finance/services/tax-engine.service.ts",
-        "crm/crm-revenue-intelligence.service.ts",
+        "finance/services/tax-engine.service.ts",
+        "crm/services/crm-revenue-intelligence.service.ts",
         "documents/services/signature-workflow.service.ts",
       ];
       for (const e of emitters) {

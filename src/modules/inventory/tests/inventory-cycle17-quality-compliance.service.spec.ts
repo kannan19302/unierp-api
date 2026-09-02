@@ -53,7 +53,7 @@ describe("QualityComplianceService", () => {
   it("listCapas — returns filtered results", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaRecord.findMany).mockResolvedValue([]);
     await svc.listCapas(TENANT, { status: "OPEN", type: "CORRECTIVE" });
@@ -71,7 +71,7 @@ describe("QualityComplianceService", () => {
   it("createCapa — generates CAPA number and creates record", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     const dto = {
       title: "Process failure in warehouse",
@@ -100,7 +100,7 @@ describe("QualityComplianceService", () => {
   it("getCapa — throws NotFoundException for unknown id", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaRecord.findFirst).mockResolvedValue(null);
     await expect(svc.getCapa(TENANT, "no-id")).rejects.toBeInstanceOf(
@@ -111,7 +111,7 @@ describe("QualityComplianceService", () => {
   it("transitionCapaStatus — allows OPEN → IN_PROGRESS", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaRecord.findFirst).mockResolvedValue({
       id: "cap1",
@@ -132,7 +132,7 @@ describe("QualityComplianceService", () => {
   it("transitionCapaStatus — rejects invalid transition from CLOSED", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaRecord.findFirst).mockResolvedValue({
       id: "cap1",
@@ -146,7 +146,7 @@ describe("QualityComplianceService", () => {
   it("transitionCapaStatus — sets closedAt when closing", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaRecord.findFirst).mockResolvedValue({
       id: "cap1",
@@ -170,7 +170,7 @@ describe("QualityComplianceService", () => {
   it("addCapaAction — creates action linked to CAPA", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaRecord.findFirst).mockResolvedValue({
       id: "cap1",
@@ -190,7 +190,7 @@ describe("QualityComplianceService", () => {
   it("completeCapaAction — marks action complete with timestamp", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaAction.findFirst).mockResolvedValue({
       id: "act1",
@@ -215,7 +215,7 @@ describe("QualityComplianceService", () => {
   it("completeCapaAction — rejects already completed action", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaAction.findFirst).mockResolvedValue({
       id: "act1",
@@ -229,7 +229,7 @@ describe("QualityComplianceService", () => {
   it("getCapaDashboard — returns aggregate counts", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaRecord.count).mockResolvedValue(3 as any);
     const result = await svc.getCapaDashboard(TENANT);
@@ -242,7 +242,7 @@ describe("QualityComplianceService", () => {
   it("scheduleCalibration — creates calibration with DUE status", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     const dto = {
       instrumentId: "inst-001",
@@ -267,7 +267,7 @@ describe("QualityComplianceService", () => {
   it("recordCalibrationResult — marks PASSED and sets nextDueDate when interval set", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.calibrationRecord.findFirst).mockResolvedValue({
       id: "cal1",
@@ -296,7 +296,7 @@ describe("QualityComplianceService", () => {
   it("recordCalibrationResult — rejects duplicate result recording", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.calibrationRecord.findFirst).mockResolvedValue({
       id: "cal1",
@@ -311,7 +311,7 @@ describe("QualityComplianceService", () => {
   it("getOverdueCalibrations — queries past scheduled_date with DUE/OVERDUE status", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.calibrationRecord.findMany).mockResolvedValue([
       { id: "cal2" },
@@ -332,7 +332,7 @@ describe("QualityComplianceService", () => {
   it("createDeviation — generates deviation number", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     const dto = {
       title: "Temperature excursion in cold store",
@@ -352,7 +352,7 @@ describe("QualityComplianceService", () => {
   it("reviewDeviation — transitions OPEN to UNDER_REVIEW", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.deviationRecord.findFirst).mockResolvedValue({
       id: "dev1",
@@ -373,7 +373,7 @@ describe("QualityComplianceService", () => {
   it("reviewDeviation — rejects non-OPEN deviation", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.deviationRecord.findFirst).mockResolvedValue({
       id: "dev1",
@@ -387,7 +387,7 @@ describe("QualityComplianceService", () => {
   it("closeDeviation — links optional CAPA id", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.deviationRecord.findFirst).mockResolvedValue({
       id: "dev1",
@@ -408,7 +408,7 @@ describe("QualityComplianceService", () => {
   it("getDeviationDashboard — counts by severity", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.deviationRecord.count).mockResolvedValue(2 as any);
     const result = await svc.getDeviationDashboard(TENANT);
@@ -420,7 +420,7 @@ describe("QualityComplianceService", () => {
   it("createSop — generates docNumber and creates SOP", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.sopDocument.count).mockResolvedValue(5 as any);
     vi.mocked(prisma.sopDocument.create).mockResolvedValue({
@@ -444,7 +444,7 @@ describe("QualityComplianceService", () => {
   it("submitSopForReview — transitions DRAFT to UNDER_REVIEW", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.sopDocument.findFirst).mockResolvedValue({
       id: "sop1",
@@ -461,7 +461,7 @@ describe("QualityComplianceService", () => {
   it("submitSopForReview — rejects non-DRAFT document", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.sopDocument.findFirst).mockResolvedValue({
       id: "sop1",
@@ -475,7 +475,7 @@ describe("QualityComplianceService", () => {
   it("approveSop — sets APPROVED + approvedAt + effectiveDate", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.sopDocument.findFirst).mockResolvedValue({
       id: "sop1",
@@ -499,7 +499,7 @@ describe("QualityComplianceService", () => {
   it("reviseSOp — bumps version and logs revision", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.sopDocument.findFirst).mockResolvedValue({
       id: "sop1",
@@ -530,7 +530,7 @@ describe("QualityComplianceService", () => {
   it("getSopsDueSoon — returns approved SOPs with review dates within window", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.sopDocument.findMany).mockResolvedValue([
       { id: "sop1" },
@@ -547,7 +547,7 @@ describe("QualityComplianceService", () => {
   it("getComplianceDashboard — aggregates all sub-dashboards", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { QualityComplianceService } =
-      await import("../quality-compliance.service");
+      await import("../services/quality-compliance.service");
     const svc = new QualityComplianceService();
     vi.mocked(prisma.capaRecord.count).mockResolvedValue(1 as any);
     vi.mocked(prisma.calibrationRecord.count).mockResolvedValue(2 as any);

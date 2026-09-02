@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@kannan19302/database", () => ({ prisma: {} }));
-vi.mock("../../common/queues/job-tracking.util", () => ({ enqueueTrackedJob: vi.fn(async () => ({ bullJobId: "42", backgroundJobId: "job-1" })) }));
+vi.mock("../../../common/queues/job-tracking.util", () => ({ enqueueTrackedJob: vi.fn(async () => ({ bullJobId: "42", backgroundJobId: "job-1" })) }));
 
 import { enqueueTrackedJob } from "../../../common/queues/job-tracking.util";
 import { DeveloperBuildsService } from "../services/developer-builds.service";

@@ -58,7 +58,7 @@ describe("InventoryLogisticsService", () => {
   it("listCarriers — returns active carriers for tenant", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     const carriers = [{ id: "c1", code: "FEDEX", name: "FedEx" }];
     vi.mocked(prisma.shippingCarrier.findMany).mockResolvedValue(
@@ -74,7 +74,7 @@ describe("InventoryLogisticsService", () => {
   it("createCarrier — creates and returns new carrier", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     const dto = { code: "UPS", name: "United Parcel Service" };
     const created = { id: "c2", tenantId: TENANT, ...dto };
@@ -91,7 +91,7 @@ describe("InventoryLogisticsService", () => {
   it("updateCarrier — throws NotFoundException for unknown carrier", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.shippingCarrier.findFirst).mockResolvedValue(null);
     await expect(
@@ -102,7 +102,7 @@ describe("InventoryLogisticsService", () => {
   it("updateCarrier — updates carrier name", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     const existing = {
       id: "c1",
@@ -124,7 +124,7 @@ describe("InventoryLogisticsService", () => {
   it("deactivateCarrier — sets isActive false", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     const existing = { id: "c1", tenantId: TENANT, isActive: true };
     vi.mocked(prisma.shippingCarrier.findFirst).mockResolvedValue(
@@ -143,7 +143,7 @@ describe("InventoryLogisticsService", () => {
   it("addServiceLevel — creates service level for carrier", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     const dto = {
       carrierId: "c1",
@@ -166,7 +166,7 @@ describe("InventoryLogisticsService", () => {
   it("listServiceLevels — filters by carrierId", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.shippingCarrier.findFirst).mockResolvedValue({
       id: "c1",
@@ -187,7 +187,7 @@ describe("InventoryLogisticsService", () => {
   it("listAsns — queries with optional filters", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.advanceShippingNotice.findMany).mockResolvedValue([]);
     await svc.listAsns(TENANT, { vendorId: "v1", status: "PENDING" });
@@ -207,7 +207,7 @@ describe("InventoryLogisticsService", () => {
   it("getAsn — throws NotFoundException if not found", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue(null);
     await expect(svc.getAsn(TENANT, "no-id")).rejects.toBeInstanceOf(
@@ -218,7 +218,7 @@ describe("InventoryLogisticsService", () => {
   it("createAsn — generates ASN number and creates with line items", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     const dto = {
       vendorId: "v1",
@@ -241,7 +241,7 @@ describe("InventoryLogisticsService", () => {
   it("markAsnInTransit — rejects non-PENDING ASN", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: "asn1",
@@ -255,7 +255,7 @@ describe("InventoryLogisticsService", () => {
   it("cancelAsn — transitions PENDING to CANCELLED", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.advanceShippingNotice.findFirst).mockResolvedValue({
       id: "asn1",
@@ -274,7 +274,7 @@ describe("InventoryLogisticsService", () => {
   it("createInboundShipment — generates shipment number", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     const dto = { warehouseId: "wh1", shipmentNumber: undefined as any };
     const created = {
@@ -293,7 +293,7 @@ describe("InventoryLogisticsService", () => {
   it("updateInboundShipmentStatus — rejects invalid transition", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.inboundShipment.findFirst).mockResolvedValue({
       id: "is1",
@@ -307,7 +307,7 @@ describe("InventoryLogisticsService", () => {
   it("addInboundTrackingEvent — creates tracking event", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.inboundShipment.findFirst).mockResolvedValue({
       id: "is1",
@@ -330,7 +330,7 @@ describe("InventoryLogisticsService", () => {
   it("listOutboundShipments — filters by status", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.outboundShipment.findMany).mockResolvedValue([]);
     await svc.listOutboundShipments(TENANT, { status: "SHIPPED" });
@@ -344,7 +344,7 @@ describe("InventoryLogisticsService", () => {
   it("shipOutbound — transitions PACKED to SHIPPED", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.outboundShipment.findFirst).mockResolvedValue({
       id: "os1",
@@ -369,7 +369,7 @@ describe("InventoryLogisticsService", () => {
   it("shipOutbound — rejects when status is not PACKED or PENDING", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.outboundShipment.findFirst).mockResolvedValue({
       id: "os1",
@@ -383,7 +383,7 @@ describe("InventoryLogisticsService", () => {
   it("recordDelivery — transitions SHIPPED to DELIVERED", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.outboundShipment.findFirst).mockResolvedValue({
       id: "os1",
@@ -405,7 +405,7 @@ describe("InventoryLogisticsService", () => {
   it("flagOutboundException — sets status to EXCEPTION", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.outboundShipment.findFirst).mockResolvedValue({
       id: "os1",
@@ -426,7 +426,7 @@ describe("InventoryLogisticsService", () => {
   it("getShipmentExceptions — queries for EXCEPTION status", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.inboundShipment.findMany).mockResolvedValue([]);
     vi.mocked(prisma.outboundShipment.findMany).mockResolvedValue([
@@ -444,7 +444,7 @@ describe("InventoryLogisticsService", () => {
   it("getLogisticsDashboard — returns aggregate counts", async () => {
     const { prisma } = await import("@kannan19302/database");
     const { InventoryLogisticsService } =
-      await import("../inventory-logistics.service");
+      await import("../services/inventory-logistics.service");
     const svc = new InventoryLogisticsService();
     vi.mocked(prisma.advanceShippingNotice.count).mockResolvedValue(5 as any);
     vi.mocked(prisma.inboundShipment.count).mockResolvedValue(3 as any);
