@@ -2,6 +2,8 @@ import { All, Controller, Req, Res, UseGuards } from "@nestjs/common";
 import { Request, Response } from "express";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
+import { RbacGuard } from "../../../common/guards/rbac.guard";
+import { Permissions } from "../../../common/decorators/permissions.decorator";
 import { ServiceRegistryService } from "../services/service-registry.service";
 import { TenantTokenService } from "../services/tenant-token.service";
 import { ExtProxyService } from "../services/ext-proxy.service";
@@ -19,7 +21,8 @@ interface AuthenticatedRequest extends Request {
 @ApiTags("ext-gateway")
 @ApiBearerAuth()
 @Controller("ext")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RbacGuard)
+@Permissions("extensions.gateway.invoke")
 export class ExtGatewayController {
   constructor(
     private readonly registry: ServiceRegistryService,

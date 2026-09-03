@@ -11,6 +11,7 @@ import { ApiOperation, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { RbacGuard } from "../guards/rbac.guard";
 import { TrackChanges } from "../decorators/track-changes.decorator";
 import { CurrentTenant } from "../decorators/current-tenant.decorator";
+import { Permissions } from "../decorators/permissions.decorator";
 import { AppSettingsService } from "./settings.service";
 import {
   ModuleSettingsSchema,
@@ -35,6 +36,7 @@ export abstract class SettingsControllerBase {
   @ApiQuery({ name: "roleId", required: false })
   @Get()
   @UseGuards(RbacGuard)
+  @Permissions("settings.read")
   async getAllSettings(
     @CurrentTenant() tenantId: string,
     @Query() query: GetSettingsQuery,
@@ -45,6 +47,7 @@ export abstract class SettingsControllerBase {
   @ApiOperation({ summary: "Get settings schema for this module" })
   @Get("schema")
   @UseGuards(RbacGuard)
+  @Permissions("settings.read")
   async getSchema(): Promise<SettingsSchemaResponse> {
     return this.settingsService.getSchema(this.moduleSlug, this.settingsSchema);
   }
@@ -59,6 +62,7 @@ export abstract class SettingsControllerBase {
   @ApiQuery({ name: "roleId", required: false })
   @Get(":key")
   @UseGuards(RbacGuard)
+  @Permissions("settings.read")
   async getSetting(
     @CurrentTenant() tenantId: string,
     @Param("key") key: string,
@@ -76,6 +80,7 @@ export abstract class SettingsControllerBase {
   @ApiParam({ name: "key", description: "Setting key" })
   @Patch(":key")
   @UseGuards(RbacGuard)
+  @Permissions("settings.write")
   @TrackChanges("AppSettings")
   async setSetting(
     @CurrentTenant() tenantId: string,
@@ -101,6 +106,7 @@ export abstract class SettingsControllerBase {
   @ApiQuery({ name: "roleId", required: false })
   @Delete(":key")
   @UseGuards(RbacGuard)
+  @Permissions("settings.delete")
   async deleteSetting(
     @CurrentTenant() tenantId: string,
     @Param("key") key: string,
