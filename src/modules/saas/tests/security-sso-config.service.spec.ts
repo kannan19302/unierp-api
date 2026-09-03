@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   encryptConfigurationSecret: vi.fn((value: string) => `enc:v1:synthetic:${value.length}`),
   testOidcConnection: vi.fn(),
+  testSamlConfiguration: vi.fn(),
+  auditCreate: vi.fn().mockResolvedValue({ id: "audit-1" }),
 }));
 
 vi.mock("@kannan19302/database", () => ({
@@ -19,6 +21,9 @@ vi.mock("@kannan19302/database", () => ({
       upsert: mocks.upsert,
       update: mocks.update,
     },
+    auditLog: {
+      create: mocks.auditCreate,
+    },
   },
   idpClient: {},
 }));
@@ -28,6 +33,7 @@ vi.mock("@kannan19302/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@kannan19302/auth")>()),
   encryptConfigurationSecret: mocks.encryptConfigurationSecret,
   testOidcConnection: mocks.testOidcConnection,
+  testSamlConfiguration: mocks.testSamlConfiguration,
 }));
 vi.mock("@kannan19302/shared", () => ({ hasPermission: vi.fn() }));
 
@@ -138,4 +144,82 @@ describe("SaasPortalSecurityService canonical SSO configuration", () => {
       .rejects.toBeInstanceOf(BadRequestException);
     expect(mocks.update).not.toHaveBeenCalled();
   });
+
+  it("records successful SAML connection verification and emits audit log", async () => {
+    mocks.findUnique.mockResolvedValue({
+      id: "sso-saml-1",
+      samlEntryPoint: "https://idp.example.test/sso/saml",
+      samlCert: "-----BEGIN CERTIFICATE-----\nsynthetic-cert\n-----END CERTIFICATE-----",
+      samlIssuer: "unierp-tenant-a",
+      verificationStatus: "UNVERIFIED",
+      lastVerifiedAt: null,
+    });
+    mocks.testSamlConfiguration.mockReturnValue({
+      entryPoint: "https://idp.example.test/sso/saml",
+      issuer: "unierp-tenant-a",
+      certificateSubject: "CN=idp.example.test",
+      validTo: "2027-09-03",
+      fingerprint256: "AA:BB:CC",
+      keyAlgorithm: "rsa",
+    });
+
+    const result = await new SaasPortalSecurityService().testSsoConnection("tenant-a", "SAML", "user-a");
+    expect(result).toMatchObject({ success: true, evidence: { fingerprint256: "AA:BB:CC" } });
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ verificationStatus: "VERIFIED", lastVerifiedBy: "user-a" }),
+    }));
+    expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        action: "SSO_CONNECTION_TEST_SUCCESS",
+        userId: "user-a",
+        changes: expect.objectContaining({ providerType: "SAML" }),
+      }),
+    }));
+  });
+
+  it("records safe failed SAML status on verification error", async () => {
+    mocks.findUnique.mockResolvedValue({
+      id: "sso-saml-1",
+      samlEntryPoint: "https://idp.example.test/sso/saml",
+      samlCert: "invalid-cert",
+    });
+    mocks.testSamlConfiguration.mockImplementation(() => {
+      throw new Error("Invalid certificate");
+    });
+
+    await expect(new SaasPortalSecurityService().testSsoConnection("tenant-a", "SAML", "user-a"))
+      .rejects.toBeInstanceOf(BadRequestException);
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        isActive: false,
+        verificationStatus: "FAILED",
+        lastVerificationError: "SAML_CONNECTION_TEST_FAILED",
+      }),
+    }));
+    expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        action: "SSO_CONNECTION_TEST_FAILED",
+        userId: "user-a",
+        changes: expect.objectContaining({ providerType: "SAML" }),
+      }),
+    }));
+  });
+
+  it("emits audit event when an active SSO configuration is activated or deactivated", async () => {
+    mocks.findUnique.mockResolvedValue({
+      id: "sso-saml-1",
+      verificationStatus: "VERIFIED",
+      lastVerifiedAt: new Date(),
+    });
+
+    await new SaasPortalSecurityService().setSsoActivation("tenant-a", "SAML", true, "admin-user");
+    expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        action: "SSO_CONFIG_ACTIVATED",
+        userId: "admin-user",
+        changes: expect.objectContaining({ providerType: "SAML", isActive: true }),
+      }),
+    }));
+  });
 });
+

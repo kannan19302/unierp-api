@@ -87,7 +87,7 @@ export class ConsoleGateway
    * so the console UI can perform real-time CRUD updates.
    */
   @OnEvent("*.*")
-  handlePrismaEvent(payload: { model: string; action: string; data: any }) {
+  handlePrismaEvent(payload: { model: string; action: string; data: any; tenantId?: string }) {
     if (payload && payload.model && payload.action) {
       // E.g., 'tenant.create', 'tenant.update', 'domain.create'
       const eventName = `${payload.model.toLowerCase()}.${payload.action.toLowerCase()}`;

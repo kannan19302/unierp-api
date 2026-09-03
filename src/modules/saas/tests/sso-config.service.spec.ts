@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   delete: vi.fn(),
   encrypt: vi.fn((value: string) => `enc:v1:synthetic:${value.length}`),
   testOidc: vi.fn(),
+  testSaml: vi.fn(),
+  auditCreate: vi.fn().mockResolvedValue({ id: "audit-1" }),
 }));
 
 vi.mock("@kannan19302/database", () => ({
@@ -19,6 +21,9 @@ vi.mock("@kannan19302/database", () => ({
       update: mocks.update,
       delete: mocks.delete,
     },
+    auditLog: {
+      create: mocks.auditCreate,
+    },
   },
 }));
 
@@ -26,6 +31,7 @@ vi.mock("@kannan19302/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@kannan19302/auth")>()),
   encryptConfigurationSecret: mocks.encrypt,
   testOidcConnection: mocks.testOidc,
+  testSamlConfiguration: mocks.testSaml,
 }));
 
 describe("legacy SaaS SSO compatibility adapter", () => {
@@ -118,4 +124,42 @@ describe("legacy SaaS SSO compatibility adapter", () => {
       .rejects.toBeInstanceOf(BadRequestException);
     expect(mocks.update).not.toHaveBeenCalled();
   });
+
+  it("verifies SAML connection and emits audit log", async () => {
+    mocks.findMany.mockResolvedValue([{
+      id: "sso-saml-1",
+      tenantId: "tenant-a",
+      providerType: "SAML",
+      samlEntryPoint: "https://idp.example.test/sso/saml",
+      samlCert: "-----BEGIN CERTIFICATE-----\nsynthetic-cert\n-----END CERTIFICATE-----",
+      samlIssuer: "unierp-tenant-a",
+      isActive: false,
+      verificationStatus: "UNVERIFIED",
+      lastVerifiedAt: null,
+      createdAt: new Date(),
+    }]);
+    mocks.testSaml.mockReturnValue({
+      entryPoint: "https://idp.example.test/sso/saml",
+      issuer: "unierp-tenant-a",
+      certificateSubject: "CN=idp.example.test",
+      validTo: "2027-09-03",
+      fingerprint256: "AA:BB:CC",
+      keyAlgorithm: "rsa",
+    });
+
+    const result = await new SsoConfigService().testSsoConnection("tenant-a", "user-admin");
+    expect(result.success).toBe(true);
+    expect(mocks.testSaml).toHaveBeenCalledOnce();
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ verificationStatus: "VERIFIED", lastVerifiedBy: "user-admin" }),
+    }));
+    expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        action: "SSO_CONNECTION_TEST_SUCCESS",
+        userId: "user-admin",
+        changes: expect.objectContaining({ providerType: "SAML" }),
+      }),
+    }));
+  });
 });
+

@@ -8,6 +8,7 @@ import {
   encryptConfigurationSecret,
   requirePublicHttpsUrl,
   testOidcConnection,
+  testSamlConfiguration,
 } from "@kannan19302/auth";
 
 interface LegacySsoCreate {
@@ -136,9 +137,62 @@ export class SsoConfigService {
 
   async testSsoConnection(tenantId: string, verifiedBy: string) {
     const config = await this.requireTenantConfig(tenantId);
-    if (config.providerType !== "OIDC") {
-      throw new BadRequestException("SAML connection testing is not available on this compatibility endpoint.");
+    if (config.providerType === "SAML") {
+      try {
+        const evidence = testSamlConfiguration({
+          samlEntryPoint: config.samlEntryPoint,
+          samlCert: config.samlCert,
+          samlIssuer: config.samlIssuer,
+        });
+        const verified = await prisma.ssoConfig.update({
+          where: { tenantId_providerType: { tenantId, providerType: config.providerType } },
+          data: {
+            verificationStatus: "VERIFIED",
+            lastVerifiedAt: new Date(),
+            lastVerifiedBy: verifiedBy,
+            lastVerificationError: null,
+          },
+        });
+        if (prisma?.auditLog?.create) {
+          await prisma.auditLog.create({
+            data: {
+              tenantId,
+              userId: verifiedBy,
+              action: "SSO_CONNECTION_TEST_SUCCESS",
+              entityType: "SsoConfig",
+              entityId: config.id,
+              changes: { providerType: "SAML", evidence } as any,
+            },
+          });
+        }
+        return { success: true, config: toLegacyResponse(verified), evidence };
+      } catch {
+        await prisma.ssoConfig.update({
+          where: { tenantId_providerType: { tenantId, providerType: config.providerType } },
+          data: {
+            isActive: false,
+            verificationStatus: "FAILED",
+            lastVerifiedAt: null,
+            lastVerifiedBy: verifiedBy,
+            lastVerificationError: "SAML_CONNECTION_TEST_FAILED",
+          },
+        });
+        if (prisma?.auditLog?.create) {
+          await prisma.auditLog.create({
+            data: {
+              tenantId,
+              userId: verifiedBy,
+              action: "SSO_CONNECTION_TEST_FAILED",
+              entityType: "SsoConfig",
+              entityId: config.id,
+              changes: { providerType: "SAML" },
+            },
+          });
+        }
+        throw new BadRequestException("SAML connection test failed.");
+      }
     }
+
     try {
       const evidence = await testOidcConnection(config.issuerUrl);
       const verified = await prisma.ssoConfig.update({
@@ -150,6 +204,18 @@ export class SsoConfigService {
           lastVerificationError: null,
         },
       });
+      if (prisma?.auditLog?.create) {
+        await prisma.auditLog.create({
+          data: {
+            tenantId,
+            userId: verifiedBy,
+            action: "SSO_CONNECTION_TEST_SUCCESS",
+            entityType: "SsoConfig",
+            entityId: config.id,
+            changes: { providerType: "OIDC", evidence } as any,
+          },
+        });
+      }
       return { success: true, config: toLegacyResponse(verified), evidence };
     } catch {
       await prisma.ssoConfig.update({
@@ -162,6 +228,18 @@ export class SsoConfigService {
           lastVerificationError: "OIDC_CONNECTION_TEST_FAILED",
         },
       });
+      if (prisma?.auditLog?.create) {
+        await prisma.auditLog.create({
+          data: {
+            tenantId,
+            userId: verifiedBy,
+            action: "SSO_CONNECTION_TEST_FAILED",
+            entityType: "SsoConfig",
+            entityId: config.id,
+            changes: { providerType: "OIDC" },
+          },
+        });
+      }
       throw new BadRequestException("OIDC connection test failed.");
     }
   }

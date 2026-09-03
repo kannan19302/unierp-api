@@ -13,6 +13,7 @@ import {
   encryptConfigurationSecret,
   requirePublicHttpsUrl,
   testOidcConnection,
+  testSamlConfiguration,
 } from "@kannan19302/auth";
 
 /**
@@ -178,6 +179,14 @@ export class SaasPortalSecurityService {
     const providerType = normalizeSsoProvider(data.providerType);
     if (providerType === "OIDC") {
       assertOidcIssuer(data.issuerUrl);
+    } else if (providerType === "SAML") {
+      if (data.samlEntryPoint) {
+        try {
+          requirePublicHttpsUrl(data.samlEntryPoint, "SAML entry point");
+        } catch {
+          throw new BadRequestException("A SAML configuration requires a public HTTPS entry point URL.");
+        }
+      }
     }
     const { clientSecret, ...safeData } = data;
     const encryptedSecret = clientSecret
@@ -215,9 +224,67 @@ export class SaasPortalSecurityService {
       where: { tenantId_providerType: { tenantId, providerType } },
     });
     if (!config) throw new NotFoundException("SSO configuration not found");
-    if (providerType !== "OIDC") {
-      throw new BadRequestException("Only OIDC connection testing is currently supported.");
+
+    if (providerType === "SAML") {
+      try {
+        const evidence = testSamlConfiguration({
+          samlEntryPoint: config.samlEntryPoint,
+          samlCert: config.samlCert,
+          samlIssuer: config.samlIssuer,
+        });
+        const verified = await prisma.ssoConfig.update({
+          where: { tenantId_providerType: { tenantId, providerType } },
+          data: {
+            verificationStatus: "VERIFIED",
+            lastVerifiedAt: new Date(),
+            lastVerifiedBy: verifiedBy,
+            lastVerificationError: null,
+          },
+        });
+        if (prisma?.auditLog?.create) {
+          await prisma.auditLog.create({
+            data: {
+              tenantId,
+              userId: verifiedBy,
+              action: "SSO_CONNECTION_TEST_SUCCESS",
+              entityType: "SsoConfig",
+              entityId: config.id,
+              changes: { providerType: "SAML", evidence } as any,
+            },
+          });
+        }
+        return {
+          success: true,
+          config: redactSsoConfig(verified),
+          evidence,
+        };
+      } catch (err: any) {
+        await prisma.ssoConfig.update({
+          where: { tenantId_providerType: { tenantId, providerType } },
+          data: {
+            isActive: false,
+            verificationStatus: "FAILED",
+            lastVerifiedAt: null,
+            lastVerifiedBy: verifiedBy,
+            lastVerificationError: "SAML_CONNECTION_TEST_FAILED",
+          },
+        });
+        if (prisma?.auditLog?.create) {
+          await prisma.auditLog.create({
+            data: {
+              tenantId,
+              userId: verifiedBy,
+              action: "SSO_CONNECTION_TEST_FAILED",
+              entityType: "SsoConfig",
+              entityId: config.id,
+              changes: { providerType: "SAML", error: err instanceof Error ? err.message : String(err) },
+            },
+          });
+        }
+        throw new BadRequestException(`SAML connection test failed: ${err instanceof Error ? err.message : err}`);
+      }
     }
+
     try {
       const evidence = await testOidcConnection(config.issuerUrl);
       const verified = await prisma.ssoConfig.update({
@@ -229,6 +296,18 @@ export class SaasPortalSecurityService {
           lastVerificationError: null,
         },
       });
+      if (prisma?.auditLog?.create) {
+        await prisma.auditLog.create({
+          data: {
+            tenantId,
+            userId: verifiedBy,
+            action: "SSO_CONNECTION_TEST_SUCCESS",
+            entityType: "SsoConfig",
+            entityId: config.id,
+            changes: { providerType: "OIDC", evidence } as any,
+          },
+        });
+      }
       return {
         success: true,
         config: redactSsoConfig(verified),
@@ -245,11 +324,23 @@ export class SaasPortalSecurityService {
           lastVerificationError: "OIDC_CONNECTION_TEST_FAILED",
         },
       });
+      if (prisma?.auditLog?.create) {
+        await prisma.auditLog.create({
+          data: {
+            tenantId,
+            userId: verifiedBy,
+            action: "SSO_CONNECTION_TEST_FAILED",
+            entityType: "SsoConfig",
+            entityId: config.id,
+            changes: { providerType: "OIDC" },
+          },
+        });
+      }
       throw new BadRequestException("OIDC connection test failed.");
     }
   }
 
-  async setSsoActivation(tenantId: string, providerTypeValue: string, active: boolean) {
+  async setSsoActivation(tenantId: string, providerTypeValue: string, active: boolean, changedBy?: string) {
     const providerType = normalizeSsoProvider(providerTypeValue);
     const config = await prisma.ssoConfig.findUnique({
       where: { tenantId_providerType: { tenantId, providerType } },
@@ -262,6 +353,18 @@ export class SaasPortalSecurityService {
       where: { tenantId_providerType: { tenantId, providerType } },
       data: { isActive: active },
     });
+    if (prisma?.auditLog?.create && changedBy) {
+      await prisma.auditLog.create({
+        data: {
+          tenantId,
+          userId: changedBy,
+          action: active ? "SSO_CONFIG_ACTIVATED" : "SSO_CONFIG_DEACTIVATED",
+          entityType: "SsoConfig",
+          entityId: config.id,
+          changes: { providerType, isActive: active },
+        },
+      });
+    }
     return redactSsoConfig(updated);
   }
 
