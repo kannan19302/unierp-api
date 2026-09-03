@@ -727,17 +727,13 @@ export class GlAccountingService {
     changes: Record<string, unknown>,
     userId: string,
   ) {
-    try {
-      await (
-        txOrPrisma as {
-          financeAuditLog: { create: (args: unknown) => Promise<unknown> };
-        }
-      ).financeAuditLog.create({
-        data: { tenantId, entityType, entityId, action, changes, userId },
-      });
-    } catch {
-      /* silent — audit log should not break business operations */
-    }
+    await (
+      txOrPrisma as {
+        financeAuditLog: { create: (args: unknown) => Promise<unknown> };
+      }
+    ).financeAuditLog.create({
+      data: { tenantId, entityType, entityId, action, changes, userId },
+    });
   }
 
   // ── MULTI-BOOK ACCOUNTING ──────────────────────────────────────

@@ -614,21 +614,17 @@ export class CardSpendLimitService {
     newValue: unknown,
     action: "CREATE" | "UPDATE" | "DELETE",
   ) {
-    try {
-      await prisma.cardLimitAuditLog.create({
-        data: {
-          tenantId,
-          limitId,
-          limitType,
-          changedByUserId,
-          oldValue: (oldValue ?? Prisma.JsonNull) as Prisma.InputJsonValue,
-          newValue: (newValue ?? Prisma.JsonNull) as Prisma.InputJsonValue,
-          action,
-        },
-      });
-    } catch {
-      /* audit log should never block the primary operation */
-    }
+    await prisma.cardLimitAuditLog.create({
+      data: {
+        tenantId,
+        limitId,
+        limitType,
+        changedByUserId,
+        oldValue: (oldValue ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+        newValue: (newValue ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+        action,
+      },
+    });
   }
 
   // ── Period Auto-Reset ─────────────────────────────────────────

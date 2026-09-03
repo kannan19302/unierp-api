@@ -151,20 +151,23 @@ export class SaasFeatureFlagsMeteringDeepService {
       await (prisma as any).tenantFeatureOverride.delete({
         where: { tenantId_featureKey: { tenantId: targetTenantId, featureKey: flagKey } }
       });
-      await this.auditService.record({
-        actorId: adminUserId,
-        actorRole: "SUPER_ADMIN",
-        targetId: targetTenantId,
-        action: "REMOVE_FEATURE_OVERRIDE",
-        details: {
-          resourceType: "FeatureFlag",
-          resourceId: flagKey,
-          severity: "INFO"
-        },
-      });
-    } catch (err) {
-      // Ignore if not found
+    } catch (err: any) {
+      if (err?.code !== "P2025") {
+        throw err;
+      }
     }
+
+    await this.auditService.record({
+      actorId: adminUserId,
+      actorRole: "SUPER_ADMIN",
+      targetId: targetTenantId,
+      action: "REMOVE_FEATURE_OVERRIDE",
+      details: {
+        resourceType: "FeatureFlag",
+        resourceId: flagKey,
+        severity: "INFO"
+      },
+    });
     return { flagKey, targetTenantId, removed: true };
   }
 

@@ -44,17 +44,18 @@ export class ProjectChangeSetsService {
     if (current.fingerprint !== change.baseFingerprint) throw new ConflictException("Changeset base is stale; rebase and submit a new reviewed changeset");
     const claim = await this.db.projectChangeSet.updateMany({ where: { id: change.id, status: "APPROVED" }, data: { status: "MERGING" } });
     if (claim.count !== 1) throw new ConflictException("Changeset merge is already in progress or completed");
+    let result: unknown;
     try {
-      const result = await this.imports.apply(input.tenantId, input.projectId, change.bundle, input.mergedBy);
+      result = await this.imports.apply(input.tenantId, input.projectId, change.bundle, input.mergedBy);
       await this.db.projectChangeSet.update({ where: { id: change.id }, data: { status: "MERGED", mergedAt: new Date(), mergedBy: input.mergedBy } });
-      await this.audit(input.tenantId, input.projectId, "CHANGESET_MERGED", input.mergedBy, { changeSetId: change.id, bundleHash: change.bundleHash });
-      return result;
     } catch (error) {
       // A failed apply is retryable. The compare-on-state update never
       // overwrites a concurrently recovered/merged record.
       await this.db.projectChangeSet.updateMany({ where: { id: change.id, status: "MERGING" }, data: { status: "APPROVED" } });
       throw error;
     }
+    await this.audit(input.tenantId, input.projectId, "CHANGESET_MERGED", input.mergedBy, { changeSetId: change.id, bundleHash: change.bundleHash });
+    return result;
   }
 
   private async find(tenantId: string, projectId: string, id: string, statuses: string[]) {
@@ -64,6 +65,6 @@ export class ProjectChangeSetsService {
   }
 
   private async audit(tenantId: string, projectId: string, action: string, actorId: string | null | undefined, metadata: Record<string, unknown>) {
-    try { await this.db.developerAuditEvent?.create?.({ data: { tenantId, projectId, action, actorId: actorId ?? null, metadata } }); } catch { /* audit writing must not make an immutable lifecycle transition ambiguous */ }
+    await this.db.developerAuditEvent?.create?.({ data: { tenantId, projectId, action, actorId: actorId ?? null, metadata } });
   }
 }

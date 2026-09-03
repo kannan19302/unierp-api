@@ -193,7 +193,7 @@ export class ProjectReleasesService {
   }
 
   private async audit(tenantId: string, projectId: string, action: string, actorId: string | null | undefined, metadata: Record<string, unknown>) {
-    try { await this.db.developerAuditEvent?.create?.({ data: { tenantId, projectId, action, actorId: actorId ?? null, metadata } }); } catch { /* audit availability never makes a signed lifecycle write ambiguous */ }
+    await this.db.developerAuditEvent?.create?.({ data: { tenantId, projectId, action, actorId: actorId ?? null, metadata } });
   }
 
   protected nextReleaseId() {

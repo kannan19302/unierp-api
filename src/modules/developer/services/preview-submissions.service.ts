@@ -83,6 +83,6 @@ export class PreviewSubmissionsService {
 
   private async audit(input: { tenantId: string; projectId: string; previewId?: string; runtime?: { releaseId: string; environmentId: string }; createdBy?: string | null }, dataObjectArtifactId: string, recordId: string) {
     const metadata = input.previewId ? { previewId: input.previewId, dataObjectArtifactId, recordId } : { releaseId: input.runtime!.releaseId, environmentId: input.runtime!.environmentId, dataObjectArtifactId, recordId };
-    try { await this.db.developerAuditEvent?.create({ data: { tenantId: input.tenantId, projectId: input.projectId, action: input.previewId ? "PREVIEW_RECORD_CREATED" : "RUNTIME_RECORD_CREATED", actorId: input.createdBy ?? null, metadata } }); } catch { /* the committed tenant record remains authoritative */ }
+    await this.db.developerAuditEvent?.create({ data: { tenantId: input.tenantId, projectId: input.projectId, action: input.previewId ? "PREVIEW_RECORD_CREATED" : "RUNTIME_RECORD_CREATED", actorId: input.createdBy ?? null, metadata } });
   }
 }

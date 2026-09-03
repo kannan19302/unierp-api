@@ -91,6 +91,6 @@ export class ProjectPreviewService {
   }
   async revoke(tenantId: string, projectId: string, id: string) { const session = await this.db.projectPreviewSession.findFirst({ where: { tenantId, projectId, id, status: { in: ["PENDING", "ACTIVE"] } } }); if (!session) throw new NotFoundException("Active or pending preview session not found"); const revoked = await this.db.projectPreviewSession.update({ where: { id }, data: { status: "REVOKED", revokedAt: new Date() } }); await this.audit(tenantId, projectId, "PREVIEW_REVOKED", session.createdBy ?? null, { previewId: id, previousStatus: session.status }); return revoked; }
   private async audit(tenantId: string, projectId: string, action: string, actorId: string | null, metadata: Record<string, unknown>) {
-    try { await this.db.developerAuditEvent?.create({ data: { tenantId, projectId, action, actorId, metadata } }); } catch { /* audit availability must not orphan an already-created preview */ }
+    await this.db.developerAuditEvent?.create({ data: { tenantId, projectId, action, actorId, metadata } });
   }
 }
