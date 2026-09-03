@@ -22,13 +22,14 @@ const CONFIG_PATH = path.join(root, 'vitest.config.ts').replace(/\\/g, '/');
 function resolveExcludeIn(envCI) {
   const script = `
     import('${'file:///' + CONFIG_PATH}').then((mod) => {
-      console.log(JSON.stringify(mod.default.test.exclude));
+      const cfg = mod.default?.default || mod.default;
+      console.log(JSON.stringify(cfg?.test?.exclude));
     });
   `;
   const env = { ...process.env };
   if (envCI) env.CI = 'true';
   else delete env.CI;
-  const out = execFileSync('node', ['--input-type=module', '-e', script], {
+  const out = execFileSync('node', ['--import', 'tsx', '--input-type=module', '-e', script], {
     cwd: root,
     env,
     encoding: 'utf-8',

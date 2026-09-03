@@ -4,7 +4,7 @@ import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { Prisma, PrismaClient } from "@kannan19302/database/prisma";
 import { CustomObjectSchemaService } from "../services/custom-object-schema.service";
 import { BuilderDataObjectsService } from "../services/builder-data-objects.service";
-import { PreviewSubmissionsService } from "../../../platform/preview-submissions.service";
+import { PreviewSubmissionsService } from "../services/preview-submissions.service";
 
 /**
  * The same database, reached as the `NOBYPASSRLS` application role — see

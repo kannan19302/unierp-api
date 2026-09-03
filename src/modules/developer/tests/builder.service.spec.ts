@@ -6,7 +6,7 @@ import { BuilderStatsService } from "../services/builder-stats.service";
 import { BuilderDashboardsService } from "../services/builder-dashboards.service";
 import { BuilderDevOpsService } from "../services/builder-devops.service";
 import { BuilderWebContentService } from "../services/builder-web-content.service";
-import { ModuleCompositionService } from "../../../platform/module-composition.service";
+import { ModuleCompositionService } from "../services/module-composition.service";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { vi, describe, it, expect, beforeEach } from "vitest";

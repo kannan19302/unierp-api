@@ -96,27 +96,16 @@ function extractPermissionCallSites(filePath: string): PermissionCallSite[] {
  * by another `@Permissions(...)` line.
  */
 function findStackedPermissionPairs(filePath: string): number[] {
-  const source = readFileSync(filePath, "utf-8");
-  const lines = source.split("\n");
+  const lines = readFileSync(filePath, "utf-8").split("\n");
   const offendingLines: number[] = [];
-
   for (let i = 0; i < lines.length; i++) {
-    if (!/@Permissions\(/.test(lines[i])) continue;
-
-    // Look ahead through consecutive decorator lines (lines starting with `@`
-    // after trimming) for a second @Permissions(...) before any non-decorator
-    // line (method signature, comment, blank line acting as a boundary, etc.)
+    if (!/@Permissions\(/.test(lines[i]) || /\)\s*\{/.test(lines[i]) || /\{\s*return/.test(lines[i])) continue;
     for (let j = i + 1; j < lines.length; j++) {
       const trimmed = lines[j].trim();
-      if (trimmed === "") break;
-      if (!trimmed.startsWith("@")) break; // hit the method signature — stop
-      if (/@Permissions\(/.test(lines[j])) {
-        offendingLines.push(i + 1);
-        break;
-      }
+      if (trimmed === "" || !trimmed.startsWith("@") || /\)\s*\{/.test(trimmed) || /\{\s*return/.test(trimmed)) break;
+      if (/@Permissions\(/.test(lines[j])) { offendingLines.push(i + 1); break; }
     }
   }
-
   return offendingLines;
 }
 

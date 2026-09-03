@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { withTenantSession } from "../../../test/tenant-session";
+import { withTenantSession } from "../../../../test/tenant-session";
 import { CrmContractDeepService } from "../services/crm-contract-deep.service";
 
 describe("CrmContractDeepService", () => {

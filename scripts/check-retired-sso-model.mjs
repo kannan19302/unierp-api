@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 
 const root = path.resolve("src");
@@ -23,7 +23,10 @@ function visit(directory) {
   }
 }
 
-visit(root);
+const scanDirs = ["src", "test"].filter((d) => existsSync(path.resolve(d)));
+for (const dir of scanDirs) {
+  visit(path.resolve(dir));
+}
 if (findings.length > 0) {
   console.error("Retired TenantSsoConfig runtime usage detected:");
   findings.forEach((finding) => console.error(`- ${finding}`));

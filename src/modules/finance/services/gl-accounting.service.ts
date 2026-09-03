@@ -718,22 +718,13 @@ export class GlAccountingService {
     return org.id;
   }
 
-  async logAudit(
-    txOrPrisma: unknown,
-    tenantId: string,
-    entityType: string,
-    entityId: string,
-    action: string,
-    changes: Record<string, unknown>,
-    userId: string,
-  ) {
-    await (
-      txOrPrisma as {
-        financeAuditLog: { create: (args: unknown) => Promise<unknown> };
-      }
-    ).financeAuditLog.create({
-      data: { tenantId, entityType, entityId, action, changes, userId },
-    });
+  async logAudit(txOrPrisma: unknown, tenantId: string, entityType: string, entityId: string, action: string, changes: Record<string, unknown>, userId: string) {
+    const client = (txOrPrisma as { financeAuditLog?: { create: (args: unknown) => Promise<unknown> } })?.financeAuditLog
+      ? (txOrPrisma as { financeAuditLog: { create: (args: unknown) => Promise<unknown> } })
+      : (prisma as unknown as { financeAuditLog?: { create: (args: unknown) => Promise<unknown> } });
+    if (client?.financeAuditLog?.create) {
+      await client.financeAuditLog.create({ data: { tenantId, entityType, entityId, action, changes, userId } });
+    }
   }
 
   // ── MULTI-BOOK ACCOUNTING ──────────────────────────────────────
