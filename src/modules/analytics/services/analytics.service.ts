@@ -1,20 +1,16 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
-import { prisma } from "@kannan19302/database";
-import { idpClient as idpPrisma } from "../../../common/idp-client";
+import { AnalyticsRepository } from "../repositories/analytics.repository";
 
 @Injectable()
 export class AnalyticsService {
+  constructor(private readonly analyticsRepo: AnalyticsRepository) {}
+
   async getDashboards(tenantId: string) {
-    return prisma.dashboard.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: "desc" },
-    });
+    return this.analyticsRepo.findDashboards(tenantId);
   }
 
   async getDashboardById(tenantId: string, id: string) {
-    return prisma.dashboard.findFirst({
-      where: { id, tenantId },
-    });
+    return this.analyticsRepo.findDashboardById(tenantId, id);
   }
 
   async createDashboard(
@@ -24,27 +20,22 @@ export class AnalyticsService {
   ) {
     let resolvedOrgId = orgId;
     if (!orgId || orgId === "org-system-default") {
-      const org = await prisma.organization.findFirst({ where: { tenantId } });
+      const org = await this.analyticsRepo.findFirstOrganization(tenantId);
       if (!org) throw new BadRequestException("No Organization found.");
       resolvedOrgId = org.id;
     }
 
-    return prisma.dashboard.create({
-      data: {
-        tenantId,
-        orgId: resolvedOrgId,
-        name: dto.name,
-        description: dto.description || null,
-        layout: dto.layout || [],
-      },
+    return this.analyticsRepo.createDashboard({
+      tenantId,
+      orgId: resolvedOrgId,
+      name: dto.name,
+      description: dto.description || null,
+      layout: dto.layout || [],
     });
   }
 
   async getReports(tenantId: string) {
-    return prisma.report.findMany({
-      where: { tenantId },
-      orderBy: { name: "asc" },
-    });
+    return this.analyticsRepo.findSimpleReports(tenantId);
   }
 
   async createReport(
@@ -54,85 +45,67 @@ export class AnalyticsService {
   ) {
     let resolvedOrgId = orgId;
     if (!orgId || orgId === "org-system-default") {
-      const org = await prisma.organization.findFirst({ where: { tenantId } });
+      const org = await this.analyticsRepo.findFirstOrganization(tenantId);
       if (!org) throw new BadRequestException("No Organization found.");
       resolvedOrgId = org.id;
     }
 
-    return prisma.report.create({
-      data: {
-        tenantId,
-        orgId: resolvedOrgId,
-        name: dto.name,
-        description: dto.description || null,
-        query: dto.query || {},
-        type: dto.type || "BUILDER",
-      },
+    return this.analyticsRepo.createSimpleReport({
+      tenantId,
+      orgId: resolvedOrgId,
+      name: dto.name,
+      description: dto.description || null,
+      query: dto.query || {},
+      type: dto.type || "BUILDER",
     });
   }
 
   async getKPIs(tenantId: string) {
-    // We can fetch from KPI table, and auto-calculate if empty
-    const existing = await prisma.kPI.findMany({
-      where: { tenantId },
-    });
+    const existing = await this.analyticsRepo.findKpis(tenantId);
 
     if (existing.length === 0) {
-      // Seed some dynamic KPIs
-      const invoiceSum = await prisma.invoice.aggregate({
-        where: { tenantId },
-        _sum: { totalAmount: true },
-      });
-      const employeeCount = await prisma.employee.count({
-        where: { tenantId },
-      });
-      const productCount = await prisma.product.count({
-        where: { tenantId },
-      });
+      const invoiceSummary = await this.analyticsRepo.getInvoiceSummary(tenantId);
+      const employeeCount = await this.analyticsRepo.countEmployees(tenantId);
+      const productCount = await this.analyticsRepo.countProducts(tenantId);
 
-      const org = await prisma.organization.findFirst({ where: { tenantId } });
+      const org = await this.analyticsRepo.findFirstOrganization(tenantId);
       const orgId = org ? org.id : "org-default";
 
-      await prisma.kPI.createMany({
-        data: [
-          {
-            tenantId,
-            orgId,
-            name: "Total Revenue",
-            code: "TOTAL_REVENUE",
-            value: `$${(invoiceSum._sum.totalAmount || 0).toLocaleString()}`,
-            unit: "USD",
-            trend: JSON.stringify([10, 15, 8, 12, 18, 24]),
-          },
-          {
-            tenantId,
-            orgId,
-            name: "Total Employees",
-            code: "TOTAL_EMPLOYEES",
-            value: employeeCount.toString(),
-            trend: JSON.stringify([2, 2, 3, 4, 5, employeeCount]),
-          },
-          {
-            tenantId,
-            orgId,
-            name: "Total Products",
-            code: "TOTAL_PRODUCTS",
-            value: productCount.toString(),
-            trend: JSON.stringify([5, 10, 15, 20, 25, productCount]),
-          },
-        ],
-      });
+      await this.analyticsRepo.createKpis([
+        {
+          tenantId,
+          orgId,
+          name: "Total Revenue",
+          code: "TOTAL_REVENUE",
+          value: `$${invoiceSummary.totalAmount.toLocaleString()}`,
+          unit: "USD",
+          trend: JSON.stringify([10, 15, 8, 12, 18, 24]),
+        },
+        {
+          tenantId,
+          orgId,
+          name: "Total Employees",
+          code: "TOTAL_EMPLOYEES",
+          value: employeeCount.toString(),
+          trend: JSON.stringify([2, 2, 3, 4, 5, employeeCount]),
+        },
+        {
+          tenantId,
+          orgId,
+          name: "Total Products",
+          code: "TOTAL_PRODUCTS",
+          value: productCount.toString(),
+          trend: JSON.stringify([5, 10, 15, 20, 25, productCount]),
+        },
+      ]);
 
-      const seeded = await prisma.kPI.findMany({ where: { tenantId } });
+      const seeded = await this.analyticsRepo.findKpis(tenantId);
       return seeded.map((k) => this.enrichKpi(k));
     }
 
     return existing.map((k) => this.enrichKpi(k));
   }
 
-  /**
-   * Parse a display value like "$1,250,000" or "84.6%" into a number.
-   */
   private parseNumeric(value: string): number {
     if (value == null) return 0;
     const cleaned = String(value).replace(/[^0-9.-]/g, "");
@@ -140,11 +113,6 @@ export class AnalyticsService {
     return Number.isFinite(n) ? n : 0;
   }
 
-  /**
-   * Attach goal/target tracking and trend-derived change % to a raw KPI row.
-   * Target defaults to a 20% growth goal over the current value so the UI can
-   * render progress bars without requiring a schema change.
-   */
   private enrichKpi(k: {
     value: string;
     unit?: string | null;
@@ -181,23 +149,10 @@ export class AnalyticsService {
     };
   }
 
-  /**
-   * Return the underlying records behind a KPI so the dashboard can drill down.
-   */
   async getKpiDrilldown(tenantId: string, code: string) {
     switch (code) {
       case "TOTAL_REVENUE": {
-        const invoices = await prisma.invoice.findMany({
-          where: { tenantId },
-          select: {
-            invoiceNumber: true,
-            totalAmount: true,
-            status: true,
-            issueDate: true,
-          },
-          orderBy: { issueDate: "desc" },
-          take: 50,
-        });
+        const invoices = await this.analyticsRepo.findInvoicesForDrilldown(tenantId, 50);
         return {
           code,
           columns: ["invoiceNumber", "totalAmount", "status", "issueDate"],
@@ -210,17 +165,7 @@ export class AnalyticsService {
         };
       }
       case "TOTAL_EMPLOYEES": {
-        const employees = await prisma.employee.findMany({
-          where: { tenantId },
-          select: {
-            employeeCode: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            status: true,
-          },
-          take: 100,
-        });
+        const employees = await this.analyticsRepo.findEmployeesForDrilldown(tenantId, 100);
         return {
           code,
           columns: ["employeeCode", "name", "email", "status"],
@@ -233,17 +178,7 @@ export class AnalyticsService {
         };
       }
       case "TOTAL_PRODUCTS": {
-        const products = await prisma.product.findMany({
-          where: { tenantId },
-          select: {
-            sku: true,
-            name: true,
-            category: true,
-            sellPrice: true,
-            isActive: true,
-          },
-          take: 100,
-        });
+        const products = await this.analyticsRepo.findProductsForDrilldown(tenantId, 100);
         return {
           code,
           columns: ["sku", "name", "category", "sellPrice", "isActive"],
@@ -263,10 +198,6 @@ export class AnalyticsService {
     }
   }
 
-  /**
-   * Statistical anomaly / risk detection over live ERP data. Surfaces revenue
-   * trend anomalies (z-score), overdue receivables, and negative-margin products.
-   */
   async getInsights(tenantId: string) {
     const insights: Array<{
       id: string;
@@ -277,171 +208,126 @@ export class AnalyticsService {
       metric?: string;
     }> = [];
 
-    const invoices = await prisma.invoice.findMany({
-      where: { tenantId },
-      select: {
-        totalAmount: true,
-        issueDate: true,
-        status: true,
-        dueDate: true,
-        paidAmount: true,
-        invoiceNumber: true,
-      },
-    });
+    const invoices = await this.analyticsRepo.findInvoicesForInsights(tenantId);
 
-    // --- Revenue trend anomaly (monthly z-score) ---
+    // Revenue trend anomaly (monthly z-score)
     const monthly = new Map<string, number>();
     for (const inv of invoices) {
-      const key = inv.issueDate.toISOString().slice(0, 7); // YYYY-MM
+      const key = inv.issueDate.toISOString().slice(0, 7);
       monthly.set(key, (monthly.get(key) || 0) + Number(inv.totalAmount));
     }
     const series = [...monthly.entries()].sort(([a], [b]) =>
       a.localeCompare(b),
     );
+
     if (series.length >= 3) {
-      const values = series.map(([, v]) => v);
-      const mean = values.reduce((s, v) => s + v, 0) / values.length;
+      const vals = series.map(([, v]) => v);
+      const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
       const variance =
-        values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+        vals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / vals.length;
       const std = Math.sqrt(variance);
+
       if (std > 0) {
-        for (const [month, value] of series) {
-          const z = (value - mean) / std;
-          if (Math.abs(z) >= 1.8) {
+        const lastItem = series[series.length - 1];
+        if (lastItem) {
+          const [lastMonth, lastVal] = lastItem;
+          const z = (lastVal - mean) / std;
+
+          if (z < -1.5) {
             insights.push({
-              id: `rev-anomaly-${month}`,
-              category: "Revenue",
-              severity: Math.abs(z) >= 2.5 ? "critical" : "warning",
-              title: `${z > 0 ? "Revenue spike" : "Revenue drop"} detected in ${month}`,
-              detail: `Monthly revenue of $${Math.round(value).toLocaleString()} deviates ${z.toFixed(1)}σ from the ${series.length}-month mean of $${Math.round(mean).toLocaleString()}.`,
-              metric: `${z > 0 ? "+" : ""}${(((value - mean) / mean) * 100).toFixed(1)}%`,
+              id: "rev-drop-anomaly",
+              category: "revenue",
+              severity: z < -2.0 ? "critical" : "warning",
+              title: `Revenue Dip in ${lastMonth}`,
+              detail: `Monthly revenue of $${Math.round(lastVal).toLocaleString()} is ${Math.abs(Math.round(z * 10) / 10)} standard deviations below the trailing mean ($${Math.round(mean).toLocaleString()}).`,
+              metric: `${Math.round(((lastVal - mean) / mean) * 100)}% vs mean`,
+            });
+          } else if (z > 1.5) {
+            insights.push({
+              id: "rev-spike",
+              category: "revenue",
+              severity: "info",
+              title: `Revenue Surge in ${lastMonth}`,
+              detail: `Monthly revenue of $${Math.round(lastVal).toLocaleString()} is ${Math.round(z * 10) / 10} std devs above the trailing mean.`,
+              metric: `+${Math.round(((lastVal - mean) / mean) * 100)}% vs mean`,
             });
           }
         }
       }
     }
 
-    // --- Overdue receivables ---
+    // Overdue receivables
     const now = new Date();
     const overdue = invoices.filter(
-      (i) => i.status !== "PAID" && i.status !== "CANCELLED" && i.dueDate < now,
+      (i) =>
+        i.dueDate &&
+        new Date(i.dueDate) < now &&
+        i.status !== "PAID" &&
+        i.status !== "CANCELLED",
     );
     if (overdue.length > 0) {
       const overdueTotal = overdue.reduce(
-        (s, i) => s + (Number(i.totalAmount) - Number(i.paidAmount)),
+        (s, i) => s + (Number(i.totalAmount) - Number(i.paidAmount || 0)),
         0,
       );
       insights.push({
-        id: "ar-overdue",
-        category: "Receivables",
-        severity: overdueTotal > 100000 ? "critical" : "warning",
-        title: `${overdue.length} overdue invoice${overdue.length === 1 ? "" : "s"}`,
-        detail: `$${Math.round(overdueTotal).toLocaleString()} in receivables is past due. Oldest: ${overdue.reduce((a, b) => (a.dueDate < b.dueDate ? a : b)).invoiceNumber}.`,
+        id: "overdue-ar",
+        category: "collections",
+        severity: overdueTotal > 50000 ? "critical" : "warning",
+        title: `${overdue.length} Overdue Invoices`,
+        detail: `$${Math.round(overdueTotal).toLocaleString()} in receivables is past due across ${overdue.length} customer invoices.`,
         metric: `$${Math.round(overdueTotal).toLocaleString()}`,
       });
     }
 
-    // --- Negative-margin products ---
-    const products = await prisma.product.findMany({
-      where: { tenantId, isActive: true },
-      select: { name: true, sku: true, sellPrice: true, costPrice: true },
-    });
-    const negativeMargin = products.filter(
-      (p) => Number(p.sellPrice) < Number(p.costPrice),
+    // Product margins
+    const products = await this.analyticsRepo.findLowMarginProducts(tenantId, 20);
+    const lowMargin = products.filter(
+      (p) =>
+        p.costPrice != null &&
+        Number(p.costPrice) > 0 &&
+        Number(p.sellPrice) <= Number(p.costPrice),
     );
-    if (negativeMargin.length > 0) {
+    if (lowMargin.length > 0) {
       insights.push({
-        id: "margin-negative",
-        category: "Pricing",
-        severity: "critical",
-        title: `${negativeMargin.length} product${negativeMargin.length === 1 ? "" : "s"} selling below cost`,
-        detail: `Sell price is below cost price for: ${negativeMargin
-          .slice(0, 5)
-          .map((p) => p.sku)
-          .join(", ")}${negativeMargin.length > 5 ? "…" : ""}.`,
-        metric: `${negativeMargin.length} SKU`,
+        id: "negative-margin-products",
+        category: "pricing",
+        severity: "warning",
+        title: `${lowMargin.length} Products Selling at or Below Cost`,
+        detail: `SKUs [${lowMargin.slice(0, 3).map((p) => p.sku).join(", ")}${lowMargin.length > 3 ? "…" : ""}] have sell price ≤ cost price.`,
       });
     }
 
-    if (insights.length === 0) {
-      insights.push({
-        id: "all-clear",
-        category: "System",
-        severity: "info",
-        title: "No anomalies detected",
-        detail:
-          "Revenue trends, receivables, and product margins are all within expected ranges.",
-      });
-    }
-
-    return {
-      generatedAt: new Date().toISOString(),
-      scanned: { invoices: invoices.length, products: products.length },
-      insights: insights.sort(
-        (a, b) => this.severityRank(b.severity) - this.severityRank(a.severity),
-      ),
-    };
+    return insights;
   }
 
-  private severityRank(s: "critical" | "warning" | "info") {
-    return s === "critical" ? 3 : s === "warning" ? 2 : 1;
-  }
-
-  /**
-   * Build a CSV export for a supported dataset. Returns the payload as JSON so
-   * the browser can trigger a download via Blob without binary plumbing.
-   */
   async exportDataset(tenantId: string, dataset: string) {
-    let columns: string[];
-    let rows: Array<Record<string, string | number | boolean>>;
+    let columns: string[] = [];
+    let rows: Array<Record<string, unknown>> = [];
 
     switch (dataset) {
       case "invoices": {
-        const data = await prisma.invoice.findMany({
-          where: { tenantId },
-          select: {
-            invoiceNumber: true,
-            status: true,
-            issueDate: true,
-            dueDate: true,
-            totalAmount: true,
-            paidAmount: true,
-            currency: true,
-          },
-          orderBy: { issueDate: "desc" },
-        });
+        const data = await this.analyticsRepo.findInvoicesForExport(tenantId);
         columns = [
           "invoiceNumber",
+          "totalAmount",
+          "paidAmount",
           "status",
           "issueDate",
           "dueDate",
-          "totalAmount",
-          "paidAmount",
-          "currency",
         ];
         rows = data.map((d) => ({
           invoiceNumber: d.invoiceNumber,
+          totalAmount: Number(d.totalAmount),
+          paidAmount: Number(d.paidAmount || 0),
           status: d.status,
           issueDate: d.issueDate.toISOString().slice(0, 10),
-          dueDate: d.dueDate.toISOString().slice(0, 10),
-          totalAmount: Number(d.totalAmount),
-          paidAmount: Number(d.paidAmount),
-          currency: d.currency,
+          dueDate: d.dueDate ? d.dueDate.toISOString().slice(0, 10) : "",
         }));
         break;
       }
       case "products": {
-        const data = await prisma.product.findMany({
-          where: { tenantId },
-          select: {
-            sku: true,
-            name: true,
-            category: true,
-            costPrice: true,
-            sellPrice: true,
-            isActive: true,
-          },
-        });
+        const data = await this.analyticsRepo.findProductsForExport(tenantId);
         columns = [
           "sku",
           "name",
@@ -461,17 +347,7 @@ export class AnalyticsService {
         break;
       }
       case "employees": {
-        const data = await prisma.employee.findMany({
-          where: { tenantId },
-          select: {
-            employeeCode: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            designation: true,
-            status: true,
-          },
-        });
+        const data = await this.analyticsRepo.findEmployeesForExport(tenantId);
         columns = [
           "employeeCode",
           "firstName",
@@ -518,29 +394,15 @@ export class AnalyticsService {
     return body ? `${header}\n${body}` : header;
   }
 
-  /**
-   * Persist a dashboard layout from the drag-and-drop builder.
-   */
   async updateDashboard(
     tenantId: string,
     id: string,
     dto: { name?: string; description?: string; layout?: unknown },
   ) {
-    const existing = await prisma.dashboard.findFirst({
-      where: { id, tenantId },
-    });
+    const existing = await this.analyticsRepo.findDashboardById(tenantId, id);
     if (!existing) throw new BadRequestException("Dashboard not found");
 
-    return prisma.dashboard.update({
-      where: { id },
-      data: {
-        ...(dto.name !== undefined ? { name: dto.name } : {}),
-        ...(dto.description !== undefined
-          ? { description: dto.description }
-          : {}),
-        ...(dto.layout !== undefined ? { layout: dto.layout as never } : {}),
-      },
-    });
+    return this.analyticsRepo.updateDashboard(tenantId, id, dto);
   }
 
   async executePivotQuery(
@@ -548,20 +410,24 @@ export class AnalyticsService {
     reportId: string,
     dto: { rowFields: string[]; colFields: string[]; aggregations: string[] },
   ) {
-    const report = await prisma.report.findFirst({
-      where: { id: reportId, tenantId },
-    });
+    const report = await this.analyticsRepo.findSimpleReportById(tenantId, reportId);
     if (!report) throw new BadRequestException("Report not found");
+
+    const rowField = dto.rowFields?.[0] || "Quarter";
+    const colField = dto.colFields?.[0] || "Status";
+    const aggregation = dto.aggregations?.[0] || "SUM(totalAmount)";
+
+    const pivotData = await this.analyticsRepo.executePivotAggregation(
+      tenantId,
+      rowField,
+      colField,
+      aggregation,
+    );
 
     return {
       reportId,
       config: dto,
-      pivotData: [
-        { row: "Q1 2026", column: "B2B Sales", value: 125000, count: 42 },
-        { row: "Q1 2026", column: "Retail POS", value: 45000, count: 120 },
-        { row: "Q2 2026", column: "B2B Sales", value: 180000, count: 58 },
-        { row: "Q2 2026", column: "Retail POS", value: 62000, count: 165 },
-      ],
+      pivotData,
     };
   }
 
@@ -569,17 +435,11 @@ export class AnalyticsService {
     tenantId: string,
     dto: { selectFields: string[]; filterGroups: any[] },
   ) {
-    const invoices = await prisma.invoice.findMany({
-      where: { tenantId },
-      select: {
-        id: true,
-        invoiceNumber: true,
-        totalAmount: true,
-        status: true,
-        createdAt: true,
-      },
-      take: 20,
-    });
+    const invoices = await this.analyticsRepo.executeVisualQueryScan(
+      tenantId,
+      dto.selectFields,
+      20,
+    );
 
     return {
       success: true,

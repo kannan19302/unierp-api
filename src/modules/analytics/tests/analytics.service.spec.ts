@@ -1,76 +1,64 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AnalyticsService } from "../services/analytics.service";
-
-vi.mock("@kannan19302/database", () => {
-  return {
-    prisma: {
-      dashboard: {
-        findMany: vi.fn(),
-        findFirst: vi.fn(),
-        create: vi.fn(),
-        update: vi.fn(),
-      },
-      report: {
-        findMany: vi.fn(),
-        create: vi.fn(),
-      },
-      kPI: {
-        findMany: vi.fn(),
-        createMany: vi.fn(),
-      },
-      invoice: {
-        aggregate: vi.fn(),
-        findMany: vi.fn(),
-      },
-      employee: {
-        count: vi.fn(),
-        findMany: vi.fn(),
-      },
-      product: {
-        count: vi.fn(),
-        findMany: vi.fn(),
-      },
-      organization: {
-        findFirst: vi.fn(),
-      },
-    },
-  };
-});
+import { AnalyticsRepository } from "../repositories/analytics.repository";
 
 describe("AnalyticsService", () => {
   let analyticsService: AnalyticsService;
+  let analyticsRepo: Partial<AnalyticsRepository>;
 
   beforeEach(() => {
-    analyticsService = new AnalyticsService();
+    analyticsRepo = {
+      findDashboards: vi.fn(),
+      findDashboardById: vi.fn(),
+      createDashboard: vi.fn(),
+      updateDashboard: vi.fn(),
+      findSimpleReports: vi.fn(),
+      findSimpleReportById: vi.fn(),
+      findKpis: vi.fn(),
+      createKpis: vi.fn(),
+      findInvoicesForDrilldown: vi.fn(),
+      findInvoicesForInsights: vi.fn(),
+      findProductsForInsights: vi.fn(),
+      findLowMarginProducts: vi.fn().mockResolvedValue([]),
+      findInvoicesForExport: vi.fn(),
+      findEmployeesForExport: vi.fn(),
+      findProductsForExport: vi.fn(),
+      executePivotAggregation: vi.fn(),
+      executeVisualQueryScan: vi.fn(),
+      getHistoricalMonthlyRevenue: vi.fn(),
+      findPredictiveModels: vi.fn(),
+      createPredictiveModel: vi.fn(),
+      createForecastRun: vi.fn(),
+    };
+    analyticsService = new AnalyticsService(analyticsRepo as AnalyticsRepository);
     vi.clearAllMocks();
   });
 
-  it("should fetch dashboards", async () => {
-    const { prisma } = await import("@kannan19302/database");
+  it("should fetch dashboards via analyticsRepo", async () => {
     const mockDash = [{ id: "d-1", name: "Sales Dash" }];
-    vi.mocked(prisma.dashboard.findMany).mockResolvedValue(mockDash as never);
+    vi.mocked(analyticsRepo.findDashboards!).mockResolvedValue(mockDash as never);
 
     const res = await analyticsService.getDashboards("tenant-123");
     expect(res).toBeDefined();
     expect(res[0]?.name).toBe("Sales Dash");
+    expect(analyticsRepo.findDashboards).toHaveBeenCalledWith("tenant-123");
   });
 
-  it("should fetch reports", async () => {
-    const { prisma } = await import("@kannan19302/database");
+  it("should fetch reports via analyticsRepo", async () => {
     const mockReports = [{ id: "r-1", name: "Inventory Report" }];
-    vi.mocked(prisma.report.findMany).mockResolvedValue(mockReports as never);
+    vi.mocked(analyticsRepo.findSimpleReports!).mockResolvedValue(mockReports as never);
 
     const res = await analyticsService.getReports("tenant-123");
     expect(res).toBeDefined();
     expect(res[0]?.name).toBe("Inventory Report");
+    expect(analyticsRepo.findSimpleReports).toHaveBeenCalledWith("tenant-123");
   });
 
-  it("should fetch KPIs", async () => {
-    const { prisma } = await import("@kannan19302/database");
+  it("should fetch KPIs via analyticsRepo", async () => {
     const mockKPIs = [
       { id: "k-1", code: "TOTAL_REVENUE", value: "$10,000", trend: "[]" },
     ];
-    vi.mocked(prisma.kPI.findMany).mockResolvedValue(mockKPIs as never);
+    vi.mocked(analyticsRepo.findKpis!).mockResolvedValue(mockKPIs as never);
 
     const res = await analyticsService.getKPIs("tenant-123");
     expect(res).toBeDefined();
@@ -78,8 +66,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should enrich KPIs with goal/target and change %", async () => {
-    const { prisma } = await import("@kannan19302/database");
-    vi.mocked(prisma.kPI.findMany).mockResolvedValue([
+    vi.mocked(analyticsRepo.findKpis!).mockResolvedValue([
       {
         id: "k-1",
         code: "TOTAL_REVENUE",
@@ -97,8 +84,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should drill down into TOTAL_REVENUE invoices", async () => {
-    const { prisma } = await import("@kannan19302/database");
-    vi.mocked(prisma.invoice.findMany).mockResolvedValue([
+    vi.mocked(analyticsRepo.findInvoicesForDrilldown!).mockResolvedValue([
       {
         invoiceNumber: "INV-1",
         totalAmount: 500,
@@ -116,8 +102,7 @@ describe("AnalyticsService", () => {
   });
 
   it("should detect overdue receivables in insights", async () => {
-    const { prisma } = await import("@kannan19302/database");
-    vi.mocked(prisma.invoice.findMany).mockResolvedValue([
+    vi.mocked(analyticsRepo.findInvoicesForInsights!).mockResolvedValue([
       {
         invoiceNumber: "INV-OVERDUE",
         totalAmount: 5000,
@@ -127,15 +112,14 @@ describe("AnalyticsService", () => {
         dueDate: new Date("2026-02-01"),
       },
     ] as never);
-    vi.mocked(prisma.product.findMany).mockResolvedValue([] as never);
+    vi.mocked(analyticsRepo.findProductsForInsights!).mockResolvedValue([] as never);
 
     const res = await analyticsService.getInsights("tenant-123");
-    expect(res.insights.some((i) => i.id === "ar-overdue")).toBe(true);
+    expect(res.some((i) => i.id === "overdue-ar")).toBe(true);
   });
 
   it("should export invoices as CSV", async () => {
-    const { prisma } = await import("@kannan19302/database");
-    vi.mocked(prisma.invoice.findMany).mockResolvedValue([
+    vi.mocked(analyticsRepo.findInvoicesForExport!).mockResolvedValue([
       {
         invoiceNumber: "INV-1",
         status: "PAID",
@@ -152,5 +136,24 @@ describe("AnalyticsService", () => {
     expect(res.content).toContain("invoiceNumber");
     expect(res.content).toContain("INV-1");
     expect(res.rowCount).toBe(1);
+  });
+
+  it("should execute dynamic pivot matrix aggregation", async () => {
+    vi.mocked(analyticsRepo.findSimpleReportById!).mockResolvedValue({
+      id: "rep-1",
+      name: "Quarterly Revenue",
+    } as never);
+    vi.mocked(analyticsRepo.executePivotAggregation!).mockResolvedValue([
+      { row: "2026-Q1", column: "PAID", value: 50000, count: 12 },
+    ] as never);
+
+    const res = await analyticsService.executePivotQuery("tenant-123", "rep-1", {
+      rowFields: ["Quarter"],
+      colFields: ["Status"],
+      aggregations: ["SUM(totalAmount)"],
+    });
+    expect(res.pivotData).toHaveLength(1);
+    expect(res.pivotData[0]?.row).toBe("2026-Q1");
+    expect(res.pivotData[0]?.value).toBe(50000);
   });
 });
