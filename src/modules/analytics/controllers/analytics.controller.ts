@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   UseGuards,
   Req,
@@ -148,4 +149,25 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.runSecureVisualQuery(req.user.tenantId, dto);
   }
+
+  @ApiOperation({ summary: "Delete dashboard" })
+  @Delete("dashboards/:id")
+  @Permissions("analytics.dashboard.create")
+  async deleteDashboard(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.analyticsService.deleteDashboard(req.user.tenantId, id);
+  }
+
+  @ApiOperation({ summary: "Delete report" })
+  @Delete("reports/:id")
+  @Permissions("analytics.report.create")
+  async deleteReport(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.analyticsService.deleteReport(req.user.tenantId, id);
+  }
 }
+

@@ -68,6 +68,12 @@ export class AnalyticsRepository {
     });
   }
 
+  async deleteDashboard(tenantId: string, id: string) {
+    return prisma.dashboard.deleteMany({
+      where: { id, tenantId },
+    });
+  }
+
   // ── Reports ─────────────────────────────────────────────────────────────
   async findReports(
     tenantId: string,
@@ -131,6 +137,12 @@ export class AnalyticsRepository {
         query: data.query || {},
         type: data.type || "BUILDER",
       },
+    });
+  }
+
+  async deleteReport(tenantId: string, id: string) {
+    return prisma.report.deleteMany({
+      where: { id, tenantId },
     });
   }
 

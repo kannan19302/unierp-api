@@ -405,6 +405,18 @@ export class AnalyticsService {
     return this.analyticsRepo.updateDashboard(tenantId, id, dto);
   }
 
+  async deleteDashboard(tenantId: string, id: string) {
+    const existing = await this.analyticsRepo.findDashboardById(tenantId, id);
+    if (!existing) throw new BadRequestException("Dashboard not found");
+    return this.analyticsRepo.deleteDashboard(tenantId, id);
+  }
+
+  async deleteReport(tenantId: string, id: string) {
+    const existing = await this.analyticsRepo.findSimpleReportById(tenantId, id);
+    if (!existing) throw new BadRequestException("Report not found");
+    return this.analyticsRepo.deleteReport(tenantId, id);
+  }
+
   async executePivotQuery(
     tenantId: string,
     reportId: string,
