@@ -26,6 +26,7 @@ describe("AnalyticsService", () => {
       executePivotAggregation: vi.fn(),
       executeVisualQueryScan: vi.fn(),
       getHistoricalMonthlyRevenue: vi.fn(),
+      getRecentActivityTelemetry: vi.fn(),
       findPredictiveModels: vi.fn(),
       createPredictiveModel: vi.fn(),
       createForecastRun: vi.fn(),
@@ -156,4 +157,34 @@ describe("AnalyticsService", () => {
     expect(res.pivotData[0]?.row).toBe("2026-Q1");
     expect(res.pivotData[0]?.value).toBe(50000);
   });
+
+  it("should fetch historical monthly revenue via analyticsRepo", async () => {
+    const mockMonthly = [
+      { month: "2026-01", amount: 45000 },
+      { month: "2026-02", amount: 62000 },
+    ];
+    vi.mocked(analyticsRepo.getHistoricalMonthlyRevenue!).mockResolvedValue(mockMonthly as never);
+
+    const res = await analyticsService.getHistoricalMonthlyRevenue("tenant-123");
+    expect(res).toHaveLength(2);
+    expect(res[0]?.month).toBe("2026-01");
+    expect(res[0]?.amount).toBe(45000);
+    expect(analyticsRepo.getHistoricalMonthlyRevenue).toHaveBeenCalledWith("tenant-123");
+  });
+
+  it("should fetch recent activity telemetry via analyticsRepo", async () => {
+    const mockTelemetry = {
+      recentInvoices: [{ id: "inv-1", invoiceNumber: "INV-001", status: "PAID", createdAt: new Date() }],
+      activeEmployees: 5,
+      recentAuditLogs: [{ id: "aud-1", action: "invoice.create", entityType: "Invoice", createdAt: new Date() }],
+    };
+    vi.mocked(analyticsRepo.getRecentActivityTelemetry!).mockResolvedValue(mockTelemetry as never);
+
+    const res = await analyticsService.getRecentActivity("tenant-123");
+    expect(res.recentInvoices).toHaveLength(1);
+    expect(res.activeEmployees).toBe(5);
+    expect(res.recentAuditLogs).toHaveLength(1);
+    expect(analyticsRepo.getRecentActivityTelemetry).toHaveBeenCalledWith("tenant-123");
+  });
 });
+

@@ -8,7 +8,18 @@ import {
   UseGuards,
   Req,
 } from "@nestjs/common";
-import { z } from "zod";
+import {
+  createDashboardSchema,
+  CreateDashboardRequest,
+  updateDashboardSchema,
+  UpdateDashboardRequest,
+  createReportSchema,
+  CreateReportRequest,
+  executePivotQueryRequestSchema,
+  ExecutePivotQueryRequest,
+  executeVisualQueryRequestSchema,
+  ExecuteVisualQueryRequest,
+} from "@kannan19302/contracts";
 import { ZodBody } from "../../../common/decorators/zod-body.decorator";
 import { Request } from "express";
 import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
@@ -56,8 +67,8 @@ export class AnalyticsController {
   @Permissions("analytics.dashboard.create")
   async createDashboard(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any())
-    dto: { name: string; description?: string; layout?: unknown },
+    @ZodBody(createDashboardSchema)
+    dto: CreateDashboardRequest,
   ) {
     const orgId = req.user.orgId || "org-system-default";
     return this.analyticsService.createDashboard(req.user.tenantId, orgId, dto);
@@ -75,8 +86,8 @@ export class AnalyticsController {
   @Permissions("analytics.report.create")
   async createReport(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any())
-    dto: { name: string; description?: string; query?: unknown; type?: string },
+    @ZodBody(createReportSchema)
+    dto: CreateReportRequest,
   ) {
     const orgId = req.user.orgId || "org-system-default";
     return this.analyticsService.createReport(req.user.tenantId, orgId, dto);
@@ -116,14 +127,28 @@ export class AnalyticsController {
     return this.analyticsService.exportDataset(req.user.tenantId, dataset);
   }
 
+  @ApiOperation({ summary: "Get historical monthly revenue" })
+  @Get("monthly-revenue")
+  @Permissions("analytics.kpi.read")
+  async getHistoricalMonthlyRevenue(@Req() req: AuthenticatedRequest) {
+    return this.analyticsService.getHistoricalMonthlyRevenue(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get recent audit & entity activity telemetry" })
+  @Get("activity")
+  @Permissions("analytics.kpi.read")
+  async getRecentActivity(@Req() req: AuthenticatedRequest) {
+    return this.analyticsService.getRecentActivity(req.user.tenantId);
+  }
+
   @ApiOperation({ summary: "Update dashboard" })
   @Patch("dashboards/:id")
   @Permissions("analytics.dashboard.create")
   async updateDashboard(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(z.any())
-    dto: { name?: string; description?: string; layout?: unknown },
+    @ZodBody(updateDashboardSchema)
+    dto: UpdateDashboardRequest,
   ) {
     return this.analyticsService.updateDashboard(req.user.tenantId, id, dto);
   }
@@ -134,8 +159,8 @@ export class AnalyticsController {
   async executePivotQuery(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(z.any())
-    dto: { rowFields: string[]; colFields: string[]; aggregations: string[] },
+    @ZodBody(executePivotQueryRequestSchema)
+    dto: ExecutePivotQueryRequest,
   ) {
     return this.analyticsService.executePivotQuery(req.user.tenantId, id, dto);
   }
@@ -145,7 +170,8 @@ export class AnalyticsController {
   @Permissions("analytics.report.read")
   async runSecureVisualQuery(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: { selectFields: string[]; filterGroups: any[] },
+    @ZodBody(executeVisualQueryRequestSchema)
+    dto: ExecuteVisualQueryRequest,
   ) {
     return this.analyticsService.runSecureVisualQuery(req.user.tenantId, dto);
   }

@@ -1,4 +1,11 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
+import type {
+  CreateDashboardRequest,
+  UpdateDashboardRequest,
+  CreateReportRequest,
+  ExecutePivotQueryRequest,
+  ExecuteVisualQueryRequest,
+} from "@kannan19302/contracts";
 import { AnalyticsRepository } from "../repositories/analytics.repository";
 
 @Injectable()
@@ -16,7 +23,7 @@ export class AnalyticsService {
   async createDashboard(
     tenantId: string,
     orgId: string,
-    dto: { name: string; description?: string; layout?: unknown },
+    dto: CreateDashboardRequest,
   ) {
     let resolvedOrgId = orgId;
     if (!orgId || orgId === "org-system-default") {
@@ -41,7 +48,7 @@ export class AnalyticsService {
   async createReport(
     tenantId: string,
     orgId: string,
-    dto: { name: string; description?: string; query?: unknown; type?: string },
+    dto: CreateReportRequest,
   ) {
     let resolvedOrgId = orgId;
     if (!orgId || orgId === "org-system-default") {
@@ -58,6 +65,14 @@ export class AnalyticsService {
       query: dto.query || {},
       type: dto.type || "BUILDER",
     });
+  }
+
+  async getHistoricalMonthlyRevenue(tenantId: string) {
+    return this.analyticsRepo.getHistoricalMonthlyRevenue(tenantId);
+  }
+
+  async getRecentActivity(tenantId: string) {
+    return this.analyticsRepo.getRecentActivityTelemetry(tenantId);
   }
 
   async getKPIs(tenantId: string) {
@@ -79,7 +94,7 @@ export class AnalyticsService {
           code: "TOTAL_REVENUE",
           value: `$${invoiceSummary.totalAmount.toLocaleString()}`,
           unit: "USD",
-          trend: JSON.stringify([10, 15, 8, 12, 18, 24]),
+          trend: JSON.stringify(invoiceSummary.totalAmount > 0 ? [invoiceSummary.totalAmount] : []),
         },
         {
           tenantId,
@@ -87,7 +102,7 @@ export class AnalyticsService {
           name: "Total Employees",
           code: "TOTAL_EMPLOYEES",
           value: employeeCount.toString(),
-          trend: JSON.stringify([2, 2, 3, 4, 5, employeeCount]),
+          trend: JSON.stringify(employeeCount > 0 ? [employeeCount] : []),
         },
         {
           tenantId,
@@ -95,13 +110,14 @@ export class AnalyticsService {
           name: "Total Products",
           code: "TOTAL_PRODUCTS",
           value: productCount.toString(),
-          trend: JSON.stringify([5, 10, 15, 20, 25, productCount]),
+          trend: JSON.stringify(productCount > 0 ? [productCount] : []),
         },
       ]);
 
       const seeded = await this.analyticsRepo.findKpis(tenantId);
       return seeded.map((k) => this.enrichKpi(k));
     }
+
 
     return existing.map((k) => this.enrichKpi(k));
   }
@@ -397,7 +413,7 @@ export class AnalyticsService {
   async updateDashboard(
     tenantId: string,
     id: string,
-    dto: { name?: string; description?: string; layout?: unknown },
+    dto: UpdateDashboardRequest,
   ) {
     const existing = await this.analyticsRepo.findDashboardById(tenantId, id);
     if (!existing) throw new BadRequestException("Dashboard not found");
@@ -420,14 +436,20 @@ export class AnalyticsService {
   async executePivotQuery(
     tenantId: string,
     reportId: string,
-    dto: { rowFields: string[]; colFields: string[]; aggregations: string[] },
+    dto: ExecutePivotQueryRequest,
   ) {
     const report = await this.analyticsRepo.findSimpleReportById(tenantId, reportId);
     if (!report) throw new BadRequestException("Report not found");
 
     const rowField = dto.rowFields?.[0] || "Quarter";
     const colField = dto.colFields?.[0] || "Status";
-    const aggregation = dto.aggregations?.[0] || "SUM(totalAmount)";
+    const firstAgg = dto.aggregations?.[0];
+    const aggregation =
+      typeof firstAgg === "string"
+        ? firstAgg
+        : firstAgg && typeof firstAgg === "object" && "fn" in firstAgg
+          ? `${firstAgg.fn}(${firstAgg.field})`
+          : "SUM(totalAmount)";
 
     const pivotData = await this.analyticsRepo.executePivotAggregation(
       tenantId,
@@ -445,7 +467,7 @@ export class AnalyticsService {
 
   async runSecureVisualQuery(
     tenantId: string,
-    dto: { selectFields: string[]; filterGroups: any[] },
+    dto: ExecuteVisualQueryRequest,
   ) {
     const invoices = await this.analyticsRepo.executeVisualQueryScan(
       tenantId,
@@ -457,10 +479,10 @@ export class AnalyticsService {
       success: true,
       fields: dto.selectFields,
       rows: invoices.map((inv) => {
-        const rowData: any = {};
+        const rowData: Record<string, unknown> = {};
         dto.selectFields.forEach((field) => {
           if (field in inv) {
-            rowData[field] = (inv as any)[field];
+            rowData[field] = (inv as Record<string, unknown>)[field];
           }
         });
         return rowData;
