@@ -264,6 +264,83 @@ describe("Finance Hardening Services", () => {
       const res = await service.poolConcentrationRun(tenantId, "pool-1");
       expect(res).toBeDefined();
     });
+
+    it("should simulate zero-balance concentration sweep correctly", async () => {
+      const mockPool = {
+        id: "pool-sim-1",
+        tenantId,
+        orgId,
+        name: "ZBA Cash Pool",
+        headerAccountId: "header-1",
+        participantAccountIds: ["sub-1", "sub-2"],
+        targetBalance: 25000,
+        isActive: true,
+      };
+      vi.mocked(prisma.cashPool.findFirst).mockResolvedValue(mockPool as any);
+      vi.mocked(prisma.bankAccount.findFirst).mockImplementation((args: any) => {
+        if (args?.where?.id === "header-1") {
+          return Promise.resolve({
+            id: "header-1",
+            bankName: "JPMorgan Master Treasury",
+            accountNumber: "9876543210",
+            accountId: "gl-acc-header",
+          } as any);
+        }
+        if (args?.where?.id === "sub-1") {
+          return Promise.resolve({
+            id: "sub-1",
+            bankName: "Bank of America Operating",
+            accountNumber: "1111222233",
+            accountId: "gl-acc-sub1",
+          } as any);
+        }
+        if (args?.where?.id === "sub-2") {
+          return Promise.resolve({
+            id: "sub-2",
+            bankName: "Wells Fargo Payroll",
+            accountNumber: "4444555566",
+            accountId: "gl-acc-sub2",
+          } as any);
+        }
+        return Promise.resolve(null);
+      });
+
+      if (!prisma.journalEntry.aggregate) {
+        (prisma.journalEntry as any).aggregate = vi.fn();
+      }
+      vi.mocked(prisma.journalEntry.aggregate).mockImplementation((args: any) => {
+        if (args?.where?.accountId === "gl-acc-header") {
+          return Promise.resolve({ _sum: { debit: 500000, credit: 0 } } as any);
+        }
+        if (args?.where?.accountId === "gl-acc-sub1") {
+          // sub1 has 75000, target 25000 => excess 50000 (SWEEP_TO_HEADER)
+          return Promise.resolve({ _sum: { debit: 75000, credit: 0 } } as any);
+        }
+        if (args?.where?.accountId === "gl-acc-sub2") {
+          // sub2 has 10000, target 25000 => deficit 15000 (FUND_FROM_HEADER)
+          return Promise.resolve({ _sum: { debit: 10000, credit: 0 } } as any);
+        }
+        return Promise.resolve({ _sum: { debit: 0, credit: 0 } } as any);
+      });
+
+      const sim = await service.simulateConcentrationSweep(tenantId, "pool-sim-1");
+
+      expect(sim.poolId).toBe("pool-sim-1");
+      expect(sim.currentHeaderBalance).toBe(500000);
+      expect(sim.totalSweptUp).toBe(50000);
+      expect(sim.totalFundedDown).toBe(15000);
+      expect(sim.netMobilized).toBe(35000);
+      expect(sim.projectedHeaderBalance).toBe(535000);
+      expect(sim.participants).toHaveLength(2);
+
+      const p1 = sim.participants.find((p) => p.bankAccountId === "sub-1");
+      expect(p1?.action).toBe("SWEEP_TO_HEADER");
+      expect(p1?.transferAmount).toBe(50000);
+
+      const p2 = sim.participants.find((p) => p.bankAccountId === "sub-2");
+      expect(p2?.action).toBe("FUND_FROM_HEADER");
+      expect(p2?.transferAmount).toBe(15000);
+    });
   });
 
   // ── Consolidation Deep Service ──

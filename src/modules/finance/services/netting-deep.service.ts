@@ -476,4 +476,133 @@ export class NettingDeepService {
       ),
     };
   }
+
+  // ── Multilateral Netting Settlement Matrix ─────────────────
+
+  async computeMultilateralMatrix(tenantId: string, runId: string) {
+    const run = await prisma.nettingRun.findFirst({
+      where: { id: runId, tenantId },
+      include: { details: true },
+    });
+    if (!run) throw new NotFoundException("Netting run not found");
+
+    const participants = new Set<string>();
+    const details = run.details || [];
+
+    for (const d of details) {
+      if (d.fromOrgId) participants.add(d.fromOrgId);
+      if (d.toOrgId) participants.add(d.toOrgId);
+    }
+
+    const participantList = Array.from(participants);
+    const pairwiseMatrix: Record<string, Record<string, number>> = {};
+    for (const p of participantList) {
+      pairwiseMatrix[p] = {};
+      for (const q of participantList) {
+        pairwiseMatrix[p][q] = 0;
+      }
+    }
+
+    let grossVolume = 0;
+    let grossTransactionCount = 0;
+
+    for (const d of details) {
+      const amt = Number(d.baseAmount ?? d.nettedAmount ?? d.originalAmount ?? 0);
+      if (amt > 0 && d.fromOrgId && d.toOrgId) {
+        if (!pairwiseMatrix[d.fromOrgId]) {
+          pairwiseMatrix[d.fromOrgId] = {};
+        }
+        pairwiseMatrix[d.fromOrgId]![d.toOrgId] =
+          (pairwiseMatrix[d.fromOrgId]![d.toOrgId] || 0) + amt;
+        grossVolume += amt;
+        grossTransactionCount += 1;
+      }
+    }
+
+    const positions: Array<{
+      orgId: string;
+      grossPayables: number;
+      grossReceivables: number;
+      netPosition: number;
+      role: "PAYER" | "RECEIVER" | "SQUARE";
+    }> = [];
+
+    let totalDisbursements = 0;
+
+    for (const orgId of participantList) {
+      let grossPayables = 0;
+      let grossReceivables = 0;
+
+      for (const other of participantList) {
+        grossPayables += pairwiseMatrix[orgId]?.[other] || 0;
+        grossReceivables += pairwiseMatrix[other]?.[orgId] || 0;
+      }
+
+      const netPosition = grossReceivables - grossPayables;
+      const role: "PAYER" | "RECEIVER" | "SQUARE" =
+        netPosition < 0 ? "PAYER" : netPosition > 0 ? "RECEIVER" : "SQUARE";
+
+      if (role === "PAYER") {
+        totalDisbursements += Math.abs(netPosition);
+      }
+
+      positions.push({
+        orgId,
+        grossPayables,
+        grossReceivables,
+        netPosition,
+        role,
+      });
+    }
+
+    const settlements: Array<{
+      fromOrgId: string;
+      toOrgId: string;
+      amount: number;
+      description: string;
+    }> = [];
+
+    for (const p of positions) {
+      if (p.role === "PAYER") {
+        settlements.push({
+          fromOrgId: p.orgId,
+          toOrgId: "TREASURY_CENTRE",
+          amount: Math.abs(p.netPosition),
+          description: `Multilateral net obligation settlement from ${p.orgId} to Treasury Centre`,
+        });
+      } else if (p.role === "RECEIVER") {
+        settlements.push({
+          fromOrgId: "TREASURY_CENTRE",
+          toOrgId: p.orgId,
+          amount: p.netPosition,
+          description: `Multilateral net credit disbursement from Treasury Centre to ${p.orgId}`,
+        });
+      }
+    }
+
+    const netTransactionCount = settlements.length;
+    const netVolume = totalDisbursements;
+    const volumeReductionPercentage =
+      grossVolume > 0 ? ((grossVolume - netVolume) / grossVolume) * 100 : 0;
+    const transactionsSaved = Math.max(
+      0,
+      grossTransactionCount - netTransactionCount,
+    );
+
+    return {
+      runId,
+      runNumber: run.runNumber,
+      status: run.status,
+      grossVolume,
+      netVolume,
+      volumeReductionPercentage: Number(volumeReductionPercentage.toFixed(2)),
+      grossTransactionCount,
+      netTransactionCount,
+      transactionsSaved,
+      participants: participantList,
+      pairwiseMatrix,
+      positions,
+      settlements,
+    };
+  }
 }

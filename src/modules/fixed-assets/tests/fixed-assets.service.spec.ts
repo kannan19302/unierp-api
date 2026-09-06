@@ -128,6 +128,37 @@ describe("FixedAssetsService", () => {
     expect(result).toBeDefined();
   });
 
+  it("should post balanced ASC 360 derecognition journal on asset disposal when accounts mapped", async () => {
+    (prisma.fixedAsset.findFirst as any).mockResolvedValue({
+      id: "a1",
+      tenantId: "t1",
+      orgId: "org-1",
+      assetCode: "FA-999",
+      name: "Server Rack",
+      purchaseValue: "5000",
+      currentValue: "2000",
+      accountId: "acc-asset-cost",
+      accumDepAccountId: "acc-accum-dep",
+      status: "ACTIVE",
+      category: null,
+      location: null,
+      custodian: null,
+      depreciations: [],
+      transfers: [],
+      maintenanceLogs: [],
+    });
+
+    const result = await service.disposeAsset("t1", "a1", "u1", {
+      disposalDate: "2026-07-27",
+      disposalType: "SALE",
+      salePrice: 2500,
+      approvedBy: "u1",
+    });
+
+    expect(result).toEqual({ id: "d-1" });
+    expect(prisma.$transaction).toHaveBeenCalled();
+  });
+
   it("should get audit logs", async () => {
     const mockLogs = [{ id: "1", action: "UPDATED", tenantId: "t1" }];
     (prisma.fixedAssetAuditLog.findMany as any).mockResolvedValue(mockLogs);

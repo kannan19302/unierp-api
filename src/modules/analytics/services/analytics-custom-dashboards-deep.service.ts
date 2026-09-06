@@ -28,6 +28,7 @@ export class AnalyticsCustomDashboardsDeepService {
   }
 
   async addWidget(
+    tenantId: string,
     dashboardId: string,
     dto: {
       title: string;
@@ -38,6 +39,7 @@ export class AnalyticsCustomDashboardsDeepService {
   ) {
     return prisma.analyticsDashboardWidgetDeep.create({
       data: {
+        tenantId,
         dashboardId,
         title: dto.title,
         widgetType: dto.widgetType || "KPI",

@@ -22,6 +22,8 @@ import {
   TaxJurisdictionLookupService,
   TaxFilingCalendarService,
   RecurringJournalSchedulerService,
+  SubledgerInvariantService,
+  Iso20022PaymentGeneratorService,
 } from "../services/index";
 
 interface AuthenticatedRequest extends Request {
@@ -106,6 +108,8 @@ export class FinanceTaxJournalDeepController {
     private readonly taxLookupService: TaxJurisdictionLookupService,
     private readonly filingCalendarService: TaxFilingCalendarService,
     private readonly recurringJournalService: RecurringJournalSchedulerService,
+    private readonly subledgerInvariantService: SubledgerInvariantService,
+    private readonly iso20022Service: Iso20022PaymentGeneratorService,
   ) {}
 
   // ── TAX JURISDICTION LOOKUP ─────────────────────
@@ -265,5 +269,31 @@ export class FinanceTaxJournalDeepController {
     return this.recurringJournalService.processDueRecurringJournals(
       req.user.tenantId,
     );
+  }
+
+  // ── SUBLEDGER-TO-GL INVARIANT RECONCILIATION ──
+
+  @ApiOperation({ summary: "Validate all subledger-to-GL equality invariants" })
+  @Get("reconciliation/invariants")
+  @Permissions("finance.report.read")
+  async validateSubledgerInvariants(@Req() req: AuthenticatedRequest) {
+    return this.subledgerInvariantService.validateSubledgerInvariants(
+      req.user.tenantId,
+    );
+  }
+
+  // ── ISO 20022 PAIN.001 PAYMENT GENERATION ──
+
+  @ApiOperation({
+    summary:
+      "Generate standard ISO 20022 pain.001.001.03 XML credit transfer batch with SHA-256 integrity hash",
+  })
+  @Get("payables/payment-batches/:id/export-iso20022")
+  @Permissions("finance.payables.read")
+  async exportIso20022PaymentBatch(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.iso20022Service.generatePain001Xml(req.user.tenantId, id);
   }
 }

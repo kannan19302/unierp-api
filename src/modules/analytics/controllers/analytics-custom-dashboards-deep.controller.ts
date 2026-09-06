@@ -47,6 +47,7 @@ export class AnalyticsCustomDashboardsDeepController {
   @Permissions("analytics.dashboards.update")
   @Post("dashboards/:id/widgets")
   async addWidget(
+    @Req() req: any,
     @Param("id") dashboardId: string,
     @Body()
     dto: {
@@ -56,6 +57,6 @@ export class AnalyticsCustomDashboardsDeepController {
       layoutGrid?: any;
     },
   ) {
-    return this.dashboardService.addWidget(dashboardId, dto);
+    return this.dashboardService.addWidget(req.user.tenantId, dashboardId, dto);
   }
 }

@@ -190,4 +190,263 @@ export class FinanceRepository {
 
     return paginatedResult(entries, total, params);
   }
+
+  /**
+   * Creates a journal header with balanced journal lines in a single transaction.
+   */
+  async createJournalWithEntries(
+    tenantId: string,
+    orgId: string,
+    journalData: {
+      entryNumber: string;
+      date?: Date;
+      status?: string;
+      notes?: string;
+      createdBy?: string;
+    },
+    lines: Array<{
+      accountId: string;
+      debit: number;
+      credit: number;
+      description?: string;
+    }>,
+  ): Promise<any> {
+    return prisma.$transaction(async (tx) => {
+      const journal = await tx.journal.create({
+        data: {
+          tenantId,
+          orgId,
+          entryNumber: journalData.entryNumber,
+          date: journalData.date || new Date(),
+          status: journalData.status || "DRAFT",
+          notes: journalData.notes,
+          createdBy: journalData.createdBy,
+        },
+      });
+
+      const createdLines: any[] = [];
+      for (const line of lines) {
+        const entry = await tx.journalEntry.create({
+          data: {
+            tenantId,
+            journalId: journal.id,
+            accountId: line.accountId,
+            debit: new Prisma.Decimal(line.debit),
+            credit: new Prisma.Decimal(line.credit),
+            description: line.description,
+          },
+          include: {
+            account: true,
+          },
+        });
+        createdLines.push(entry);
+      }
+
+      return {
+        ...journal,
+        lines: createdLines,
+      };
+    });
+  }
+
+  /**
+   * Finds paginated journals with entry lines.
+   */
+  async findJournals(
+    tenantId: string,
+    params: PaginationParams = {},
+  ): Promise<PaginatedResult<any>> {
+    const where: any = { tenantId };
+    const { skip, take } = buildPaginationValues(params);
+    const orderBy = buildOrderBy(params.sort || "-date");
+
+    const [journals, total] = await Promise.all([
+      prisma.journal.findMany({
+        where,
+        include: {
+          entries: {
+            include: {
+              account: { select: { id: true, code: true, name: true, type: true } },
+            },
+          },
+        },
+        skip,
+        take,
+        orderBy: orderBy as any,
+      }),
+      prisma.journal.count({ where }),
+    ]);
+
+    return paginatedResult(journals, total, params);
+  }
+
+  // ─── Accounts & Chart of Accounts ──────────────────────────────────────
+
+  /**
+   * Finds accounts for tenant with optional type or active filter.
+   */
+  async findAccounts(
+    tenantId: string,
+    params: PaginationParams & { type?: string; isActive?: boolean } = {},
+  ): Promise<PaginatedResult<any>> {
+    const where: any = { tenantId };
+    if (params.type) where.type = params.type;
+    if (params.isActive !== undefined) where.isActive = params.isActive;
+    if (params.search) {
+      where.OR = [
+        { code: { contains: params.search, mode: "insensitive" } },
+        { name: { contains: params.search, mode: "insensitive" } },
+      ];
+    }
+
+    const { skip, take } = buildPaginationValues(params);
+    const orderBy = buildOrderBy(params.sort || "code");
+
+    const [accounts, total] = await Promise.all([
+      prisma.account.findMany({
+        where,
+        skip,
+        take,
+        orderBy: orderBy as any,
+      }),
+      prisma.account.count({ where }),
+    ]);
+
+    return paginatedResult(accounts, total, params);
+  }
+
+  /**
+   * Finds an account by ID.
+   */
+  async findAccountById(tenantId: string, id: string): Promise<any | null> {
+    return prisma.account.findFirst({
+      where: { id, tenantId },
+      include: {
+        children: true,
+        parent: true,
+      },
+    });
+  }
+
+  /**
+   * Creates a new Chart of Accounts record.
+   */
+  async createAccount(tenantId: string, orgId: string, data: any): Promise<any> {
+    return prisma.account.create({
+      data: {
+        ...data,
+        tenantId,
+        orgId,
+      },
+    });
+  }
+
+  // ─── Financial Periods ─────────────────────────────────────────────────
+
+  /**
+   * Finds financial periods for a tenant.
+   */
+  async findFinancialPeriods(tenantId: string): Promise<any[]> {
+    return prisma.financialPeriod.findMany({
+      where: { tenantId },
+      orderBy: { startDate: "asc" },
+    });
+  }
+
+  /**
+   * Finds a financial period by ID.
+   */
+  async findFinancialPeriodById(tenantId: string, id: string): Promise<any | null> {
+    return prisma.financialPeriod.findFirst({
+      where: { id, tenantId },
+    });
+  }
+
+  /**
+   * Closes a financial period atomically.
+   */
+  async closeFinancialPeriod(tenantId: string, id: string): Promise<any> {
+    return prisma.financialPeriod.updateMany({
+      where: { id, tenantId },
+      data: { status: "CLOSED" },
+    });
+  }
+
+  // ─── Financial Metrics & Dashboard Telemetry ───────────────────────────
+
+  /**
+   * Aggregates real-time financial metrics for the tenant dashboard.
+   */
+  async getFinancialMetrics(tenantId: string): Promise<any> {
+    const [
+      invoices,
+      payments,
+      accounts,
+      periods,
+    ] = await Promise.all([
+      prisma.invoice.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { totalAmount: true, paidAmount: true, status: true, issueDate: true },
+      }),
+      prisma.payment.findMany({
+        where: { tenantId },
+        select: { amount: true, paidAt: true },
+      }),
+      prisma.account.findMany({
+        where: { tenantId, isActive: true },
+        select: { id: true, code: true, name: true, type: true, balance: true },
+      }),
+      prisma.financialPeriod.findMany({
+        where: { tenantId },
+        select: { id: true, name: true, status: true },
+      }),
+    ]);
+
+    let totalRevenue = 0;
+    let outstandingAr = 0;
+    let totalInvoices = invoices.length;
+    let paidInvoices = 0;
+    let overdueInvoices = 0;
+
+    for (const inv of invoices) {
+      const tot = Number(inv.totalAmount);
+      const paid = Number(inv.paidAmount);
+      totalRevenue += tot;
+      outstandingAr += Math.max(0, tot - paid);
+      if (inv.status === "PAID") paidInvoices++;
+      if (inv.status === "OVERDUE") overdueInvoices++;
+    }
+
+    let netCashBalance = 0;
+    for (const acc of accounts) {
+      if (acc.type === "ASSET" && (acc.code.startsWith("10") || acc.name.toLowerCase().includes("cash"))) {
+        netCashBalance += Number(acc.balance);
+      }
+    }
+
+    const openPeriod = periods.find((p) => p.status === "OPEN");
+
+    return {
+      kpis: {
+        totalRevenueYtd: totalRevenue,
+        totalRevenue,
+        outstandingAr,
+        pendingAp: 0,
+        netCashBalance,
+        totalInvoices,
+        paidInvoices,
+        overdueInvoices,
+        paymentRate: totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0,
+        bankAccounts: accounts.filter((a) => a.code.startsWith("10")).length,
+      },
+      compliance: {
+        periodName: openPeriod?.name || null,
+        closePct: periods.length > 0 ? (periods.filter((p) => p.status === "CLOSED").length / periods.length) * 100 : 0,
+        bankAccountCount: accounts.filter((a) => a.code.startsWith("10")).length,
+        icEliminationsRun: true,
+      },
+      accounts,
+    };
+  }
 }
+

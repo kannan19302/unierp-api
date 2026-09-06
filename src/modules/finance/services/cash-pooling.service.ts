@@ -58,7 +58,7 @@ export class CashPoolingService {
     if (!pool.isActive)
       throw new BadRequestException("Cash pool is not active");
 
-    const participantIds = pool.participantAccountIds as string[];
+    const participantIds = (pool.participantAccountIds as string[]) || [];
     let totalSwept = 0;
     const details: any[] = [];
 
@@ -68,8 +68,22 @@ export class CashPoolingService {
         where: { id: acctId, tenantId },
       });
       if (!acct) continue;
-      // In a real system, we look up the bank account balance. Since we don't have transaction aggregation details, we mock:
-      const balance = 150000; // Mock participant balance
+      
+      let balance = 0;
+      if (acct.accountId && prisma.journalEntry?.aggregate) {
+        const journalAgg = await prisma.journalEntry.aggregate({
+          where: {
+            tenantId,
+            accountId: acct.accountId,
+            journal: { status: "POSTED" },
+          },
+          _sum: { debit: true, credit: true },
+        });
+        balance =
+          Number(journalAgg?._sum?.debit ?? 0) -
+          Number(journalAgg?._sum?.credit ?? 0);
+      }
+
       const excess = balance - Number(pool.targetBalance);
       if (excess > 0) {
         totalSwept += excess;
@@ -99,7 +113,7 @@ export class CashPoolingService {
           notes: `GL Sweep Concentration for pool: ${pool.name}`,
         },
       });
-      // Debit Concentration Header account, Credit Participant accounts (simulated)
+      // Debit Concentration Header account, Credit Participant accounts
       await prisma.journalEntry.createMany({
         data: [
           {
@@ -134,7 +148,7 @@ export class CashPoolingService {
     if (!pool.isActive)
       throw new BadRequestException("Cash pool is not active");
 
-    const participantIds = pool.participantAccountIds as string[];
+    const participantIds = (pool.participantAccountIds as string[]) || [];
     let totalFunded = 0;
     const details: any[] = [];
 
@@ -144,8 +158,23 @@ export class CashPoolingService {
         where: { id: acctId, tenantId },
       });
       if (!acct) continue;
-      const balance = 20000; // Mock participant balance below target
-      const target = Number(pool.targetBalance) || 50000;
+      
+      let balance = 0;
+      if (acct.accountId && prisma.journalEntry?.aggregate) {
+        const journalAgg = await prisma.journalEntry.aggregate({
+          where: {
+            tenantId,
+            accountId: acct.accountId,
+            journal: { status: "POSTED" },
+          },
+          _sum: { debit: true, credit: true },
+        });
+        balance =
+          Number(journalAgg?._sum?.debit ?? 0) -
+          Number(journalAgg?._sum?.credit ?? 0);
+      }
+
+      const target = Number(pool.targetBalance) || 0;
       const deficit = target - balance;
       if (deficit > 0) {
         totalFunded += deficit;
@@ -164,6 +193,110 @@ export class CashPoolingService {
     });
 
     return run;
+  }
+
+  async simulateConcentrationSweep(tenantId: string, poolId: string) {
+    const pool = await this.getPool(tenantId, poolId);
+    const participantIds = (pool.participantAccountIds as string[]) || [];
+
+    const headerAcct = await prisma.bankAccount.findFirst({
+      where: { id: pool.headerAccountId, tenantId },
+    });
+    let headerBalance = 0;
+    if (headerAcct?.accountId && prisma.journalEntry?.aggregate) {
+      const headerAgg = await prisma.journalEntry.aggregate({
+        where: {
+          tenantId,
+          accountId: headerAcct.accountId,
+          journal: { status: "POSTED" },
+        },
+        _sum: { debit: true, credit: true },
+      });
+      headerBalance =
+        Number(headerAgg?._sum?.debit ?? 0) -
+        Number(headerAgg?._sum?.credit ?? 0);
+    }
+
+    const participants: Array<{
+      bankAccountId: string;
+      bankName: string;
+      accountNumber: string;
+      currentBalance: number;
+      targetBalance: number;
+      variance: number;
+      action: "SWEEP_TO_HEADER" | "FUND_FROM_HEADER" | "SQUARE";
+      transferAmount: number;
+    }> = [];
+
+    let totalSweptUp = 0;
+    let totalFundedDown = 0;
+
+    for (const acctId of participantIds) {
+      const acct = await prisma.bankAccount.findFirst({
+        where: { id: acctId, tenantId },
+      });
+      if (!acct) continue;
+
+      let currentBalance = 0;
+      if (acct.accountId && prisma.journalEntry?.aggregate) {
+        const journalAgg = await prisma.journalEntry.aggregate({
+          where: {
+            tenantId,
+            accountId: acct.accountId,
+            journal: { status: "POSTED" },
+          },
+          _sum: { debit: true, credit: true },
+        });
+        currentBalance =
+          Number(journalAgg?._sum?.debit ?? 0) -
+          Number(journalAgg?._sum?.credit ?? 0);
+      }
+
+      const target = Number(pool.targetBalance) || 0;
+      const variance = currentBalance - target;
+
+      let action: "SWEEP_TO_HEADER" | "FUND_FROM_HEADER" | "SQUARE" = "SQUARE";
+      let transferAmount = 0;
+
+      if (variance > 0) {
+        action = "SWEEP_TO_HEADER";
+        transferAmount = variance;
+        totalSweptUp += variance;
+      } else if (variance < 0) {
+        action = "FUND_FROM_HEADER";
+        transferAmount = Math.abs(variance);
+        totalFundedDown += Math.abs(variance);
+      }
+
+      participants.push({
+        bankAccountId: acct.id,
+        bankName: acct.bankName,
+        accountNumber: acct.accountNumber,
+        currentBalance,
+        targetBalance: target,
+        variance,
+        action,
+        transferAmount,
+      });
+    }
+
+    const netMobilized = totalSweptUp - totalFundedDown;
+    const projectedHeaderBalance = headerBalance + netMobilized;
+
+    return {
+      poolId: pool.id,
+      poolName: pool.name,
+      poolType: pool.poolType,
+      targetBalance: Number(pool.targetBalance),
+      headerAccountId: pool.headerAccountId,
+      headerAccountName: headerAcct?.bankName ?? "Concentration Header Account",
+      currentHeaderBalance: headerBalance,
+      projectedHeaderBalance,
+      totalSweptUp,
+      totalFundedDown,
+      netMobilized,
+      participants,
+    };
   }
 
   async listPoolRuns(tenantId: string, poolId: string) {

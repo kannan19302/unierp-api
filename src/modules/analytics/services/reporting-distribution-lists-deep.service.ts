@@ -25,11 +25,13 @@ export class ReportingDistributionListsDeepService {
   }
 
   async addRecipient(
+    tenantId: string,
     listId: string,
     dto: { recipientEmail: string; recipientName: string },
   ) {
     return prisma.reportingDistributionRecipient.create({
       data: {
+        tenantId,
         listId,
         recipientEmail: dto.recipientEmail,
         recipientName: dto.recipientName,

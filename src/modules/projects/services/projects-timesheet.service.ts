@@ -173,9 +173,9 @@ export class ProjectsTimesheetService {
       where,
       include: { timesheetEntries: true },
     });
-    const totalHours = timesheets.reduce((s, t) => s + (t.totalHours || 0), 0);
+    const totalHours = timesheets.reduce((s, t) => s + Number(t.totalHours || 0), 0);
     const billableHours = timesheets.reduce(
-      (s, t) => s + (t.billableHours || 0),
+      (s, t) => s + Number(t.billableHours || 0),
       0,
     );
     const utilizationRate =
@@ -210,11 +210,11 @@ export class ProjectsTimesheetService {
       (t) => t.status === "REJECTED",
     ).length;
     const totalHours = allTimesheets.reduce(
-      (s, t) => s + (t.totalHours || 0),
+      (s, t) => s + Number(t.totalHours || 0),
       0,
     );
     const billableHours = allTimesheets.reduce(
-      (s, t) => s + (t.billableHours || 0),
+      (s, t) => s + Number(t.billableHours || 0),
       0,
     );
     return {

@@ -49,6 +49,7 @@ export class ReportingTemplatesDeepController {
   @Permissions("reporting.templates.update")
   @Post("templates/:id/sections")
   async addSection(
+    @Req() req: any,
     @Param("id") templateId: string,
     @Body()
     dto: {
@@ -58,6 +59,6 @@ export class ReportingTemplatesDeepController {
       chartConfig?: any;
     },
   ) {
-    return this.templateService.addSection(templateId, dto);
+    return this.templateService.addSection(req.user.tenantId, templateId, dto);
   }
 }

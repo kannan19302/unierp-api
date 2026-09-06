@@ -523,11 +523,105 @@ export class FixedAssetsService {
     if (asset.status === "DISPOSED")
       throw new BadRequestException("Asset is already disposed");
     return prisma.$transaction(async (tx) => {
+      const cost = new Prisma.Decimal(asset.purchaseValue ?? asset.currentValue);
       const bookValue = new Prisma.Decimal(asset.currentValue);
+      const accumDep = cost.minus(bookValue);
       const salePrice = input.salePrice
         ? new Prisma.Decimal(input.salePrice)
         : null;
       const gainLoss = salePrice ? salePrice.minus(bookValue) : null;
+
+      // Determine GL account mapping for ASC 360 / IAS 36 derecognition
+      const assetAcc = asset.accountId || asset.category?.assetAccountId;
+      const accumAcc =
+        asset.accumDepAccountId || asset.category?.depreciationAccountId;
+      let journalId: string | null = null;
+
+      if (tx.journal && assetAcc && accumAcc && asset.orgId) {
+        const entryNumber = `JV-DISP-${asset.assetCode}-${Date.now().toString().slice(-4)}`;
+        const journal = await tx.journal.create({
+          data: {
+            tenantId,
+            orgId: asset.orgId,
+            entryNumber,
+            date: new Date(input.disposalDate),
+            status: "POSTED",
+            notes: `ASC 360 Asset derecognition: ${asset.name} (${asset.assetCode}) - ${input.disposalType}`,
+            createdBy: userId,
+          },
+        });
+        journalId = journal.id;
+
+        // 1. Debit Proceeds / Cash clearing if sale proceeds received
+        if (salePrice && salePrice.greaterThan(0)) {
+          await tx.journalEntry.create({
+            data: {
+              tenantId,
+              journalId: journal.id,
+              accountId: "acc-cash-clearing",
+              debit: salePrice,
+              credit: 0,
+              description: `Disposal proceeds - ${asset.name}`,
+            },
+          });
+        }
+
+        // 2. Debit Accumulated Depreciation to derecognize carrying reserve
+        if (accumDep.greaterThan(0)) {
+          await tx.journalEntry.create({
+            data: {
+              tenantId,
+              journalId: journal.id,
+              accountId: accumAcc,
+              debit: accumDep,
+              credit: 0,
+              description: `Derecognize accumulated depreciation - ${asset.name}`,
+            },
+          });
+        }
+
+        // 3. Credit Fixed Asset Cost Basis
+        await tx.journalEntry.create({
+          data: {
+            tenantId,
+            journalId: journal.id,
+            accountId: assetAcc,
+            debit: 0,
+            credit: cost,
+            description: `Derecognize gross asset cost - ${asset.name}`,
+          },
+        });
+
+        // 4. Record Gain or Loss on Asset Disposal
+        const gainLossNum = gainLoss ? Number(gainLoss) : 0;
+        if (gainLoss && gainLossNum !== 0) {
+          if (gainLoss.greaterThan(0)) {
+            await tx.journalEntry.create({
+              data: {
+                tenantId,
+                journalId: journal.id,
+                accountId: "acc-gain-on-disposal",
+                debit: 0,
+                credit: gainLoss,
+                description: `Gain on asset disposal - ${asset.name}`,
+              },
+            });
+          } else {
+            const lossAmount = new Prisma.Decimal(Math.abs(gainLossNum));
+            await tx.journalEntry.create({
+              data: {
+                tenantId,
+                journalId: journal.id,
+                accountId: "acc-loss-on-disposal",
+                debit: lossAmount,
+                credit: 0,
+                description: `Loss on asset disposal - ${asset.name}`,
+              },
+            });
+          }
+        }
+      }
+
       const disposal = await tx.fixedAssetDisposal.create({
         data: {
           tenantId,
@@ -538,12 +632,17 @@ export class FixedAssetsService {
           bookValueAtDisposal: bookValue,
           gainLoss,
           reason: input.reason,
+          journalId,
           approvedBy: input.approvedBy,
         },
       });
       await tx.fixedAsset.update({
         where: { id: assetId },
-        data: { status: "DISPOSED", updatedBy: userId },
+        data: {
+          status: "DISPOSED",
+          currentValue: new Prisma.Decimal(0),
+          updatedBy: userId,
+        },
       });
       await tx.fixedAssetAuditLog.create({
         data: {
@@ -551,7 +650,7 @@ export class FixedAssetsService {
           assetId,
           action: "DISPOSED",
           changedBy: userId,
-          newValue: `Disposed: ${input.disposalType}`,
+          newValue: `Disposed: ${input.disposalType} (Gain/Loss: ${gainLoss?.toString() ?? "0.00"}, Journal: ${journalId ?? "N/A"})`,
         },
       });
       return disposal;

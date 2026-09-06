@@ -40,6 +40,7 @@ import {
   PeriodManagementService,
   PaymentTermsService,
   BankFeedsService,
+  BankStatementParserService,
   CashFlowForecastService,
   InterCompanyService,
   FxRevaluationService,
@@ -58,6 +59,9 @@ import {
   TaxJurisdictionLookupService,
   TaxFilingCalendarService,
   RecurringJournalSchedulerService,
+  SubledgerInvariantService,
+  Iso20022PaymentGeneratorService,
+  SoxComplianceService,
   Asc606DeepService,
   GlobalTaxDeepService,
   FinancialInstrumentsService,
@@ -134,6 +138,8 @@ const domainServices = [
   TaxJurisdictionLookupService,
   TaxFilingCalendarService,
   RecurringJournalSchedulerService,
+  SubledgerInvariantService,
+  Iso20022PaymentGeneratorService,
   WorkingCapitalService,
   CloseManagementService,
   ConsolidationV2Service,
@@ -143,6 +149,8 @@ const domainServices = [
   ApAutomationService,
   AiAnalyticsService,
   ArCreditManagementService,
+  SoxComplianceService,
+  BankStatementParserService,
 ];
 
 @Module({

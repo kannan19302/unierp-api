@@ -261,4 +261,67 @@ describe("NettingDeepService", () => {
     const result = await service.getNettingDashboard("t1", "o1");
     expect(result.totalGroups).toBe(1);
   });
+
+  it("computeMultilateralMatrix throws if run not found", async () => {
+    vi.mocked(prisma.nettingRun.findFirst).mockResolvedValue(null);
+    await expect(
+      service.computeMultilateralMatrix("t1", "missing-run"),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it("computeMultilateralMatrix computes pairwise matrix and compression metrics correctly", async () => {
+    vi.mocked(prisma.nettingRun.findFirst).mockResolvedValue({
+      id: "run-multi-1",
+      runNumber: "NET-2026-M1",
+      status: "APPROVED",
+      details: [
+        {
+          fromOrgId: "US_CORP",
+          toOrgId: "EU_BV",
+          baseAmount: 100000,
+        },
+        {
+          fromOrgId: "EU_BV",
+          toOrgId: "US_CORP",
+          baseAmount: 40000,
+        },
+        {
+          fromOrgId: "UK_LTD",
+          toOrgId: "EU_BV",
+          baseAmount: 20000,
+        },
+      ],
+    } as any);
+
+    const matrix = await service.computeMultilateralMatrix("t1", "run-multi-1");
+
+    expect(matrix.runId).toBe("run-multi-1");
+    // Gross volume = 100000 + 40000 + 20000 = 160000
+    expect(matrix.grossVolume).toBe(160000);
+    expect(matrix.grossTransactionCount).toBe(3);
+
+    // US_CORP owes 100000, receives 40000 => net -60000 (PAYER)
+    // EU_BV owes 40000, receives 100000 + 20000 = 120000 => net +80000 (RECEIVER)
+    // UK_LTD owes 20000, receives 0 => net -20000 (PAYER)
+    const usPos = matrix.positions.find((p) => p.orgId === "US_CORP");
+    expect(usPos?.role).toBe("PAYER");
+    expect(usPos?.netPosition).toBe(-60000);
+
+    const euPos = matrix.positions.find((p) => p.orgId === "EU_BV");
+    expect(euPos?.role).toBe("RECEIVER");
+    expect(euPos?.netPosition).toBe(80000);
+
+    const ukPos = matrix.positions.find((p) => p.orgId === "UK_LTD");
+    expect(ukPos?.role).toBe("PAYER");
+    expect(ukPos?.netPosition).toBe(-20000);
+
+    // Net settlements:
+    // US_CORP -> TREASURY_CENTRE (60000)
+    // UK_LTD -> TREASURY_CENTRE (20000)
+    // TREASURY_CENTRE -> EU_BV (80000)
+    expect(matrix.settlements).toHaveLength(3);
+    expect(matrix.netVolume).toBe(80000);
+    // 50% volume reduction
+    expect(matrix.volumeReductionPercentage).toBe(50);
+  });
 });

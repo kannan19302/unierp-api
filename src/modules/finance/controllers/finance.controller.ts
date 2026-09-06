@@ -245,4 +245,88 @@ export class FinanceController {
       customerId,
     });
   }
+
+  // ─── Chart of Accounts Endpoints ────────────────────
+
+  @ApiOperation({ summary: "Get chart of accounts" })
+  @Get("accounts")
+  @Permissions("finance.account.read")
+  async getAccounts(
+    @Req() req: AuthenticatedRequest,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("type") type?: string,
+    @Query("search") search?: string,
+  ) {
+    return this.financeService.getAccounts(req.user.tenantId, {
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+      type,
+      search,
+    });
+  }
+
+  @ApiOperation({ summary: "Create general ledger account" })
+  @Post("accounts")
+  @Permissions("finance.account.create")
+  @UseInterceptors(ChangeHistoryInterceptor)
+  @TrackChanges("Account")
+  async createAccount(
+    @Req() req: AuthenticatedRequest,
+    @Req() rawReq: any,
+  ) {
+    const orgId = await resolveOrgId(req.user.tenantId, req.user.orgId);
+    return this.financeService.createAccount(req.user.tenantId, orgId, rawReq.body);
+  }
+
+  // ─── General Ledger Journal Entries ─────────────────
+
+  @ApiOperation({ summary: "Get journal entries" })
+  @Get("journal-entries")
+  @Permissions("finance.journal.read")
+  async getJournalEntries(
+    @Req() req: AuthenticatedRequest,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("sort") sort?: string,
+  ) {
+    return this.financeService.getJournalEntries(req.user.tenantId, {
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+      sort,
+    });
+  }
+
+  @ApiOperation({ summary: "Post balanced journal entry" })
+  @Post("journal-entries")
+  @Permissions("finance.journal.create")
+  @UseInterceptors(ChangeHistoryInterceptor)
+  @TrackChanges("JournalEntry")
+  async createJournalEntry(
+    @Req() req: AuthenticatedRequest,
+    @Req() rawReq: any,
+  ) {
+    const orgId = await resolveOrgId(req.user.tenantId, req.user.orgId);
+    return this.financeService.createJournalEntry(req.user.tenantId, orgId, rawReq.body);
+  }
+
+  // ─── Financial Periods ──────────────────────────────
+
+  @ApiOperation({ summary: "Get financial periods" })
+  @Get("financial-periods")
+  @Permissions("finance.period.read")
+  async getFinancialPeriods(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getFinancialPeriods(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Close financial period" })
+  @Post("financial-periods/:id/close")
+  @Permissions("finance.period.close")
+  async closeFinancialPeriod(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.financeService.closeFinancialPeriod(req.user.tenantId, id);
+  }
 }
+

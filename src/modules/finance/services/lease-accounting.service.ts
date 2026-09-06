@@ -555,4 +555,184 @@ export class LeaseAccountingService {
       },
     });
   }
+
+  async remeasureLease(
+    tenantId: string,
+    id: string,
+    payload: {
+      effectiveDate?: string;
+      newEndDate?: string;
+      newDiscountRate?: number;
+      newPaymentAmount?: number;
+      newPresentValue?: number;
+      reason?: string;
+    },
+  ) {
+    const lease = await this.getLeaseById(tenantId, id);
+    if (lease.status !== "ACTIVE") {
+      throw new BadRequestException("Only ACTIVE leases can be remeasured");
+    }
+
+    const effDate = payload.effectiveDate
+      ? new Date(payload.effectiveDate)
+      : new Date();
+    const finalEnd = payload.newEndDate
+      ? new Date(payload.newEndDate)
+      : new Date(lease.endDate);
+
+    const remainingMonths =
+      (finalEnd.getFullYear() - effDate.getFullYear()) * 12 +
+      (finalEnd.getMonth() - effDate.getMonth()) +
+      1;
+
+    if (remainingMonths <= 0) {
+      throw new BadRequestException("New end date must be after effective date");
+    }
+
+    const oldLiability = Number(lease.carryingAmount ?? lease.presentValue ?? 0);
+    const newRate =
+      payload.newDiscountRate !== undefined
+        ? payload.newDiscountRate
+        : Number(lease.interestRate ?? 0);
+
+    let newLiability = 0;
+    if (payload.newPresentValue != null) {
+      newLiability = Number(payload.newPresentValue);
+    } else if (payload.newPaymentAmount != null && remainingMonths > 0) {
+      const r = (newRate / 100) / 12;
+      const pmt = Number(payload.newPaymentAmount);
+      if (r === 0) {
+        newLiability = pmt * remainingMonths;
+      } else {
+        newLiability = (pmt * (1 - Math.pow(1 + r, -remainingMonths))) / r;
+      }
+    } else {
+      newLiability = oldLiability;
+    }
+
+    const liabilityDelta = newLiability - oldLiability;
+    const rouAdjustment = liabilityDelta;
+
+    // Delete unposted schedules from effectiveDate forward
+    await prisma.leaseSchedule.deleteMany({
+      where: {
+        financeLeaseId: id,
+        tenantId,
+        periodStart: { gte: effDate },
+        journalPosted: false,
+      },
+    });
+
+    // Compute updated schedule
+    const rows = computeAmortizationSchedule(
+      newLiability,
+      newRate || null,
+      effDate,
+      remainingMonths,
+    );
+
+    if (rows.length > 0) {
+      await prisma.leaseSchedule.createMany({
+        data: rows.map((r) => ({
+          tenantId,
+          financeLeaseId: id,
+          periodStart: r.periodStart,
+          periodEnd: r.periodEnd,
+          paymentAmount: new Prisma.Decimal(r.paymentAmount),
+          interestExpense: new Prisma.Decimal(r.interestExpense),
+          principalRepayment: new Prisma.Decimal(r.principalRepayment),
+          rouAmortization: new Prisma.Decimal(r.principalRepayment),
+        })),
+      });
+    }
+
+    // Post remeasurement GL adjustment journal if delta is non-zero
+    let glJournalId: string | null = null;
+    if (Math.abs(liabilityDelta) > 0.01) {
+      const journal = await prisma.journal.create({
+        data: {
+          tenantId,
+          orgId: lease.orgId,
+          entryNumber: `JRN-LSE-MOD-${Date.now()}`,
+          date: effDate,
+          status: "POSTED",
+          notes: `ASC 842 / IFRS 16 Lease Remeasurement for ${lease.leaseRef || id}: ${payload.reason || "Terms Adjustment"}`,
+        },
+      });
+      glJournalId = journal.id;
+
+      const absDelta = Math.abs(liabilityDelta);
+      if (liabilityDelta > 0) {
+        // Increase in liability: Debit ROU Asset, Credit Lease Liability
+        await prisma.journalEntry.createMany({
+          data: [
+            {
+              tenantId,
+              journalId: journal.id,
+              accountId: "acc-rou-asset",
+              debit: new Prisma.Decimal(absDelta),
+              credit: new Prisma.Decimal(0),
+              description: `ROU Asset increase on lease modification: ${lease.leaseRef || id}`,
+            },
+            {
+              tenantId,
+              journalId: journal.id,
+              accountId: "acc-lease-liability",
+              debit: new Prisma.Decimal(0),
+              credit: new Prisma.Decimal(absDelta),
+              description: `Lease Liability increase on lease modification: ${lease.leaseRef || id}`,
+            },
+          ],
+        });
+      } else {
+        // Decrease in liability: Debit Lease Liability, Credit ROU Asset
+        await prisma.journalEntry.createMany({
+          data: [
+            {
+              tenantId,
+              journalId: journal.id,
+              accountId: "acc-lease-liability",
+              debit: new Prisma.Decimal(absDelta),
+              credit: new Prisma.Decimal(0),
+              description: `Lease Liability reduction on lease modification: ${lease.leaseRef || id}`,
+            },
+            {
+              tenantId,
+              journalId: journal.id,
+              accountId: "acc-rou-asset",
+              debit: new Prisma.Decimal(0),
+              credit: new Prisma.Decimal(absDelta),
+              description: `ROU Asset reduction on lease modification: ${lease.leaseRef || id}`,
+            },
+          ],
+        });
+      }
+    }
+
+    const updatedLease = await prisma.financeLease.update({
+      where: { id },
+      data: {
+        endDate: finalEnd,
+        carryingAmount: new Prisma.Decimal(newLiability),
+        presentValue: new Prisma.Decimal(newLiability),
+        interestRate: newRate != null ? new Prisma.Decimal(newRate) : null,
+      },
+    });
+
+    this.events.emit("finance.lease.remeasured", {
+      tenantId,
+      leaseId: id,
+      adjustment: liabilityDelta,
+    });
+
+    return {
+      lease: updatedLease,
+      oldLiability,
+      newLiability,
+      liabilityAdjustment: liabilityDelta,
+      rouAdjustment,
+      glJournalId,
+      scheduleRowsCount: rows.length,
+    };
+  }
 }

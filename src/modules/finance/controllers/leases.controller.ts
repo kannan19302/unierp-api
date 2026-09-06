@@ -55,6 +55,14 @@ const RenewSchema = z.object({
   newEndDate: z.string(),
   newPresentValue: z.number().positive().optional(),
 });
+const RemeasureSchema = z.object({
+  effectiveDate: z.string().optional(),
+  newEndDate: z.string().optional(),
+  newDiscountRate: z.number().min(0).max(100).optional(),
+  newPaymentAmount: z.number().positive().optional(),
+  newPresentValue: z.number().positive().optional(),
+  reason: z.string().optional(),
+});
 
 @ApiTags("Finance - Leases")
 @ApiBearerAuth()
@@ -246,5 +254,19 @@ export class LeasesController {
       body.newEndDate,
       body.newPresentValue,
     );
+  }
+
+  @ApiOperation({
+    summary: "Remeasure/modify a lease under ASC 842 / IFRS 16",
+  })
+  @Post(":id/remeasure")
+  @Permissions("finance.leases.update")
+  @TrackChanges("finance.leases.remeasure")
+  remeasure(
+    @Req() req: AuthRequest,
+    @Param("id") id: string,
+    @ZodBody(RemeasureSchema) body: z.infer<typeof RemeasureSchema>,
+  ) {
+    return this.svc.remeasureLease(this.tid(req), id, body);
   }
 }

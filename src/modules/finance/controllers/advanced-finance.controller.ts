@@ -30,6 +30,7 @@ import { RevenueBillingService } from "../services/revenue-billing.service";
 import { ComplianceControlsService } from "../services/compliance-controls.service";
 import { Form1099Service } from "../services/form-1099.service";
 import { EconomicNexusService } from "../services/economic-nexus.service";
+import { SoxComplianceService } from "../services/sox-compliance.service";
 import {
   GlAccountingService,
   BudgetingService,
@@ -43,6 +44,7 @@ import {
   PeriodManagementService,
   PaymentTermsService,
   BankFeedsService,
+  BankStatementParserService,
   CashFlowForecastService,
   InterCompanyService,
   FxRevaluationService,
@@ -1209,6 +1211,8 @@ export class AdvancedFinanceController {
     private readonly consolidationDeepService: ConsolidationDeepService,
     private readonly form1099Service: Form1099Service,
     private readonly nexusService: EconomicNexusService,
+    private readonly soxComplianceService: SoxComplianceService,
+    private readonly bankStatementParserService: BankStatementParserService,
   ) {}
 
   @ApiOperation({ summary: "Get exchange rates" })
@@ -2221,6 +2225,51 @@ export class AdvancedFinanceController {
     return this.bankFeedsService.ignoreTransaction(req.user.tenantId, id);
   }
 
+  @ApiOperation({ summary: "Parse bank statement file (SWIFT MT940 or ISO 20022 CAMT.053)" })
+  @Post("bank-statements/parse")
+  @Permissions("finance.bank-recon.read")
+  async parseBankStatement(
+    @ZodBody(
+      z.object({
+        rawContent: z.string().min(1),
+        format: z.enum(["MT940", "CAMT053"]).optional(),
+      }),
+    )
+    dto: { rawContent: string; format?: "MT940" | "CAMT053" },
+  ) {
+    if (
+      dto.format === "CAMT053" ||
+      (!dto.format && (dto.rawContent.includes("<Document") || dto.rawContent.includes("<BkToCstmrStmt")))
+    ) {
+      return this.bankStatementParserService.parseCAMT053(dto.rawContent);
+    }
+    return this.bankStatementParserService.parseMT940(dto.rawContent);
+  }
+
+  @ApiOperation({ summary: "Import bank statement transactions into bank feed ledger" })
+  @Post("bank-statements/import")
+  @Permissions("finance.bank-recon.create")
+  @UseInterceptors(ChangeHistoryInterceptor)
+  @TrackChanges("BankTransaction")
+  async importBankStatementFeed(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(
+      z.object({
+        connectionId: z.string().min(1),
+        rawContent: z.string().min(1),
+        format: z.enum(["MT940", "CAMT053"]).optional(),
+      }),
+    )
+    dto: { connectionId: string; rawContent: string; format?: "MT940" | "CAMT053" },
+  ) {
+    return this.bankStatementParserService.importStatement(
+      req.user.tenantId,
+      dto.connectionId,
+      dto.rawContent,
+      dto.format,
+    );
+  }
+
   @ApiOperation({ summary: "Get rolling 13-week cash flow forecast" })
   @Get("cash-flow/forecast")
   @Permissions("finance.report.read")
@@ -3099,6 +3148,34 @@ export class AdvancedFinanceController {
       entityType,
       entityId,
     );
+  }
+
+  @ApiOperation({ summary: "Get SOX 404 compliance summary and health scorecard" })
+  @Permissions("finance.audit.read")
+  @Get("sox/summary")
+  async getSoxSummary(@Req() req: AuthenticatedRequest) {
+    return this.soxComplianceService.getSoxComplianceSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get SOX 404 toxic role & permission segregation of duties conflicts" })
+  @Permissions("finance.audit.read")
+  @Get("sox/conflicts")
+  async getSoxConflicts(@Req() req: AuthenticatedRequest) {
+    return this.soxComplianceService.detectToxicRoleConflicts(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get SOX 404 single-actor transaction violations" })
+  @Permissions("finance.audit.read")
+  @Get("sox/violations")
+  async getSoxViolations(@Req() req: AuthenticatedRequest) {
+    return this.soxComplianceService.auditTransactionViolations(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get SOX 404 toxic segregation of duties rules catalog" })
+  @Permissions("finance.audit.read")
+  @Get("sox/rules")
+  async getSoxRules() {
+    return this.soxComplianceService.getRules();
   }
 
   @ApiOperation({ summary: "Compute tax return" })
@@ -7576,6 +7653,21 @@ export class AdvancedFinanceController {
   @Permissions("finance.treasury.read")
   async listCashPools(@Req() req: AuthenticatedRequest) {
     return this.cashPoolingService.listCashPools(req.user.tenantId);
+  }
+
+  @ApiOperation({
+    summary: "Simulate zero-balance concentration cash pool sweep and funding",
+  })
+  @Get("cash-pools/:id/simulate-sweep")
+  @Permissions("finance.treasury.read")
+  async simulateConcentrationSweep(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.cashPoolingService.simulateConcentrationSweep(
+      req.user.tenantId,
+      id,
+    );
   }
 
   @ApiOperation({ summary: "Execute concentration cash pool sweep" })

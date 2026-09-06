@@ -42,3 +42,7 @@ export { TaxProvisioningService } from "./tax-provisioning.service";
 export { ApAutomationService } from "./ap-automation.service";
 export { AiAnalyticsService } from "./ai-analytics.service";
 export { ArCreditManagementService } from "./ar-credit-management.service";
+export { SubledgerInvariantService } from "./subledger-invariant.service";
+export { Iso20022PaymentGeneratorService } from "./iso20022-payment-generator.service";
+export { SoxComplianceService } from "./sox-compliance.service";
+export { BankStatementParserService } from "./bank-statement-parser.service";

@@ -41,6 +41,7 @@ export class ReportingComplianceSignoffDeepService {
 
     await prisma.reportingSignoffHistory.create({
       data: {
+        tenantId: audit.tenantId,
         auditId,
         signerUserId,
         signatureHash: dto.signatureHash,

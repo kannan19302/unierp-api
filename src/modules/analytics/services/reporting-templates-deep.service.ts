@@ -35,6 +35,7 @@ export class ReportingTemplatesDeepService {
   }
 
   async addSection(
+    tenantId: string,
     templateId: string,
     dto: {
       sectionName: string;
@@ -45,6 +46,7 @@ export class ReportingTemplatesDeepService {
   ) {
     return prisma.reportingTemplateSection.create({
       data: {
+        tenantId,
         templateId,
         sectionName: dto.sectionName,
         sectionOrder: dto.sectionOrder,

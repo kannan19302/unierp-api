@@ -281,6 +281,18 @@ export class NettingDeepController {
     return this.nettingService.getNettingRunStats(req.user.tenantId, groupId);
   }
 
+  @Get("runs/:id/multilateral-matrix")
+  @Permissions("finance.eliminations.read")
+  @ApiOperation({
+    summary: "Get multilateral netting clearing matrix and compression metrics",
+  })
+  async getMultilateralMatrix(
+    @Req() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.nettingService.computeMultilateralMatrix(req.user.tenantId, id);
+  }
+
   @Post("runs/:id/settle")
   @Permissions("finance.eliminations.manage")
   @ApiOperation({ summary: "Settle netting run" })

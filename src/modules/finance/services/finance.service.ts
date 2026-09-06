@@ -21,9 +21,30 @@ import {
   PaginationParams,
 } from "../../../common/utils/pagination.util";
 
+import { FinanceRepository } from "../repositories/finance.repository";
+
 @Injectable()
 export class FinanceService {
-  constructor(private readonly eventEmitter?: EventEmitter2) {}
+  private readonly financeRepo: FinanceRepository;
+  private readonly eventEmitter?: EventEmitter2;
+
+  constructor(
+    repoOrEmitter?: FinanceRepository | EventEmitter2,
+    eventEmitter?: EventEmitter2,
+  ) {
+    if (
+      repoOrEmitter &&
+      "emit" in repoOrEmitter &&
+      typeof (repoOrEmitter as any).emit === "function" &&
+      !("findInvoices" in repoOrEmitter)
+    ) {
+      this.financeRepo = new FinanceRepository();
+      this.eventEmitter = repoOrEmitter as EventEmitter2;
+    } else {
+      this.financeRepo = (repoOrEmitter as FinanceRepository) || new FinanceRepository();
+      this.eventEmitter = eventEmitter;
+    }
+  }
 
   /**
    * Fetch all invoices with pagination, sorting, and filtering.
@@ -873,4 +894,96 @@ export class FinanceService {
       },
     };
   }
+
+  // ─── Chart of Accounts & General Ledger ───────────────────────────────
+
+  async getAccounts(
+    tenantId: string,
+    params: PaginationParams & { type?: string; isActive?: boolean } = {},
+  ) {
+    return this.financeRepo.findAccounts(tenantId, params);
+  }
+
+  async createAccount(tenantId: string, orgId: string, data: any) {
+    return this.financeRepo.createAccount(tenantId, orgId, data);
+  }
+
+  async getJournalEntries(tenantId: string, params: PaginationParams = {}) {
+    return this.financeRepo.findJournalEntries(tenantId, params);
+  }
+
+  async createJournalEntry(tenantId: string, orgId: string, input: any) {
+    // 1. Period close check
+    if (input.periodId) {
+      const period = await this.financeRepo.findFinancialPeriodById(tenantId, input.periodId);
+      if (period && period.status === "CLOSED") {
+        throw new BadRequestException(
+          `Cannot post transactions into financial period '${period.name}' because it is CLOSED.`,
+        );
+      }
+    }
+
+    // 2. Strict double-entry balance check: Debits must equal Credits
+    const lines = input.lines || input.entries || [];
+    if (lines.length < 2) {
+      throw new BadRequestException("A journal voucher must contain at least two line items.");
+    }
+
+    let totalDebit = 0;
+    let totalCredit = 0;
+    for (const line of lines) {
+      totalDebit += Number(line.debit || 0);
+      totalCredit += Number(line.credit || 0);
+    }
+
+    const difference = Math.abs(totalDebit - totalCredit);
+    if (difference > 0.001) {
+      throw new BadRequestException(
+        `Journal entry is out of balance by ${difference.toFixed(2)}. Total Debits ($${totalDebit.toFixed(2)}) must equal Total Credits ($${totalCredit.toFixed(2)}).`,
+      );
+    }
+
+    const entryNumber = input.entryNumber || `JV-${Date.now().toString(36).toUpperCase()}`;
+
+    const journal = await this.financeRepo.createJournalWithEntries(
+      tenantId,
+      orgId,
+      {
+        entryNumber,
+        date: input.postingDate ? new Date(input.postingDate) : new Date(),
+        status: input.status || "POSTED",
+        notes: input.description || input.notes,
+        createdBy: input.createdBy || "system",
+      },
+      lines.map((l: any) => ({
+        accountId: l.accountId,
+        debit: Number(l.debit || 0),
+        credit: Number(l.credit || 0),
+        description: l.description,
+      })),
+    );
+
+    this.eventEmitter?.emit("finance.journal.posted", {
+      tenantId,
+      journalId: journal.id,
+      entryNumber: journal.entryNumber,
+      totalDebit,
+      totalCredit,
+    });
+
+    return journal;
+  }
+
+  // ─── Financial Periods ─────────────────────────────────────────────────
+
+  async getFinancialPeriods(tenantId: string) {
+    const periods = await this.financeRepo.findFinancialPeriods(tenantId);
+    return { data: periods };
+  }
+
+  async closeFinancialPeriod(tenantId: string, periodId: string) {
+    await this.financeRepo.closeFinancialPeriod(tenantId, periodId);
+    return { success: true, message: `Financial period closed successfully.` };
+  }
 }
+

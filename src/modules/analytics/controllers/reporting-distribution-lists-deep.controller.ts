@@ -43,9 +43,10 @@ export class ReportingDistributionListsDeepController {
   @Permissions("reporting.distribution.update")
   @Post("lists/:id/recipients")
   async addRecipient(
+    @Req() req: any,
     @Param("id") listId: string,
     @Body() dto: { recipientEmail: string; recipientName: string },
   ) {
-    return this.listService.addRecipient(listId, dto);
+    return this.listService.addRecipient(req.user.tenantId, listId, dto);
   }
 }
