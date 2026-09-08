@@ -28,11 +28,15 @@ import { FinanceRepository } from "../repositories/finance.repository";
 export class FinanceService {
   private static readonly postedJournals = new Set<string>();
   private static readonly recordedPayments = new Map<string, { amount: number; date: string; reference?: string }>();
+  private static readonly arFollowUps = new Map<string, { promisedDate: string; notes: string; action: string; updatedAt: string }>();
   private static readonly resolvedVariances = new Set<string>();
   private static readonly paidBills = new Set<string>();
   private static readonly reconciledBankTxs = new Set<string>();
+  private static readonly importedBankStatements = new Map<string, any[]>();
   private static readonly assetDepreciations = new Set<string>();
+  private static readonly registeredAssets = new Map<string, any[]>();
   private static readonly taxReturnStatusMap = new Map<string, string>();
+  private static readonly preparedTaxReturns = new Map<string, any[]>();
   private static readonly budgetDriversMap = new Map<string, { revenueGrowth: number; headcountGrowth: number; unitCostInflation: number }>();
   private static readonly fxRevaluationRuns = new Map<string, any>();
   private static readonly intercompanyEliminations = new Map<string, any>();
@@ -1623,8 +1627,25 @@ export class FinanceService {
     }
 
     const pay0842 = FinanceService.recordedPayments.get("inv-1") || FinanceService.recordedPayments.get("INV-2026-0842");
+    const followUp0842 = FinanceService.arFollowUps.get("inv-1") || FinanceService.arFollowUps.get("INV-2026-0842");
     const inspectorBalance = pay0842 ? Math.max(0, 18400.0 - pay0842.amount) : 18400.0;
     const inspectorStatus = inspectorBalance === 0 ? "PAID" : "OVERDUE";
+
+    const baseActivity = pay0842 ? [
+      { date: pay0842.date.slice(0, 10), text: `Payment of USD ${pay0842.amount.toLocaleString()} received via ACH. Invoice settled.` },
+      { date: "2026-08-30", text: "Customer promised payment via ACH." },
+    ] : [
+      { date: "2026-08-30", text: "Customer promised payment via ACH on Sep 04 2026." },
+      { date: "2026-08-25", text: "Automated dunning email (Level 1) delivered." },
+      { date: "2026-08-19", text: "Invoice reached net-30 due date." },
+    ];
+
+    const inspectorActivity = followUp0842
+      ? [
+          { date: followUp0842.updatedAt.slice(0, 10), text: `Follow-up [${followUp0842.action}]: ${followUp0842.notes}` },
+          ...baseActivity,
+        ]
+      : baseActivity;
 
     return {
       kpis: {
@@ -1642,18 +1663,11 @@ export class FinanceService {
         balance: inspectorBalance,
         dueDate: "2026-08-19",
         agingDays: inspectorBalance === 0 ? 0 : 12,
-        promisedPaymentDate: pay0842 ? "Paid on " + pay0842.date.slice(0, 10) : "2026-09-04",
+        promisedPaymentDate: pay0842 ? "Paid on " + pay0842.date.slice(0, 10) : (followUp0842?.promisedDate || "2026-09-04"),
         status: inspectorStatus,
         contactPerson: "Elena Rostova (Head of AP)",
         contactEmail: "ap@northstarlabs.com",
-        recentActivity: pay0842 ? [
-          { date: pay0842.date.slice(0, 10), text: `Payment of USD ${pay0842.amount.toLocaleString()} received via ACH. Invoice settled.` },
-          { date: "2026-08-30", text: "Customer promised payment via ACH." },
-        ] : [
-          { date: "2026-08-30", text: "Customer promised payment via ACH on Sep 04 2026." },
-          { date: "2026-08-25", text: "Automated dunning email (Level 1) delivered." },
-          { date: "2026-08-19", text: "Invoice reached net-30 due date." },
-        ],
+        recentActivity: inspectorActivity,
       },
     };
   }
@@ -1704,6 +1718,34 @@ export class FinanceService {
       status: "PAID",
       message: `Payment of USD ${amount.toLocaleString()} successfully recorded against invoice ${dto.invoiceId}.`,
       timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Record collections follow-up and promise to pay on Accounts Receivable invoice
+   */
+  async recordArFollowUp(tenantId: string, dto: { invoiceId: string; promisedPaymentDate?: string; notes: string; action?: string }) {
+    const invoiceId = dto.invoiceId || "INV-2026-0842";
+    const promisedDate = dto.promisedPaymentDate || "2026-09-04";
+    const notes = dto.notes || "Customer confirmed payment intent.";
+    const action = dto.action || "RECORD_PROMISE";
+    const updatedAt = new Date().toISOString();
+
+    FinanceService.arFollowUps.set(invoiceId, {
+      promisedDate,
+      notes,
+      action,
+      updatedAt,
+    });
+
+    return {
+      success: true,
+      invoiceId,
+      promisedPaymentDate: promisedDate,
+      notes,
+      action,
+      message: `Follow-up for invoice ${invoiceId} recorded. Promised payment date set to ${promisedDate}.`,
+      updatedAt,
     };
   }
 
@@ -1898,24 +1940,62 @@ export class FinanceService {
   }
 
   /**
+   * Import bank statement file for automated auto-triage
+   */
+  async importBankStatement(tenantId: string, dto: { bankAccountId: string; format?: string; statementDate?: string; filename?: string; transactionsCount?: number }) {
+    const accountId = dto.bankAccountId || "ba-1";
+    const format = dto.format || "OFX";
+    const filename = dto.filename || "statement_aug_2026.ofx";
+    const transactionsCount = dto.transactionsCount || 18;
+    const importedAt = new Date().toISOString();
+
+    const entry = {
+      accountId,
+      format,
+      filename,
+      transactionsCount,
+      importedAt,
+    };
+
+    const list = FinanceService.importedBankStatements.get(accountId) || [];
+    list.push(entry);
+    FinanceService.importedBankStatements.set(accountId, list);
+
+    return {
+      success: true,
+      bankAccountId: accountId,
+      format,
+      filename,
+      importedTransactionsCount: transactionsCount,
+      message: `Bank statement ${filename} successfully imported (${transactionsCount} transactions queued for auto-reconciliation).`,
+      importedAt,
+    };
+  }
+
+  /**
    * Screen 6: Fixed Assets register & depreciation schedule
    */
   async getAssetsSummary(tenantId: string) {
     const isAugDepreciated = FinanceService.assetDepreciations.has("Aug 2026");
 
+    const customAssets = FinanceService.registeredAssets.get(tenantId) || [];
+    const customCost = customAssets.reduce((sum, a) => sum + a.cost, 0);
+
     const kpis = {
-      totalCost: 3420000.0,
+      totalCost: 3420000.0 + customCost,
       accumulatedDepreciation: isAugDepreciated ? 1152400.0 : 1150400.0,
-      netBookValue: isAugDepreciated ? 2267600.0 : 2269600.0,
+      netBookValue: (isAugDepreciated ? 2267600.0 : 2269600.0) + customCost,
     };
 
-    const assets = [
+    const defaultAssets = [
       { id: "FA-0042", name: "CNC Machining Centre", category: "Machinery & Equipment", location: "Building 2 - Factory Floor", acquisitionDate: "2025-02-15", cost: 120000.0, bookValue: isAugDepreciated ? 82000.0 : 84000.0, method: "Straight-line (5yr)", status: "IN_SERVICE" },
       { id: "FA-0038", name: "Dell Enterprise PowerEdge Cluster", category: "IT Infrastructure", location: "Data Center US-East", acquisitionDate: "2024-11-10", cost: 240000.0, bookValue: 132000.0, method: "Straight-line (3yr)", status: "IN_SERVICE" },
       { id: "FA-0031", name: "High-Bay Automated Forklift", category: "Vehicles", location: "Warehouse A", acquisitionDate: "2023-06-20", cost: 85000.0, bookValue: 31100.0, method: "Straight-line (5yr)", status: "IN_SERVICE" },
       { id: "FA-0025", name: "Precision Optical CMM Scanner", category: "Machinery & Equipment", location: "QA Metrology Lab", acquisitionDate: "2025-01-08", cost: 165000.0, bookValue: 143000.0, method: "Straight-line (7yr)", status: "IN_SERVICE" },
       { id: "FA-0019", name: "Executive Conference Room AV Matrix", category: "Office Equipment", location: "Headquarters Floor 4", acquisitionDate: "2024-04-12", cost: 48000.0, bookValue: 25600.0, method: "Straight-line (4yr)", status: "IN_SERVICE" },
     ];
+
+    const assets = [...customAssets, ...defaultAssets];
 
     const selectedAsset = {
       assetId: "FA-0042",
@@ -1947,6 +2027,37 @@ export class FinanceService {
   }
 
   /**
+   * Register new asset into fixed asset subledger
+   */
+  async registerAsset(tenantId: string, dto: { assetNumber?: string; name: string; category: string; location: string; acquisitionDate: string; cost: number; salvageValue?: number; usefulLifeMonths?: number; depreciationMethod?: string }) {
+    const assetId = dto.assetNumber || `FA-00${Math.floor(10 + Math.random() * 90)}`;
+    const cost = Number(dto.cost || 50000.0);
+    const method = dto.depreciationMethod || "STRAIGHT_LINE";
+    const usefulLifeMonths = dto.usefulLifeMonths || 60;
+    const newAsset = {
+      id: assetId,
+      name: dto.name || "Enterprise Capital Asset",
+      category: dto.category || "Machinery & Equipment",
+      location: dto.location || "US Headquarters",
+      acquisitionDate: dto.acquisitionDate || new Date().toISOString().slice(0, 10),
+      cost,
+      bookValue: cost,
+      method: method === "STRAIGHT_LINE" ? `Straight-line (${Math.round(usefulLifeMonths / 12)}yr)` : method,
+      status: "IN_SERVICE",
+    };
+
+    const list = FinanceService.registeredAssets.get(tenantId) || [];
+    list.unshift(newAsset);
+    FinanceService.registeredAssets.set(tenantId, list);
+
+    return {
+      success: true,
+      asset: newAsset,
+      message: `Asset ${newAsset.id} (${newAsset.name}) registered into fixed asset subledger.`,
+    };
+  }
+
+  /**
    * Run depreciation across in-service fixed assets
    */
   async depreciateAssets(tenantId: string, dto: { period?: string; assetId?: string }) {
@@ -1967,13 +2078,16 @@ export class FinanceService {
    * Screen 7: Tax & Compliance statutory filing worklist
    */
   async getTaxSummary(tenantId: string) {
-    const filings = [
+    const customFilings = FinanceService.preparedTaxReturns.get(tenantId) || [];
+    const defaultFilings = [
       { id: "tax-1", jurisdiction: "United States (California)", entity: "Acme Corp USA", returnType: "Sales & Use Tax Return", period: "Aug 2026", targetDate: "2026-09-20", owner: "ER", status: FinanceService.taxReturnStatusMap.get("tax-1") || "DRAFT_WITH_EXCEPTIONS" },
       { id: "tax-2", jurisdiction: "United Kingdom", entity: "Acme International UK", returnType: "HMRC VAT Return", period: "Q2 2026", targetDate: "2026-09-25", owner: "JT", status: FinanceService.taxReturnStatusMap.get("tax-2") || "READY_FOR_APPROVAL" },
       { id: "tax-3", jurisdiction: "Germany", entity: "Acme GmbH", returnType: "Umsatzsteuer-Voranmeldung", period: "Aug 2026", targetDate: "2026-09-10", owner: "MK", status: FinanceService.taxReturnStatusMap.get("tax-3") || "READY_FOR_APPROVAL" },
       { id: "tax-4", jurisdiction: "India", entity: "Acme Digital India", returnType: "GSTR-3B Monthly Return", period: "Aug 2026", targetDate: "2026-09-20", owner: "SP", status: FinanceService.taxReturnStatusMap.get("tax-4") || "NEEDS_REVIEW" },
       { id: "tax-5", jurisdiction: "United States (Federal)", entity: "Acme Corp USA", returnType: "Form 941 Quarterly Employer Tax", period: "Q2 2026", targetDate: "2026-08-31", owner: "ER", status: FinanceService.taxReturnStatusMap.get("tax-5") || "FILED" },
     ];
+
+    const filings = [...customFilings, ...defaultFilings];
 
     const currentTax1Status = FinanceService.taxReturnStatusMap.get("tax-1") || "DRAFT_WITH_EXCEPTIONS";
     const isTax1Validated = currentTax1Status === "READY_FOR_APPROVAL" || currentTax1Status === "FILED";
@@ -1982,7 +2096,7 @@ export class FinanceService {
     const kpis = {
       draftReturns: isTax1Validated ? 5 : 6,
       needsReview: isTax1Validated ? 1 : 2,
-      readyForApproval: isTax1Validated && !isTax1Filed ? 5 : 4,
+      readyForApproval: (isTax1Validated && !isTax1Filed ? 5 : 4) + customFilings.length,
       filedThisPeriod: isTax1Filed ? 9 : 8,
     };
 
@@ -2011,6 +2125,33 @@ export class FinanceService {
       kpis,
       filings,
       selectedReturn,
+    };
+  }
+
+  /**
+   * Prepare statutory tax return
+   */
+  async prepareTaxReturn(tenantId: string, dto: { filingId?: string; jurisdiction?: string; period?: string; taxAmount?: number; returnType?: string }) {
+    const filingId = dto.filingId || `tax-${Date.now().toString().slice(-4)}`;
+    const newReturn = {
+      id: filingId,
+      jurisdiction: dto.jurisdiction || "United States (Federal)",
+      entity: "Acme Corp USA",
+      returnType: dto.returnType || "Quarterly Tax Return",
+      period: dto.period || "Aug 2026",
+      targetDate: "2026-09-30",
+      owner: "FM",
+      status: "READY_FOR_APPROVAL",
+    };
+
+    const list = FinanceService.preparedTaxReturns.get(tenantId) || [];
+    list.unshift(newReturn);
+    FinanceService.preparedTaxReturns.set(tenantId, list);
+
+    return {
+      success: true,
+      filing: newReturn,
+      message: `Tax return ${newReturn.returnType} for ${newReturn.jurisdiction} (${newReturn.period}) generated. Ready for reviewer approval.`,
     };
   }
 
@@ -2150,6 +2291,28 @@ export class FinanceService {
       accountingBasis: "Accrual",
       lineItems,
       inspector,
+    };
+  }
+
+  /**
+   * Export financial statement report
+   */
+  async exportFinancialReport(tenantId: string, dto: { reportType?: string; period?: string; format?: string; comparisonPeriod?: string }) {
+    const reportType = dto.reportType || "PROFIT_LOSS";
+    const format = dto.format || "PDF";
+    const period = dto.period || "2026-08";
+    const filename = `${reportType.toLowerCase()}_${period}.${format.toLowerCase()}`;
+
+    return {
+      success: true,
+      reportType,
+      period,
+      format,
+      filename,
+      mimeType: format === "PDF" ? "application/pdf" : format === "XLSX" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "text/csv",
+      downloadUrl: `/api/finance/reports/download?file=${encodeURIComponent(filename)}`,
+      generatedAt: new Date().toISOString(),
+      message: `${reportType} report for period ${period} exported in ${format} format.`,
     };
   }
 

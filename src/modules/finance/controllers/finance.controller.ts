@@ -214,6 +214,16 @@ export class FinanceController {
     return this.financeService.recordArPayment(req.user.tenantId, dto);
   }
 
+  @ApiOperation({ summary: "Record collections follow-up and promise to pay on invoice" })
+  @Post("ar/follow-up")
+  @Permissions("finance.payment.create")
+  async recordArFollowUp(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.recordArFollowUp(req.user.tenantId, dto);
+  }
+
   @ApiOperation({ summary: "Resolve Accounts Payable 3-way match variance" })
   @Post("ap/resolve-variance")
   @Permissions("finance.invoice.update")
@@ -244,6 +254,16 @@ export class FinanceController {
     return this.financeService.reconcileBankTransaction(req.user.tenantId, dto);
   }
 
+  @ApiOperation({ summary: "Import bank statement file for automated auto-triage" })
+  @Post("banking/import-statement")
+  @Permissions("finance.account.create")
+  async importBankStatement(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.importBankStatement(req.user.tenantId, dto);
+  }
+
   @ApiOperation({ summary: "Run fixed assets monthly depreciation" })
   @Post("assets/depreciate")
   @Permissions("finance.journal.create")
@@ -254,6 +274,16 @@ export class FinanceController {
     return this.financeService.depreciateAssets(req.user.tenantId, dto);
   }
 
+  @ApiOperation({ summary: "Register new asset into fixed asset subledger" })
+  @Post("assets/register")
+  @Permissions("finance.journal.create")
+  async registerAsset(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.registerAsset(req.user.tenantId, dto);
+  }
+
   @ApiOperation({ summary: "Update tax filing review status" })
   @Post("tax/update-status")
   @Permissions("finance.settings.write")
@@ -262,6 +292,26 @@ export class FinanceController {
     @ZodBody(z.any()) dto: any,
   ) {
     return this.financeService.updateTaxStatus(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Prepare regulatory tax return filing" })
+  @Post("tax/prepare")
+  @Permissions("finance.settings.write")
+  async prepareTaxReturn(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.prepareTaxReturn(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Export financial statement report" })
+  @Post("reports/export")
+  @Permissions("finance.read")
+  async exportFinancialReport(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.exportFinancialReport(req.user.tenantId, dto);
   }
 
   @ApiOperation({ summary: "Update scenario planning forecast drivers" })
