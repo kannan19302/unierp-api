@@ -2350,18 +2350,38 @@ export class FinanceService {
   /**
    * Update budget forecast drivers
    */
-  async updateBudgetDrivers(tenantId: string, dto: { scenario: string; revenueGrowth: number; headcountGrowth: number; unitCostInflation: number }) {
+  async updateBudgetDrivers(
+    tenantId: string,
+    dto: {
+      scenario?: string;
+      revenueGrowth?: number;
+      headcountGrowth?: number;
+      unitCostInflation?: number;
+      revenueGrowthPct?: number;
+      headcountGrowthPct?: number;
+      unitCostInflationPct?: number;
+      comments?: string;
+    },
+  ) {
     const scenario = dto.scenario || "BASE";
+    const revenueGrowth = Number(dto.revenueGrowthPct ?? dto.revenueGrowth ?? 8.0);
+    const headcountGrowth = Number(dto.headcountGrowthPct ?? dto.headcountGrowth ?? 3.0);
+    const unitCostInflation = Number(dto.unitCostInflationPct ?? dto.unitCostInflation ?? 2.0);
     FinanceService.budgetDriversMap.set(scenario, {
-      revenueGrowth: Number(dto.revenueGrowth ?? 8.0),
-      headcountGrowth: Number(dto.headcountGrowth ?? 3.0),
-      unitCostInflation: Number(dto.unitCostInflation ?? 2.0),
+      revenueGrowth,
+      headcountGrowth,
+      unitCostInflation,
     });
 
     return {
       success: true,
       scenario,
-      drivers: dto,
+      drivers: {
+        scenario,
+        revenueGrowth,
+        headcountGrowth,
+        unitCostInflation,
+      },
       message: `Drivers for scenario ${scenario} updated successfully.`,
       updatedAt: new Date().toISOString(),
     };

@@ -30,6 +30,44 @@ import {
   createPaymentSchema,
   bulkActionSchema,
 } from "@kannan19302/shared";
+import {
+  UpdateFinanceSettingsRequestSchema,
+  PostGlJournalSchema,
+  ReverseGlJournalSchema,
+  CreateManualJournalEntrySchema,
+  RecordArPaymentSchema,
+  ArInvoiceFollowUpSchema,
+  ApResolveVarianceSchema,
+  PayApBillSchema,
+  ReconcileBankTransactionSchema,
+  BankStatementImportSchema,
+  AssetDepreciationRunSchema,
+  AssetRegistrationSchema,
+  UpdateTaxStatusSchema,
+  TaxFilingSubmitSchema,
+  FinancialReportExportSchema,
+  BudgetDriverUpdateSchema,
+  RunFxRevaluationSchema,
+  RunIntercompanyEliminationsSchema,
+  type UpdateFinanceSettingsRequest,
+  type PostGlJournal,
+  type ReverseGlJournal,
+  type CreateManualJournalEntry,
+  type RecordArPayment,
+  type ArInvoiceFollowUp,
+  type ApResolveVariance,
+  type PayApBill,
+  type ReconcileBankTransaction,
+  type BankStatementImport,
+  type AssetDepreciationRun,
+  type AssetRegistration,
+  type UpdateTaxStatus,
+  type TaxFilingSubmit,
+  type FinancialReportExport,
+  type BudgetDriverUpdate,
+  type RunFxRevaluation,
+  type RunIntercompanyEliminations,
+} from "@kannan19302/contracts";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 import { FinanceDemoDataService } from "../services/finance-demo-data.service";
@@ -189,7 +227,7 @@ export class FinanceController {
   @Permissions("finance.settings.write")
   async updateFinanceSettings(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(UpdateFinanceSettingsRequestSchema) dto: UpdateFinanceSettingsRequest,
   ) {
     return this.financeService.updateFinanceSettings(req.user.tenantId, dto);
   }
@@ -199,7 +237,7 @@ export class FinanceController {
   @Permissions("finance.journal.create")
   async postGlJournal(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(PostGlJournalSchema) dto: PostGlJournal,
   ) {
     return this.financeService.postGlJournal(req.user.tenantId, dto);
   }
@@ -209,7 +247,7 @@ export class FinanceController {
   @Permissions("finance.journal.create")
   async reverseGlJournal(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(ReverseGlJournalSchema) dto: ReverseGlJournal,
   ) {
     return this.financeService.reverseGlJournal(req.user.tenantId, dto);
   }
@@ -219,7 +257,7 @@ export class FinanceController {
   @Permissions("finance.journal.create")
   async createManualGlJournal(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(CreateManualJournalEntrySchema) dto: CreateManualJournalEntry,
   ) {
     return this.financeService.createManualJournal(req.user.tenantId, dto);
   }
@@ -229,7 +267,7 @@ export class FinanceController {
   @Permissions("finance.payment.create")
   async recordArPayment(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(RecordArPaymentSchema) dto: RecordArPayment,
   ) {
     return this.financeService.recordArPayment(req.user.tenantId, dto);
   }
@@ -239,7 +277,7 @@ export class FinanceController {
   @Permissions("finance.payment.create")
   async recordArFollowUp(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(ArInvoiceFollowUpSchema) dto: ArInvoiceFollowUp,
   ) {
     return this.financeService.recordArFollowUp(req.user.tenantId, dto);
   }
@@ -249,7 +287,7 @@ export class FinanceController {
   @Permissions("finance.invoice.update")
   async resolveApVariance(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(ApResolveVarianceSchema) dto: ApResolveVariance,
   ) {
     return this.financeService.resolveApVariance(req.user.tenantId, dto);
   }
@@ -259,7 +297,7 @@ export class FinanceController {
   @Permissions("finance.payment.create")
   async payApBill(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(PayApBillSchema) dto: PayApBill,
   ) {
     return this.financeService.payApBill(req.user.tenantId, dto);
   }
@@ -269,7 +307,7 @@ export class FinanceController {
   @Permissions("finance.account.create")
   async reconcileBankTransaction(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(ReconcileBankTransactionSchema) dto: ReconcileBankTransaction,
   ) {
     return this.financeService.reconcileBankTransaction(req.user.tenantId, dto);
   }
@@ -279,7 +317,7 @@ export class FinanceController {
   @Permissions("finance.account.create")
   async importBankStatement(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(BankStatementImportSchema) dto: BankStatementImport,
   ) {
     return this.financeService.importBankStatement(req.user.tenantId, dto);
   }
@@ -289,7 +327,7 @@ export class FinanceController {
   @Permissions("finance.journal.create")
   async depreciateAssets(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(AssetDepreciationRunSchema) dto: AssetDepreciationRun,
   ) {
     return this.financeService.depreciateAssets(req.user.tenantId, dto);
   }
@@ -299,7 +337,7 @@ export class FinanceController {
   @Permissions("finance.journal.create")
   async registerAsset(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(AssetRegistrationSchema) dto: AssetRegistration,
   ) {
     return this.financeService.registerAsset(req.user.tenantId, dto);
   }
@@ -309,7 +347,7 @@ export class FinanceController {
   @Permissions("finance.settings.write")
   async updateTaxStatus(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(UpdateTaxStatusSchema) dto: UpdateTaxStatus,
   ) {
     return this.financeService.updateTaxStatus(req.user.tenantId, dto);
   }
@@ -319,7 +357,7 @@ export class FinanceController {
   @Permissions("finance.settings.write")
   async prepareTaxReturn(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(TaxFilingSubmitSchema) dto: TaxFilingSubmit,
   ) {
     return this.financeService.prepareTaxReturn(req.user.tenantId, dto);
   }
@@ -329,7 +367,7 @@ export class FinanceController {
   @Permissions("finance.read")
   async exportFinancialReport(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(FinancialReportExportSchema) dto: FinancialReportExport,
   ) {
     return this.financeService.exportFinancialReport(req.user.tenantId, dto);
   }
@@ -339,7 +377,7 @@ export class FinanceController {
   @Permissions("finance.settings.write")
   async updateBudgetDrivers(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(BudgetDriverUpdateSchema) dto: BudgetDriverUpdate,
   ) {
     return this.financeService.updateBudgetDrivers(req.user.tenantId, dto);
   }
@@ -356,7 +394,7 @@ export class FinanceController {
   @Permissions("finance.period_close")
   async runFxRevaluation(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(RunFxRevaluationSchema) dto: RunFxRevaluation,
   ) {
     return this.financeService.runFxRevaluation(req.user.tenantId, dto);
   }
@@ -373,7 +411,7 @@ export class FinanceController {
   @Permissions("finance.consolidation.write")
   async runIntercompanyEliminations(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.any()) dto: any,
+    @ZodBody(RunIntercompanyEliminationsSchema) dto: RunIntercompanyEliminations,
   ) {
     return this.financeService.runIntercompanyEliminations(req.user.tenantId, dto);
   }
