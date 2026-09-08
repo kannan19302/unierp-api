@@ -204,6 +204,26 @@ export class FinanceController {
     return this.financeService.postGlJournal(req.user.tenantId, dto);
   }
 
+  @ApiOperation({ summary: "Reverse General Ledger journal voucher with auto-reversing entry" })
+  @Post("gl/reverse-journal")
+  @Permissions("finance.journal.create")
+  async reverseGlJournal(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.reverseGlJournal(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Create and register manual General Ledger journal voucher" })
+  @Post("gl/create-journal")
+  @Permissions("finance.journal.create")
+  async createManualGlJournal(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.createManualJournal(req.user.tenantId, dto);
+  }
+
   @ApiOperation({ summary: "Record payment against Accounts Receivable invoice" })
   @Post("ar/record-payment")
   @Permissions("finance.payment.create")

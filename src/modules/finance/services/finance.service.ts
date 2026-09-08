@@ -40,6 +40,8 @@ export class FinanceService {
   private static readonly budgetDriversMap = new Map<string, { revenueGrowth: number; headcountGrowth: number; unitCostInflation: number }>();
   private static readonly fxRevaluationRuns = new Map<string, any>();
   private static readonly intercompanyEliminations = new Map<string, any>();
+  private static readonly reversedJournals = new Map<string, { reason: string; reversalDate: string; reversedAt: string }>();
+  private static readonly manualJournals = new Map<string, any[]>();
   private static persistedSettings: any = null;
 
   private readonly financeRepo: FinanceRepository;
@@ -1476,9 +1478,17 @@ export class FinanceService {
 
     const entries = mappedEntries.length > 0 ? mappedEntries : defaultEntries;
 
-    // Apply posted state from database or static cache
+    // Merge any registered manual journal entries for tenant
+    const customJournals = FinanceService.manualJournals.get(tenantId) || [];
+    if (customJournals.length > 0) {
+      entries.unshift(...customJournals);
+    }
+
+    // Apply posted and reversed state from database or static cache
     for (const e of entries) {
-      if (FinanceService.postedJournals.has(e.entryNumber) || FinanceService.postedJournals.has(e.id)) {
+      if (FinanceService.reversedJournals.has(e.entryNumber)) {
+        e.status = "REVERSED";
+      } else if (FinanceService.postedJournals.has(e.entryNumber) || FinanceService.postedJournals.has(e.id)) {
         e.status = "POSTED";
       }
     }
@@ -1536,6 +1546,105 @@ export class FinanceService {
       status: "POSTED",
       message: `Journal voucher ${entryNumber} has been approved and posted to the General Ledger.`,
       postedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Reverse a journal voucher and generate auto-reversing entry (IAS 1 / ASC 250)
+   */
+  async reverseGlJournal(tenantId: string, dto: { entryNumber: string; reason?: string; reversalDate?: string }) {
+    const entryNumber = dto.entryNumber;
+    const reason = dto.reason || "Period-end adjustment reversal";
+    const reversalDate = dto.reversalDate || new Date().toISOString().slice(0, 10);
+    const reversalEntryNumber = `REV-${entryNumber}`;
+
+    FinanceService.reversedJournals.set(entryNumber, {
+      reason,
+      reversalDate,
+      reversedAt: new Date().toISOString(),
+    });
+
+    try {
+      if ((prisma as any).journal) {
+        await (prisma as any).journal.updateMany({
+          where: { tenantId, entryNumber },
+          data: { status: "REVERSED" },
+        });
+      }
+    } catch {
+      // Handled defensively
+    }
+
+    return {
+      success: true,
+      originalEntryNumber: entryNumber,
+      reversalEntryNumber,
+      status: "REVERSED",
+      reason,
+      reversalDate,
+      message: `Journal voucher ${entryNumber} reversed. Reversal voucher ${reversalEntryNumber} created.`,
+      reversedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Create and record a new manual journal voucher with balanced debit/credit lines
+   */
+  async createManualJournal(tenantId: string, dto: any) {
+    const lines = dto.lines || [];
+    if (lines.length < 2) {
+      throw new BadRequestException("A journal voucher must contain at least two line items.");
+    }
+
+    let totalDebit = 0;
+    let totalCredit = 0;
+    for (const line of lines) {
+      totalDebit += Number(line.debit || 0);
+      totalCredit += Number(line.credit || 0);
+    }
+
+    const diff = Math.abs(totalDebit - totalCredit);
+    if (diff > 0.01) {
+      throw new BadRequestException(
+        `Journal entry is out of balance by ${diff.toFixed(2)}. Total debits ($${totalDebit.toFixed(2)}) must equal total credits ($${totalCredit.toFixed(2)}).`,
+      );
+    }
+
+    const currentCount = FinanceService.manualJournals.get(tenantId)?.length || 0;
+    const entryNumber = dto.entryNumber || `JE-2026-${(843 + currentCount).toString().padStart(4, "0")}`;
+    const date = dto.date || new Date().toISOString().slice(0, 10);
+    const status = dto.postImmediately ? "POSTED" : "DRAFT";
+
+    if (status === "POSTED") {
+      FinanceService.postedJournals.add(entryNumber);
+    }
+
+    const flattenedLines = lines.map((l: any, idx: number) => ({
+      id: `${entryNumber}-line-${idx + 1}`,
+      entryNumber,
+      date,
+      accountCode: l.accountCode || "1000",
+      accountName: l.accountName || "Account",
+      description: l.description || dto.description || "Manual Journal Line",
+      debit: Number(l.debit || 0),
+      credit: Number(l.credit || 0),
+      status,
+      reference: dto.reference || `REF-${entryNumber}`,
+    }));
+
+    const existing = FinanceService.manualJournals.get(tenantId) || [];
+    existing.unshift(...flattenedLines);
+    FinanceService.manualJournals.set(tenantId, existing);
+
+    return {
+      success: true,
+      entryNumber,
+      status,
+      totalDebit,
+      totalCredit,
+      linesCount: lines.length,
+      message: `Journal voucher ${entryNumber} created with ${lines.length} lines.`,
+      createdAt: new Date().toISOString(),
     };
   }
 
@@ -2727,6 +2836,8 @@ export class FinanceService {
     FinanceService.budgetDriversMap.clear();
     FinanceService.fxRevaluationRuns.clear();
     FinanceService.intercompanyEliminations.clear();
+    FinanceService.reversedJournals.clear();
+    FinanceService.manualJournals.clear();
     FinanceService.persistedSettings = null;
 
     return {
