@@ -356,8 +356,29 @@ describe("FinanceService", () => {
       expect(result.kpis).toHaveProperty("totalRevenueYtd");
       expect(result.kpis).toHaveProperty("outstandingAr");
       expect(result.kpis).toHaveProperty("paymentRate");
+
+      // Executive Screen 1 telemetry properties
+      expect(result.kpis).toHaveProperty("revenue");
+      expect(result.kpis.revenue).toHaveProperty("sparkline");
+      expect(result.kpis).toHaveProperty("operatingCashFlow");
+      expect(result.kpis).toHaveProperty("ebitdaMargin");
+      expect(result.kpis).toHaveProperty("dso");
+
+      // Charts and summaries
       expect(result.charts).toHaveProperty("revenueTrend");
       expect(result.charts).toHaveProperty("statusDistribution");
+      expect(result.charts).toHaveProperty("arAgingSummary");
+      expect(result.charts.arAgingSummary).toHaveProperty("buckets");
+
+      // Exceptions feed
+      expect(result).toHaveProperty("exceptions");
+      expect(result.exceptions).toHaveProperty("overdueReceivables");
+      expect(result.exceptions).toHaveProperty("unmatchedTransactions");
+      expect(result.exceptions).toHaveProperty("pendingJournals");
+
+      // Month-End Close checklist
+      expect(result).toHaveProperty("monthEndClose");
+      expect(result.monthEndClose).toHaveProperty("tasks");
     });
   });
 });

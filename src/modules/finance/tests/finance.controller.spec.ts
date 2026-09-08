@@ -20,9 +20,19 @@ describe("FinanceController", () => {
       createInvoice: vi.fn(),
       createPayment: vi.fn(),
       getDashboardData: vi.fn(),
+      getGlSummary: vi.fn(),
+      getArSummary: vi.fn(),
+      getApSummary: vi.fn(),
+      getBankingSummary: vi.fn(),
+      getAssetsSummary: vi.fn(),
+      getTaxSummary: vi.fn(),
+      getBudgetSummary: vi.fn(),
+      getReportsPnlSummary: vi.fn(),
+      getFinanceSettings: vi.fn(),
+      updateFinanceSettings: vi.fn(),
     } as unknown as FinanceService;
 
-    controller = new FinanceController(service);
+    controller = new FinanceController(service, {} as any);
   });
 
   describe("getInvoices", () => {

@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from "@nestjs/common";
 import Redis from "ioredis";
 import { RuntimePlanCacheService } from "./runtime-plan-cache.service";
 
@@ -16,7 +16,10 @@ export class RuntimePlanCacheInvalidationService implements OnModuleInit, OnModu
   private publisher?: RedisClient;
   private subscriber?: RedisClient;
 
-  constructor(private readonly cache: RuntimePlanCacheService, clients?: { publisher: RedisClient; subscriber: RedisClient }) {
+  constructor(
+    private readonly cache: RuntimePlanCacheService,
+    @Optional() clients?: { publisher: RedisClient; subscriber: RedisClient },
+  ) {
     this.publisher = clients?.publisher;
     this.subscriber = clients?.subscriber;
   }

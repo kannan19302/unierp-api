@@ -11,6 +11,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { ZodBody } from "../../../common/decorators/zod-body.decorator";
+import { z } from "zod";
 import { Request } from "express";
 import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../../common/guards/rbac.guard";
@@ -110,6 +111,215 @@ export class FinanceController {
   @Permissions("finance.invoice.read")
   async getDashboardData(@Req() req: AuthenticatedRequest) {
     return this.financeService.getDashboardData(req.user.tenantId);
+  }
+
+  // ─── Strata v2 Screens 2–10 Endpoints ──────────────────────────
+
+  @ApiOperation({ summary: "Get General Ledger summary and recent journals" })
+  @Get("gl/summary")
+  @Permissions("finance.read")
+  async getGlSummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getGlSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get Accounts Receivable workspace data" })
+  @Get("ar/summary")
+  @Permissions("finance.read")
+  async getArSummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getArSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get Accounts Payable 3-way match workspace data" })
+  @Get("ap/summary")
+  @Permissions("finance.read")
+  async getApSummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getApSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get Banking & Treasury reconciliation and forecast" })
+  @Get("banking/summary")
+  @Permissions("finance.read")
+  async getBankingSummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getBankingSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get Fixed Assets register and depreciation schedule" })
+  @Get("assets/summary")
+  @Permissions("finance.read")
+  async getAssetsSummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getAssetsSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get Tax & Compliance statutory filing worklist" })
+  @Get("tax/summary")
+  @Permissions("finance.read")
+  async getTaxSummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getTaxSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Get Budget & Planning matrix and forecast drivers" })
+  @Get("budget/summary")
+  @Permissions("finance.read")
+  async getBudgetSummary(
+    @Req() req: AuthenticatedRequest,
+    @Query("scenario") scenario?: string,
+  ) {
+    return this.financeService.getBudgetSummary(req.user.tenantId, scenario || "BASE");
+  }
+
+  @ApiOperation({ summary: "Get Financial Reports P&L comparative statement" })
+  @Get("reports/pnl")
+  @Permissions("finance.read")
+  async getReportsPnl(
+    @Req() req: AuthenticatedRequest,
+    @Query("period") period?: string,
+  ) {
+    return this.financeService.getReportsPnlSummary(req.user.tenantId, period || "2026-08");
+  }
+
+  @ApiOperation({ summary: "Get Finance settings and policy context" })
+  @Get("settings/overview")
+  @Permissions("finance.read")
+  async getFinanceSettings(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getFinanceSettings(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Update Finance settings policies" })
+  @Patch("settings/overview")
+  @Permissions("finance.settings.write")
+  async updateFinanceSettings(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.updateFinanceSettings(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Approve and post General Ledger journal voucher" })
+  @Post("gl/post-journal")
+  @Permissions("finance.journal.create")
+  async postGlJournal(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.postGlJournal(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Record payment against Accounts Receivable invoice" })
+  @Post("ar/record-payment")
+  @Permissions("finance.payment.create")
+  async recordArPayment(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.recordArPayment(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Resolve Accounts Payable 3-way match variance" })
+  @Post("ap/resolve-variance")
+  @Permissions("finance.invoice.update")
+  async resolveApVariance(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.resolveApVariance(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Schedule and execute Accounts Payable bill payment" })
+  @Post("ap/pay-bill")
+  @Permissions("finance.payment.create")
+  async payApBill(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.payApBill(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Reconcile bank transaction with ledger record" })
+  @Post("banking/reconcile")
+  @Permissions("finance.account.create")
+  async reconcileBankTransaction(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.reconcileBankTransaction(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Run fixed assets monthly depreciation" })
+  @Post("assets/depreciate")
+  @Permissions("finance.journal.create")
+  async depreciateAssets(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.depreciateAssets(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Update tax filing review status" })
+  @Post("tax/update-status")
+  @Permissions("finance.settings.write")
+  async updateTaxStatus(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.updateTaxStatus(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Update scenario planning forecast drivers" })
+  @Post("budget/update-drivers")
+  @Permissions("finance.settings.write")
+  async updateBudgetDrivers(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.updateBudgetDrivers(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Get Multi-Currency FX revaluation summary and exposure analysis" })
+  @Get("fx-revaluation/summary")
+  @Permissions("finance.read")
+  async getFxRevaluationSummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getFxRevaluationSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Execute Multi-Currency FX revaluation and post auto-reversing GL journals" })
+  @Post("fx-revaluation/run")
+  @Permissions("finance.period_close")
+  async runFxRevaluation(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.runFxRevaluation(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Get Intercompany bilateral matrix, elimination rules, and status" })
+  @Get("intercompany/summary")
+  @Permissions("finance.read")
+  async getIntercompanySummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.getIntercompanySummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Run automated bilateral intercompany balance eliminations" })
+  @Post("intercompany/eliminate")
+  @Permissions("finance.consolidation.write")
+  async runIntercompanyEliminations(
+    @Req() req: AuthenticatedRequest,
+    @ZodBody(z.any()) dto: any,
+  ) {
+    return this.financeService.runIntercompanyEliminations(req.user.tenantId, dto);
+  }
+
+  @ApiOperation({ summary: "Get Vendor 1099-NEC / 1099-MISC statutory compliance report" })
+  @Get("tax/1099-summary")
+  @Permissions("finance.read")
+  async get1099ReportSummary(@Req() req: AuthenticatedRequest) {
+    return this.financeService.get1099ReportSummary(req.user.tenantId);
+  }
+
+  @ApiOperation({ summary: "Reset finance interactive state" })
+  @Post("demo/reset")
+  @Permissions("finance.settings.write")
+  async resetFinanceDemoData(@Req() req: AuthenticatedRequest) {
+    return this.financeService.resetFinanceDemoData(req.user.tenantId);
   }
 
   @ApiOperation({ summary: "Get invoice stats" })

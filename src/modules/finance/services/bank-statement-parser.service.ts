@@ -222,12 +222,17 @@ export class BankStatementParserService {
     }
 
     const statementIdMatch = xmlContent.match(/<Id>([^<]+)<\/Id>/);
-    const statementId = statementIdMatch ? statementIdMatch[1] : `CAMT053-${Date.now()}`;
+    const statementId = statementIdMatch && statementIdMatch[1] ? statementIdMatch[1] : `CAMT053-${Date.now()}`;
 
     // Extract Account IBAN or ID
     const ibanMatch = xmlContent.match(/<IBAN>([^<]+)<\/IBAN>/);
     const othrIdMatch = xmlContent.match(/<Othr>\s*<Id>([^<]+)<\/Id>/);
-    const accountNumber = ibanMatch ? ibanMatch[1] : othrIdMatch ? othrIdMatch[1] : "UNKNOWN_ACCOUNT";
+    const accountNumber =
+      ibanMatch && ibanMatch[1]
+        ? ibanMatch[1]
+        : othrIdMatch && othrIdMatch[1]
+          ? othrIdMatch[1]
+          : "UNKNOWN_ACCOUNT";
 
     // Extract Opening and Closing Balances
     let openingBalance = 0;
@@ -241,7 +246,7 @@ export class BankStatementParserService {
     let balMatch: RegExpExecArray | null;
 
     while ((balMatch = balRegex.exec(xmlContent)) !== null) {
-      const balBlock = balMatch[1];
+      const balBlock = balMatch[1] || "";
       const isOpbd = /<Cd>OPBD<\/Cd>|<Cd>PRCD<\/Cd>/.test(balBlock);
       const isClbd = /<Cd>CLBD<\/Cd>|<Cd>CLAV<\/Cd>/.test(balBlock);
 
@@ -249,12 +254,12 @@ export class BankStatementParserService {
       const cdtDbtMatch = balBlock.match(/<CdtDbtInd>([^<]+)<\/CdtDbtInd>/);
       const dtMatch = balBlock.match(/<Dt>([^<]+)<\/Dt>/);
 
-      if (amtMatch) {
+      if (amtMatch && amtMatch[1] && amtMatch[2]) {
         currency = amtMatch[1];
         const val = parseFloat(amtMatch[2]) || 0;
         const isCredit = cdtDbtMatch ? cdtDbtMatch[1] === "CRDT" : true;
         const balance = isCredit ? val : -val;
-        const bDate = dtMatch ? new Date(dtMatch[1]) : new Date();
+        const bDate = dtMatch && dtMatch[1] ? new Date(dtMatch[1]) : new Date();
 
         if (isOpbd) {
           openingBalance = balance;
@@ -272,21 +277,21 @@ export class BankStatementParserService {
     let ntryMatch: RegExpExecArray | null;
 
     while ((ntryMatch = ntryRegex.exec(xmlContent)) !== null) {
-      const ntryBlock = ntryMatch[1];
+      const ntryBlock = ntryMatch[1] || "";
       const amtMatch = ntryBlock.match(/<Amt(?:\s+Ccy="([^"]+)")?>([^<]+)<\/Amt>/);
       const cdtDbtMatch = ntryBlock.match(/<CdtDbtInd>([^<]+)<\/CdtDbtInd>/);
       const valDtMatch = ntryBlock.match(/<(?:ValDt|BookgDt)>\s*<Dt>([^<]+)<\/Dt>/);
       const ustrdMatch = ntryBlock.match(/<Ustrd>([^<]+)<\/Ustrd>/);
       const endToEndIdMatch = ntryBlock.match(/<EndToEndId>([^<]+)<\/EndToEndId>/);
 
-      if (amtMatch) {
+      if (amtMatch && amtMatch[2]) {
         const entryCurrency = amtMatch[1] || currency;
         const rawAmount = parseFloat(amtMatch[2]) || 0;
         const isDebit = cdtDbtMatch ? cdtDbtMatch[1] === "DBIT" : false;
         const amount = isDebit ? -rawAmount : rawAmount;
-        const txDate = valDtMatch ? new Date(valDtMatch[1]) : new Date();
-        const description = ustrdMatch ? ustrdMatch[1].trim() : `CAMT.053 Entry ${amount > 0 ? "Credit" : "Debit"}`;
-        const reference = endToEndIdMatch ? endToEndIdMatch[1].trim() : undefined;
+        const txDate = valDtMatch && valDtMatch[1] ? new Date(valDtMatch[1]) : new Date();
+        const description = ustrdMatch && ustrdMatch[1] ? ustrdMatch[1].trim() : `CAMT.053 Entry ${amount > 0 ? "Credit" : "Debit"}`;
+        const reference = endToEndIdMatch && endToEndIdMatch[1] ? endToEndIdMatch[1].trim() : undefined;
 
         const hash = crypto
           .createHash("sha256")

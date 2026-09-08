@@ -10,13 +10,16 @@ export class FinancialReportingService {
   async getProfitAndLoss(
     tenantId: string,
     orgId: string,
-    startDate: string,
-    endDate: string,
+    startDate?: string,
+    endDate?: string,
     bookId?: string,
   ) {
     const resolvedOrgId = await this.glService.resolveOrgId(tenantId, orgId);
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const now = new Date();
+    const startCandidate = startDate ? new Date(startDate) : new Date(now.getFullYear(), 0, 1);
+    const endCandidate = endDate ? new Date(endDate) : now;
+    const start = isNaN(startCandidate.getTime()) ? new Date(now.getFullYear(), 0, 1) : startCandidate;
+    const end = isNaN(endCandidate.getTime()) ? now : endCandidate;
 
     const journalFilter: any = {
       orgId: resolvedOrgId,
@@ -120,10 +123,12 @@ export class FinancialReportingService {
   async getComputedBalances(
     tenantId: string,
     resolvedOrgId: string,
-    asOfDate: string | Date,
+    asOfDate?: string | Date,
     bookId?: string,
   ): Promise<Map<string, number>> {
-    const asOf = new Date(asOfDate);
+    const now = new Date();
+    const candidate = asOfDate ? new Date(asOfDate) : now;
+    const asOf = isNaN(candidate.getTime()) ? now : candidate;
     const journalFilter: any = {
       orgId: resolvedOrgId,
       date: { lte: asOf },
@@ -162,10 +167,12 @@ export class FinancialReportingService {
   async getBalanceSheet(
     tenantId: string,
     orgId: string,
-    asOfDate: string,
+    asOfDate?: string,
     bookId?: string,
   ) {
     const resolvedOrgId = await this.glService.resolveOrgId(tenantId, orgId);
+    const now = new Date();
+    const safeAsOf = asOfDate || now.toISOString().split("T")[0];
     const accounts = await prisma.account.findMany({
       where: { tenantId, orgId: resolvedOrgId, isActive: true },
     });
@@ -173,7 +180,7 @@ export class FinancialReportingService {
     const computedBalances = await this.getComputedBalances(
       tenantId,
       resolvedOrgId,
-      asOfDate,
+      safeAsOf,
       bookId,
     );
 
@@ -248,11 +255,14 @@ export class FinancialReportingService {
   async getCashFlowStatement(
     tenantId: string,
     orgId: string,
-    startDate: string,
-    endDate: string,
+    startDate?: string,
+    endDate?: string,
     bookId?: string,
   ) {
     const resolvedOrgId = await this.glService.resolveOrgId(tenantId, orgId);
+    const now = new Date();
+    const safeStart = startDate || `${now.getFullYear()}-01-01`;
+    const safeEnd = endDate || now.toISOString().split("T")[0];
     const accounts = await prisma.account.findMany({
       where: { tenantId, orgId: resolvedOrgId, isActive: true },
     });
@@ -260,7 +270,7 @@ export class FinancialReportingService {
     const computedBalances = await this.getComputedBalances(
       tenantId,
       resolvedOrgId,
-      endDate,
+      safeEnd,
       bookId,
     );
 
@@ -304,15 +314,17 @@ export class FinancialReportingService {
         operatingAccounts.reduce((s, a) => s + Number(a.balance), 0) +
         investingAccounts.reduce((s, a) => s + Number(a.balance), 0) +
         financingAccounts.reduce((s, a) => s + Number(a.balance), 0),
-      period: { startDate, endDate },
+      period: { startDate: safeStart, endDate: safeEnd },
     };
   }
 
   // ── TRIAL BALANCE ──────────────────────────────────
 
-  async getTrialBalance(tenantId: string, orgId: string, asOfDate: string) {
+  async getTrialBalance(tenantId: string, orgId: string, asOfDate?: string) {
     const resolvedOrgId = await this.glService.resolveOrgId(tenantId, orgId);
-    const asOf = new Date(asOfDate);
+    const now = new Date();
+    const candidate = asOfDate ? new Date(asOfDate) : now;
+    const asOf = isNaN(candidate.getTime()) ? now : candidate;
 
     const accounts = await prisma.account.findMany({
       where: { tenantId, orgId: resolvedOrgId, isActive: true },

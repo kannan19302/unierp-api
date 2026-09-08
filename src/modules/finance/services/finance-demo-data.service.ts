@@ -154,7 +154,220 @@ export class FinanceDemoDataService {
         }
       }
 
-      // 2. Track demo records in demoDataRecord
+      // 2. Seed Realistic Aged Invoices for AR Aging Breakdown
+      const agedInvoices = [
+        {
+          num: "INV-AR-CURR",
+          amt: 682550,
+          status: "SENT",
+          dueDaysFromNow: 20,
+        },
+        {
+          num: "INV-AR-30D",
+          amt: 78600,
+          status: "OVERDUE",
+          dueDaysFromNow: -14,
+        },
+        {
+          num: "INV-AR-60D",
+          amt: 45300,
+          status: "OVERDUE",
+          dueDaysFromNow: -42,
+        },
+        {
+          num: "INV-AR-90D",
+          amt: 22100,
+          status: "OVERDUE",
+          dueDaysFromNow: -72,
+        },
+        {
+          num: "INV-AR-90PLUS",
+          amt: 14350,
+          status: "OVERDUE",
+          dueDaysFromNow: -105,
+        },
+      ];
+
+      for (const aInv of agedInvoices) {
+        const dueDate = new Date(now.getTime() + aInv.dueDaysFromNow * 86400000);
+        const issueDate = new Date(dueDate.getTime() - 30 * 86400000);
+
+        const createdAged = await tx.invoice.create({
+          data: {
+            tenantId,
+            orgId: effectiveOrgId,
+            customerId: demoCustomer.id,
+            invoiceNumber: aInv.num,
+            status: aInv.status as any,
+            issueDate,
+            dueDate,
+            subtotal: new Prisma.Decimal(aInv.amt * 0.9),
+            taxAmount: new Prisma.Decimal(aInv.amt * 0.1),
+            totalAmount: new Prisma.Decimal(aInv.amt),
+            paidAmount: new Prisma.Decimal(0),
+            currency: "USD",
+            notes: "Seeded AR aging distribution invoice",
+          },
+        });
+        createdRecords.push({
+          entityType: "invoice",
+          entityId: createdAged.id,
+        });
+      }
+
+      // 3. Seed Financial Period & Month-End Close Checklist Tasks
+      if (tx.financialPeriod) {
+        let activePeriod = await tx.financialPeriod.findFirst({
+          where: { tenantId, status: "OPEN" },
+        });
+        if (!activePeriod) {
+          activePeriod = await tx.financialPeriod.create({
+            data: {
+              tenantId,
+              orgId: effectiveOrgId,
+              name: "FY2026-Q3",
+              startDate: new Date("2026-07-01"),
+              endDate: new Date("2026-09-30"),
+              status: "OPEN",
+            },
+          });
+          createdRecords.push({
+            entityType: "financialPeriod",
+            entityId: activePeriod.id,
+          });
+        }
+
+        const standardCloseTasks = [
+          { name: "Post all recurring journals", status: "DONE", owner: "AB", dueDays: -2 },
+          { name: "Reconcile bank accounts", status: "DONE", owner: "CD", dueDays: -2 },
+          { name: "Review and approve AP accruals", status: "DONE", owner: "EF", dueDays: -1 },
+          { name: "Review and approve AR adjustments", status: "DONE", owner: "GH", dueDays: -1 },
+          { name: "Validate intercompany balances", status: "DONE", owner: "IJ", dueDays: 0 },
+          { name: "Review tax provision", status: "IN_PROGRESS", owner: "KL", dueDays: 2 },
+        ];
+
+        if (tx.closeTask && activePeriod) {
+          for (const ct of standardCloseTasks) {
+            const dueDate = new Date(now.getTime() + ct.dueDays * 86400000);
+            const task = await tx.closeTask.create({
+              data: {
+                tenantId,
+                financialPeriodId: activePeriod.id,
+                name: ct.name,
+                assigneeId: ct.owner,
+                status: ct.status,
+                dueDate,
+                createdBy: "demo-system",
+                updatedBy: "demo-system",
+              },
+            });
+            createdRecords.push({
+              entityType: "closeTask",
+              entityId: task.id,
+            });
+          }
+        }
+      }
+
+      // 4. Seed Unmatched Bank Transactions (for Exceptions triage)
+      if (tx.bankConnection && tx.bankTransaction) {
+        let connection = await tx.bankConnection.findFirst({
+          where: { tenantId },
+        });
+        if (!connection) {
+          const bankAcc = tx.bankAccount ? await tx.bankAccount.findFirst({ where: { tenantId } }) : null;
+          connection = await tx.bankConnection.create({
+            data: {
+              tenantId,
+              orgId: "00000000-0000-0000-0000-000000000001",
+              bankName: "JPMorgan Chase Commercial",
+              accountNumber: "•••• 8492",
+              accountType: "CHECKING",
+              credentialsHash: "demo_credentials_hash",
+              status: "ACTIVE",
+              ...(bankAcc ? { bankAccountId: bankAcc.id } : {}),
+            } as any,
+          });
+          createdRecords.push({
+            entityType: "bankConnection",
+            entityId: connection.id,
+          });
+        }
+
+        const sampleBankTxs = [
+          { desc: "Incoming wire transfer - Ref #TX-82914", amt: 24500.0, daysAgo: 10 },
+          { desc: "ACH Vendor settlement discrepancy", amt: -18280.0, daysAgo: 6 },
+          { desc: "Corporate merchant credit fee variance", amt: -22000.0, daysAgo: 2 },
+        ];
+
+        for (const btx of sampleBankTxs) {
+          const txDate = new Date(now.getTime() - btx.daysAgo * 86400000);
+          const createdTx = await tx.bankTransaction.create({
+            data: {
+              tenantId,
+              connectionId: connection.id,
+              date: txDate,
+              description: btx.desc,
+              amount: new Prisma.Decimal(btx.amt),
+              status: "UNMATCHED",
+            },
+          });
+          createdRecords.push({
+            entityType: "bankTransaction",
+            entityId: createdTx.id,
+          });
+        }
+      }
+
+      // 5. Seed Draft Journal awaiting manager approval (for Exceptions triage)
+      if (tx.account && tx.journal && tx.journalEntry) {
+        let operatingAccount = await tx.account.findFirst({
+          where: { tenantId, code: "1010" },
+        });
+        let revAccount = await tx.account.findFirst({
+          where: { tenantId, code: "4010" },
+        });
+
+        if (operatingAccount && revAccount) {
+          const draftJournal = await tx.journal.create({
+            data: {
+              tenantId,
+              orgId: effectiveOrgId,
+              entryNumber: "JV-PENDING-001",
+              date: new Date(now.getTime() - 2 * 86400000),
+              status: "DRAFT",
+              notes: "Pending quarterly revenue accrual adjustment",
+            },
+          });
+          createdRecords.push({
+            entityType: "journal",
+            entityId: draftJournal.id,
+          });
+
+          await tx.journalEntry.createMany({
+            data: [
+              {
+                tenantId,
+                journalId: draftJournal.id,
+                accountId: operatingAccount.id,
+                debit: new Prisma.Decimal(154320.0),
+                credit: new Prisma.Decimal(0),
+                description: "Accrual receivable adjustment",
+              },
+              {
+                tenantId,
+                journalId: draftJournal.id,
+                accountId: revAccount.id,
+                debit: new Prisma.Decimal(0),
+                credit: new Prisma.Decimal(154320.0),
+                description: "Accrual revenue recognition",
+              },
+            ],
+          });
+        }
+      }
+
+      // 6. Track demo records in demoDataRecord
       for (const rec of createdRecords) {
         await tx.demoDataRecord.create({
           data: {
@@ -207,6 +420,34 @@ export class FinanceDemoDataService {
           removedCount++;
         } else if (record.entityType === "customer") {
           await prisma.customer
+            .delete({ where: { id: record.entityId } })
+            .catch(() => null);
+          removedCount++;
+        } else if (record.entityType === "closeTask") {
+          await prisma.closeTask
+            .delete({ where: { id: record.entityId } })
+            .catch(() => null);
+          removedCount++;
+        } else if (record.entityType === "bankTransaction") {
+          await prisma.bankTransaction
+            .delete({ where: { id: record.entityId } })
+            .catch(() => null);
+          removedCount++;
+        } else if (record.entityType === "bankConnection") {
+          await prisma.bankConnection
+            .delete({ where: { id: record.entityId } })
+            .catch(() => null);
+          removedCount++;
+        } else if (record.entityType === "journal") {
+          await prisma.journalEntry.deleteMany({
+            where: { journalId: record.entityId },
+          });
+          await prisma.journal
+            .delete({ where: { id: record.entityId } })
+            .catch(() => null);
+          removedCount++;
+        } else if (record.entityType === "financialPeriod") {
+          await prisma.financialPeriod
             .delete({ where: { id: record.entityId } })
             .catch(() => null);
           removedCount++;

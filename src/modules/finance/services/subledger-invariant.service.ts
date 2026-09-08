@@ -165,15 +165,22 @@ export class SubledgerInvariantService {
   }
 
   private async checkCashInvariant(tenantId: string): Promise<SubledgerInvariantCheckResult> {
-    // Bank accounts subledger sum from settled treasury transactions
-    const treasurySum = await prisma.treasuryTransaction
-      .aggregate({
-        where: { tenantId, status: "SETTLED" },
-        _sum: { amount: true },
-      })
-      .catch(() => ({ _sum: { amount: null } }));
-
-    const cashSubledgerBalance = Number(treasurySum._sum.amount ?? 0);
+    let cashSubledgerBalance = 0;
+    if ((prisma as any).bankAccount?.findMany) {
+      const bankAccounts = await (prisma as any).bankAccount.findMany({ where: { tenantId } }).catch(() => []);
+      if (bankAccounts && bankAccounts.length > 0) {
+        cashSubledgerBalance = bankAccounts.reduce((acc: number, b: any) => acc + Number(b.balance || 0), 0);
+      }
+    }
+    if (cashSubledgerBalance === 0 && (prisma as any).treasuryTransaction?.aggregate) {
+      const treasurySum = await (prisma as any).treasuryTransaction
+        .aggregate({
+          where: { tenantId, status: "SETTLED" },
+          _sum: { amount: true },
+        })
+        .catch(() => ({ _sum: { amount: null } }));
+      cashSubledgerBalance = Number(treasurySum._sum?.amount ?? 0);
+    }
 
     // GL 1000 Control Account net balance (Asset: debit increases, credit decreases)
     const glCashBalance = await this.calculateGlAccountBalance(tenantId, "1000", "DEBIT_NORMAL");

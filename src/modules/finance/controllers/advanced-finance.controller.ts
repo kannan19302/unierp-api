@@ -1827,8 +1827,8 @@ export class AdvancedFinanceController {
   @Permissions("finance.report.read")
   async getProfitAndLoss(
     @Req() req: AuthenticatedRequest,
-    @Query("startDate") startDate: string,
-    @Query("endDate") endDate: string,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
     @Query("bookId") bookId?: string,
   ) {
     return this.reportingService.getProfitAndLoss(
@@ -1845,7 +1845,7 @@ export class AdvancedFinanceController {
   @Permissions("finance.report.read")
   async getBalanceSheet(
     @Req() req: AuthenticatedRequest,
-    @Query("asOfDate") asOfDate: string,
+    @Query("asOfDate") asOfDate?: string,
     @Query("bookId") bookId?: string,
   ) {
     return this.reportingService.getBalanceSheet(
@@ -1861,8 +1861,8 @@ export class AdvancedFinanceController {
   @Permissions("finance.report.read")
   async getCashFlow(
     @Req() req: AuthenticatedRequest,
-    @Query("startDate") startDate: string,
-    @Query("endDate") endDate: string,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
     @Query("bookId") bookId?: string,
   ) {
     return this.reportingService.getCashFlowStatement(
@@ -1879,7 +1879,7 @@ export class AdvancedFinanceController {
   @Permissions("finance.report.read")
   async getTrialBalance(
     @Req() req: AuthenticatedRequest,
-    @Query("asOfDate") asOfDate: string,
+    @Query("asOfDate") asOfDate?: string,
   ) {
     return this.reportingService.getTrialBalance(
       req.user.tenantId,
