@@ -127,14 +127,14 @@ export class FinanceTaxJournalDeepController {
   }
 
   @ApiOperation({ summary: "List configured tax jurisdictions" })
-  @Get("tax/jurisdictions")
+  @Get("tax/jurisdiction-overrides")
   @Permissions("finance.tax.read")
   async listJurisdictions(@Req() req: AuthenticatedRequest) {
     return this.taxLookupService.listJurisdictions(req.user.tenantId);
   }
 
   @ApiOperation({ summary: "Create custom jurisdiction rate override" })
-  @Post("tax/jurisdictions")
+  @Post("tax/jurisdiction-overrides")
   @Permissions("finance.tax.create")
   @TrackChanges("EconomicNexusThreshold")
   @UseInterceptors(ChangeHistoryInterceptor)
@@ -150,7 +150,7 @@ export class FinanceTaxJournalDeepController {
   }
 
   @ApiOperation({ summary: "Update jurisdiction rate override" })
-  @Put("tax/jurisdictions/:id")
+  @Put("tax/jurisdiction-overrides/:id")
   @Permissions("finance.tax.update")
   @TrackChanges("EconomicNexusThreshold")
   @UseInterceptors(ChangeHistoryInterceptor)

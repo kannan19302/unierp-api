@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { OutboxModule } from "../../platform/outbox/outbox.module";
+import { CloseSlaRepository } from "./repositories/close-sla.repository";
 import { AdvancedFinanceController } from "./controllers/advanced-finance.controller";
 import { OpeningBalanceMigrationController } from "./controllers/opening-balance-migration.controller";
 import { OpeningBalanceMigrationService } from "./services/opening-balance-migration.service";
@@ -154,6 +156,7 @@ const domainServices = [
 ];
 
 @Module({
+  imports: [OutboxModule],
   controllers: [
     AdvancedFinanceController,
     OpeningBalanceMigrationController,
@@ -180,7 +183,7 @@ const domainServices = [
     AiAnalyticsController,
     ArCreditManagementController,
   ],
-  providers: [AdvancedFinanceRepository, AdvancedFinanceService, PeriodCloseGuardService, ...domainServices],
-  exports: [AdvancedFinanceRepository, AdvancedFinanceService, PeriodCloseGuardService, ...domainServices],
+  providers: [AdvancedFinanceRepository, CloseSlaRepository, AdvancedFinanceService, PeriodCloseGuardService, ...domainServices],
+  exports: [AdvancedFinanceRepository, CloseSlaRepository, AdvancedFinanceService, PeriodCloseGuardService, ...domainServices],
 })
 export class AdvancedFinanceModule {}

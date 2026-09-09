@@ -6435,8 +6435,8 @@ export class AdvancedFinanceController {
     );
   }
 
-  @ApiOperation({ summary: "Post asset impairment to GL" })
-  @Post("assets/impairments/:id/post")
+  @ApiOperation({ summary: "Finalize an asset impairment test" })
+  @Post("assets/impairments/:id/finalize")
   @Permissions("finance.assets.update")
   async postAssetImpairment(
     @Req() req: AuthenticatedRequest,
@@ -7839,7 +7839,7 @@ export class AdvancedFinanceController {
   }
 
   @ApiOperation({ summary: "List consolidated book runs" })
-  @Get("consolidation/runs")
+  @Get("consolidation/book-runs")
   @Permissions("finance.report.read")
   async listConsolidationRuns(@Req() req: AuthenticatedRequest) {
     return this.consolidationDeepService.listConsolidationRuns(

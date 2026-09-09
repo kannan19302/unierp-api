@@ -6,9 +6,16 @@ import {
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { Prisma } from "@kannan19302/database/prisma";
+import { AdvancedFinanceRepository } from "../repositories/advanced-finance.repository";
+import { CloseSlaRepository } from "../repositories/close-sla.repository";
+import type { AssignCloseTaskSlaRequest, CloseSlaPolicyListQuery, CreateCloseSlaPolicyRequest, RetireCloseSlaPolicyRequest, ReviseCloseSlaPolicyRequest } from "@kannan19302/contracts";
 
 @Injectable()
 export class CloseManagementService {
+  constructor(
+    private readonly repository: AdvancedFinanceRepository,
+    private readonly closeSlaRepository: CloseSlaRepository,
+  ) {}
   // ── Task Dependencies ──────────────────────────────────────────────────────
 
   async createTaskDependency(
@@ -21,64 +28,37 @@ export class CloseManagementService {
       isCritical?: boolean;
     },
   ) {
-    return prisma.closeTaskDependency.create({
-      data: {
-        tenantId,
-        taskId: dto.taskId,
-        dependsOnTaskId: dto.dependsOnTaskId,
-        dependencyType: dto.dependencyType,
-        lagDays: dto.lagDays || 0,
-        isCritical: dto.isCritical || false,
-      },
-    });
+    return this.repository.createCloseTaskDependency(tenantId, dto);
   }
 
   async listTaskDependencies(tenantId: string, taskId?: string) {
-    const where: Prisma.CloseTaskDependencyWhereInput = { tenantId };
-    if (taskId) where.taskId = taskId;
-    return (prisma.closeTaskDependency as any).findMany({
-      where,
-      include: {
-        dependsOn: {
-          select: { id: true, name: true, status: true, dueDate: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    return this.repository.findCloseTaskDependencies(tenantId, taskId);
   }
 
   async deleteTaskDependency(tenantId: string, id: string) {
-    const dep = await prisma.closeTaskDependency.findFirst({
-      where: { id, tenantId },
-    });
-    if (!dep) throw new NotFoundException("Task dependency not found");
-    await prisma.closeTaskDependency.delete({ where: { id } });
-    return { success: true };
+    return this.repository.deleteCloseTaskDependency(tenantId, id);
   }
 
   // ── SLA Management ─────────────────────────────────────────────────────────
 
-  async createSla(
-    tenantId: string,
-    dto: {
-      taskId: string;
-      deadlineAt: string;
-      slaMinutes: number;
-      priority?: string;
-      escalateAfter?: number;
-    },
-  ) {
-    return prisma.closeTaskSla.create({
-      data: {
-        tenantId,
-        taskId: dto.taskId,
-        deadlineAt: new Date(dto.deadlineAt),
-        slaMinutes: dto.slaMinutes,
-        priority: dto.priority || "NORMAL",
-        escalateAfter: dto.escalateAfter || 30,
-        status: "ACTIVE",
-      },
-    });
+  async createCloseSlaPolicy(tenantId: string, actorId: string, dto: CreateCloseSlaPolicyRequest) {
+    return this.closeSlaRepository.createPolicy(tenantId, actorId, dto);
+  }
+
+  async reviseCloseSlaPolicy(tenantId: string, actorId: string, policyId: string, dto: ReviseCloseSlaPolicyRequest) {
+    return this.closeSlaRepository.revisePolicy(tenantId, actorId, policyId, dto);
+  }
+
+  async listCloseSlaPolicies(tenantId: string, query: CloseSlaPolicyListQuery) {
+    return this.closeSlaRepository.listPolicies(tenantId, query);
+  }
+
+  async retireCloseSlaPolicy(tenantId: string, actorId: string, policyId: string, dto: RetireCloseSlaPolicyRequest) {
+    return this.closeSlaRepository.retirePolicy(tenantId, actorId, policyId, dto);
+  }
+
+  async assignCloseTaskSla(tenantId: string, dto: AssignCloseTaskSlaRequest) {
+    return this.closeSlaRepository.assignTaskSla(tenantId, dto);
   }
 
   async listSlas(
@@ -103,35 +83,22 @@ export class CloseManagementService {
       prisma.closeTaskSla.count({ where }),
     ]);
 
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return {
+      items: items.map((item) => ({ ...item,
+        responseTimeMs: item.responseTimeMs == null ? null : Number(item.responseTimeMs),
+        resolutionTimeMs: item.resolutionTimeMs == null ? null : Number(item.resolutionTimeMs),
+      })),
+      total, page, limit, totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async updateSlaStatus(tenantId: string, id: string, dto: { status: string }) {
-    const sla = await prisma.closeTaskSla.findFirst({
-      where: { id, tenantId },
-    });
-    if (!sla) throw new NotFoundException("SLA not found");
-    const data: Prisma.CloseTaskSlaUpdateInput = { status: dto.status };
-    if (dto.status === "BREACHED") data.breachedAt = new Date();
-    return prisma.closeTaskSla.update({ where: { id }, data });
+  async updateSlaStatus(tenantId: string, actorId: string, id: string,
+    dto: { status: "ACTIVE" | "BREACHED" | "RESOLVED" }) {
+    return this.closeSlaRepository.changeTaskSlaStatus(tenantId, actorId, id, dto.status);
   }
 
   async getBreachedSlas(tenantId: string) {
-    return (prisma.closeTaskSla as any).findMany({
-      where: { tenantId, status: "BREACHED" },
-      include: {
-        task: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-            assigneeId: true,
-            dueDate: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    return this.repository.findBreachedCloseTaskSlas(tenantId);
   }
 
   // ── Close Calendar ─────────────────────────────────────────────────────────
@@ -224,19 +191,7 @@ export class CloseManagementService {
       notifyMethod?: string;
     },
   ) {
-    return prisma.closeEscalationRule.create({
-      data: {
-        tenantId,
-        name: dto.name,
-        conditionField: dto.conditionField,
-        conditionOperator: dto.conditionOperator,
-        conditionValue: dto.conditionValue,
-        escalateToRole: dto.escalateToRole || null,
-        escalateToUser: dto.escalateToUser || null,
-        notifyMethod: dto.notifyMethod || "EMAIL",
-        isActive: true,
-      },
-    });
+    return this.repository.createCloseEscalationRule(tenantId, dto);
   }
 
   async listEscalationRules(tenantId: string, isActive?: boolean) {
@@ -270,65 +225,21 @@ export class CloseManagementService {
       isActive?: boolean;
     },
   ) {
-    await this.getEscalationRule(tenantId, id);
-    const data: Prisma.CloseEscalationRuleUpdateInput = {};
-    if (dto.name !== undefined) data.name = dto.name;
-    if (dto.conditionField !== undefined)
-      data.conditionField = dto.conditionField;
-    if (dto.conditionOperator !== undefined)
-      data.conditionOperator = dto.conditionOperator;
-    if (dto.conditionValue !== undefined)
-      data.conditionValue = dto.conditionValue;
-    if (dto.escalateToRole !== undefined)
-      data.escalateToRole = dto.escalateToRole;
-    if (dto.escalateToUser !== undefined)
-      data.escalateToUser = dto.escalateToUser;
-    if (dto.notifyMethod !== undefined) data.notifyMethod = dto.notifyMethod;
-    if (dto.isActive !== undefined) data.isActive = dto.isActive;
-    return prisma.closeEscalationRule.update({ where: { id }, data });
+    return this.repository.updateCloseEscalationRule(tenantId, id, dto);
   }
 
   async deleteEscalationRule(tenantId: string, id: string) {
-    await this.getEscalationRule(tenantId, id);
-    await prisma.closeEscalationRule.delete({ where: { id } });
-    return { success: true };
+    return this.repository.retireCloseEscalationRule(tenantId, id);
   }
 
   // ── Analytics ──────────────────────────────────────────────────────────────
 
   async captureSnapshot(
     tenantId: string,
-    _userId: string,
-    dto: {
-      periodId: string;
-      totalTasks: number;
-      completedTasks: number;
-      overdueTasks: number;
-      breachedSlas: number;
-      avgCompletion?: number;
-      cycleTimeHours?: number;
-      snapshotData?: Prisma.JsonValue;
-    },
+    userId: string,
+    dto: { periodId: string },
   ) {
-    return prisma.closeAnalyticsSnapshot.create({
-      data: {
-        tenantId,
-        periodId: dto.periodId,
-        totalTasks: dto.totalTasks,
-        completedTasks: dto.completedTasks,
-        overdueTasks: dto.overdueTasks,
-        breachedSlas: dto.breachedSlas,
-        avgCompletion:
-          dto.avgCompletion !== undefined
-            ? new Prisma.Decimal(dto.avgCompletion)
-            : null,
-        cycleTimeHours:
-          dto.cycleTimeHours !== undefined
-            ? new Prisma.Decimal(dto.cycleTimeHours)
-            : null,
-        snapshotData: dto.snapshotData || Prisma.JsonNull,
-      },
-    });
+    return this.repository.captureCloseAnalyticsSnapshot(tenantId, userId, dto.periodId);
   }
 
   async getPeriodAnalytics(tenantId: string, periodId: string) {
@@ -445,50 +356,6 @@ export class CloseManagementService {
   }
 
   async getCriticalPathAnalysis(tenantId: string, periodId?: string) {
-    const deps = await (prisma.closeTaskDependency as any).findMany({
-      where: { tenantId, isCritical: true },
-      include: {
-        task: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-            dueDate: true,
-            priority: true,
-          },
-        },
-        dependsOn: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-            dueDate: true,
-            priority: true,
-          },
-        },
-      },
-    });
-
-    const criticalDepIds = deps.map((d: any) => d.dependsOnTaskId);
-    const blockedTasks = await prisma.closeTask.count({
-      where: {
-        tenantId,
-        ...(periodId ? { financialPeriodId: periodId } : {}),
-        id: { in: criticalDepIds },
-        status: { notIn: ["DONE", "SKIPPED"] },
-      },
-    });
-
-    return {
-      criticalDependencies: deps.length,
-      blockedTasks,
-      criticalPath: deps.map((d: any) => ({
-        id: d.id,
-        task: d.task,
-        dependsOn: d.dependsOn,
-        dependencyType: d.dependencyType,
-        lagDays: d.lagDays,
-      })),
-    };
+    return this.repository.findCloseCriticalPath(tenantId, periodId);
   }
 }

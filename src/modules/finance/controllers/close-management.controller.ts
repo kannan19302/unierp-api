@@ -8,6 +8,7 @@ import {
   Req,
   Param,
   Query,
+  BadRequestException,
 } from "@nestjs/common";
 import { z } from "zod";
 import { ZodBody } from "../../../common/decorators/zod-body.decorator";
@@ -17,6 +18,14 @@ import { RbacGuard } from "../../../common/guards/rbac.guard";
 import { Permissions } from "../../../common/decorators/permissions.decorator";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { CloseManagementService } from "../services/close-management.service";
+import {
+  AssignCloseTaskSlaRequestSchema,
+  CloseSlaPolicyListQuerySchema,
+  CreateCloseSlaPolicyRequestSchema,
+  LegacyCreateCloseSlaPolicyRequestSchema,
+  ReviseCloseSlaPolicyRequestSchema,
+  RetireCloseSlaPolicyRequestSchema,
+} from "@kannan19302/contracts";
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -34,16 +43,6 @@ const createTaskDependencySchema = z.object({
   dependencyType: z.string().min(1),
   lagDays: z.number().int().min(0).optional(),
 });
-const createSlaSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  taskType: z.string().min(1),
-  priority: z.string().optional(),
-  responseTimeHours: z.number().positive(),
-  resolutionTimeHours: z.number().positive(),
-  escalationRules: z.any().optional(),
-  status: z.string().optional(),
-});
 const createCalendarEventSchema = z.object({
   periodId: z.string().min(1),
   eventType: z.string().min(1),
@@ -51,26 +50,21 @@ const createCalendarEventSchema = z.object({
   description: z.string().optional(),
   dueAt: z.string().min(1),
 });
-const createEscalationRuleSchema = z.object({
-  name: z.string().min(1),
-  slaId: z.string().min(1),
-  triggerCondition: z.string().min(1),
-  escalationLevel: z.number().int().min(1),
-  notifyUsers: z.array(z.string()).optional(),
-  notifyRoles: z.array(z.string()).optional(),
-  action: z.string().min(1),
-  timeoutMinutes: z.number().int().positive().optional(),
+const escalationRuleFieldsSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+  conditionField: z.string().trim().min(1).max(100),
+  conditionOperator: z.enum(["EQUALS", "NOT_EQUALS", "GREATER_THAN", "GREATER_THAN_OR_EQUAL"]),
+  conditionValue: z.string().trim().min(1).max(500),
+  escalateToRole: z.string().trim().min(1).max(255).optional(),
+  escalateToUser: z.string().trim().min(1).max(255).optional(),
+  notifyMethod: z.enum(["EMAIL", "IN_APP", "BOTH"]).default("EMAIL"),
 });
-const captureSnapshotSchema = z.object({
-  periodId: z.string().min(1),
-  totalTasks: z.number().int().min(0),
-  completedTasks: z.number().int().min(0),
-  overdueTasks: z.number().int().min(0),
-  breachedSlas: z.number().int().min(0),
-  avgCompletion: z.number().optional(),
-  cycleTimeHours: z.number().optional(),
-  snapshotData: z.any().optional(),
-});
+const createEscalationRuleSchema = escalationRuleFieldsSchema.strict().refine(
+  (value) => value.escalateToRole || value.escalateToUser,
+  { message: "An escalation target role or user is required" },
+);
+const updateEscalationRuleSchema = escalationRuleFieldsSchema.partial().extend({ isActive: z.boolean().optional() }).strict();
+const captureSnapshotSchema = z.object({ periodId: z.string().trim().min(1) }).strict();
 
 @ApiTags("advanced-finance-close-management")
 @ApiBearerAuth()
@@ -84,9 +78,14 @@ export class CloseManagementController {
   @ApiOperation({ summary: "Create task dependency" })
   async createTaskDependency(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(createTaskDependencySchema) dto: any,
+    @ZodBody(createTaskDependencySchema) dto: z.infer<typeof createTaskDependencySchema>,
   ) {
-    return this.cmService.createTaskDependency(req.user.tenantId, dto);
+    return this.cmService.createTaskDependency(req.user.tenantId, {
+      taskId: dto.successorTaskId,
+      dependsOnTaskId: dto.predecessorTaskId,
+      dependencyType: dto.dependencyType,
+      ...(dto.lagDays !== undefined ? { lagDays: dto.lagDays } : {}),
+    });
   }
 
   @Get("task-dependencies")
@@ -114,9 +113,62 @@ export class CloseManagementController {
   @ApiOperation({ summary: "Create SLA" })
   async createSla(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(createSlaSchema) dto: any,
+    @ZodBody(LegacyCreateCloseSlaPolicyRequestSchema) dto: z.infer<typeof LegacyCreateCloseSlaPolicyRequestSchema>,
   ) {
-    return this.cmService.createSla(req.user.tenantId, dto);
+    if (dto.escalationRules !== undefined) {
+      throw new BadRequestException("Legacy escalationRules require explicit migration to escalationRuleIds");
+    }
+    return this.cmService.createCloseSlaPolicy(req.user.tenantId, req.user.userId, {
+      name: dto.name,
+      ...(dto.description === undefined ? {} : { description: dto.description }),
+      taskType: dto.taskType,
+      priority: dto.priority ?? "NORMAL",
+      timeBasis: "ELAPSED",
+      responseTimeMs: dto.responseTimeHours * 3_600_000,
+      resolutionTimeMs: dto.resolutionTimeHours * 3_600_000,
+      escalationRuleIds: [],
+    });
+  }
+
+  @Post("sla-policies")
+  @Permissions("finance.close.manage")
+  @ApiOperation({ summary: "Create reusable close SLA policy" })
+  async createCloseSlaPolicy(@Req() req: AuthenticatedRequest,
+    @ZodBody(CreateCloseSlaPolicyRequestSchema) dto: z.infer<typeof CreateCloseSlaPolicyRequestSchema>) {
+    return this.cmService.createCloseSlaPolicy(req.user.tenantId, req.user.userId, dto);
+  }
+
+  @Get("sla-policies")
+  @Permissions("finance.close.read")
+  @ApiOperation({ summary: "List reusable close SLA policies" })
+  async listCloseSlaPolicies(@Req() req: AuthenticatedRequest, @Query() query: Record<string, unknown>) {
+    const parsed = CloseSlaPolicyListQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException({ message: "Validation failed", errors: parsed.error.errors });
+    return this.cmService.listCloseSlaPolicies(req.user.tenantId, parsed.data);
+  }
+
+  @Post("sla-policies/:id/versions")
+  @Permissions("finance.close.manage")
+  @ApiOperation({ summary: "Create immutable close SLA policy revision" })
+  async reviseCloseSlaPolicy(@Req() req: AuthenticatedRequest, @Param("id") id: string,
+    @ZodBody(ReviseCloseSlaPolicyRequestSchema) dto: z.infer<typeof ReviseCloseSlaPolicyRequestSchema>) {
+    return this.cmService.reviseCloseSlaPolicy(req.user.tenantId, req.user.userId, id, dto);
+  }
+
+  @Post("sla-policies/:id/retire")
+  @Permissions("finance.close.manage")
+  @ApiOperation({ summary: "Retire a reusable close SLA policy" })
+  async retireCloseSlaPolicy(@Req() req: AuthenticatedRequest, @Param("id") id: string,
+    @ZodBody(RetireCloseSlaPolicyRequestSchema) dto: z.infer<typeof RetireCloseSlaPolicyRequestSchema>) {
+    return this.cmService.retireCloseSlaPolicy(req.user.tenantId, req.user.userId, id, dto);
+  }
+
+  @Post("task-slas")
+  @Permissions("finance.close.manage")
+  @ApiOperation({ summary: "Assign SLA deadlines to a close task" })
+  async assignCloseTaskSla(@Req() req: AuthenticatedRequest,
+    @ZodBody(AssignCloseTaskSlaRequestSchema) dto: z.infer<typeof AssignCloseTaskSlaRequestSchema>) {
+    return this.cmService.assignCloseTaskSla(req.user.tenantId, dto);
   }
 
   @Get("slas")
@@ -143,9 +195,10 @@ export class CloseManagementController {
   async updateSlaStatus(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(z.object({ status: z.string().min(1) })) dto: any,
+    @ZodBody(z.object({ status: z.enum(["ACTIVE", "BREACHED", "RESOLVED"]) }).strict())
+    dto: { status: "ACTIVE" | "BREACHED" | "RESOLVED" },
   ) {
-    return this.cmService.updateSlaStatus(req.user.tenantId, id, dto);
+    return this.cmService.updateSlaStatus(req.user.tenantId, req.user.userId, id, dto);
   }
 
   @Get("slas/breached")
@@ -205,7 +258,7 @@ export class CloseManagementController {
   @ApiOperation({ summary: "Create escalation rule" })
   async createEscalationRule(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(createEscalationRuleSchema) dto: any,
+    @ZodBody(createEscalationRuleSchema) dto: z.infer<typeof createEscalationRuleSchema>,
   ) {
     return this.cmService.createEscalationRule(req.user.tenantId, dto);
   }
@@ -239,7 +292,7 @@ export class CloseManagementController {
   async updateEscalationRule(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(createEscalationRuleSchema.partial()) dto: any,
+    @ZodBody(updateEscalationRuleSchema) dto: z.infer<typeof updateEscalationRuleSchema>,
   ) {
     return this.cmService.updateEscalationRule(req.user.tenantId, id, dto);
   }
@@ -259,7 +312,7 @@ export class CloseManagementController {
   @ApiOperation({ summary: "Capture close snapshot" })
   async captureSnapshot(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(captureSnapshotSchema) dto: any,
+    @ZodBody(captureSnapshotSchema) dto: z.infer<typeof captureSnapshotSchema>,
   ) {
     return this.cmService.captureSnapshot(
       req.user.tenantId,
