@@ -169,7 +169,10 @@ export class TaxEngineDeepService {
 
   async deleteJurisdiction(tenantId: string, id: string) {
     await this.getJurisdiction(tenantId, id);
-    return prisma.taxJurisdiction.delete({ where: { id } });
+    return prisma.taxJurisdiction.update({
+      where: { id },
+      data: { isActive: false, effectiveTo: new Date() },
+    });
   }
 
   // ── TAX EXEMPTION CERTIFICATES ──────────────────────────────────

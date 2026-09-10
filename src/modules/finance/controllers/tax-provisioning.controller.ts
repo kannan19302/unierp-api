@@ -9,8 +9,23 @@ import {
   Param,
   Query,
 } from "@nestjs/common";
-import { z } from "zod";
 import { ZodBody } from "../../../common/decorators/zod-body.decorator";
+import {
+  ComputeEffectiveRateReconciliationRequestSchema,
+  CreateDeferredTaxScheduleRequestSchema,
+  CreateTaxProvisionDetailRequestSchema,
+  CreateTaxProvisionRunRequestSchema,
+  CreateUncertainTaxPositionRequestSchema,
+  CreateValuationAllowanceRequestSchema,
+  EvaluateUncertainTaxPositionRequestSchema,
+  ReserveUncertainTaxPositionRequestSchema,
+  SettleUncertainTaxPositionRequestSchema,
+  UpdateDeferredTaxScheduleRequestSchema,
+  UpdateTaxProvisionDetailRequestSchema,
+  UpdateTaxProvisionRunRequestSchema,
+  UpdateUncertainTaxPositionRequestSchema,
+  UpdateValuationAllowanceRequestSchema,
+} from "@kannan19302/contracts";
 import { Request } from "express";
 import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../../common/guards/rbac.guard";
@@ -28,57 +43,6 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-const createProvisionRunSchema = z.object({
-  runNumber: z.string().optional(),
-  period: z.string().min(1),
-  fiscalYear: z.string().min(1),
-  status: z.string().optional(),
-  jurisdiction: z.string().optional(),
-  totalProvision: z.number().optional(),
-  notes: z.string().optional(),
-});
-const createProvisionDetailSchema = z.object({
-  provisionRunId: z.string().min(1),
-  accountId: z.string().min(1),
-  provisionType: z.string().min(1),
-  amount: z.number(),
-  currency: z.string().optional(),
-  taxBase: z.number().optional(),
-  taxRate: z.number().min(0).max(100).optional(),
-  timing: z.string().optional(),
-  notes: z.string().optional(),
-});
-const createDeferredTaxScheduleSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  scheduleType: z.string().min(1),
-  jurisdiction: z.string().optional(),
-  startDate: z.string().min(1),
-  endDate: z.string().optional(),
-  totalDeferred: z.number(),
-  amortizationMethod: z.string().optional(),
-  status: z.string().optional(),
-});
-const createUncertainTaxPositionSchema = z.object({
-  positionName: z.string().min(1),
-  description: z.string().optional(),
-  jurisdiction: z.string().min(1),
-  taxAuthority: z.string().optional(),
-  taxType: z.string().min(1),
-  exposureAmount: z.number().positive(),
-  likelihood: z.string().min(1),
-  status: z.string().optional(),
-  notes: z.string().optional(),
-});
-const createValuationAllowanceSchema = z.object({
-  deferredTaxAssetId: z.string().min(1),
-  allowanceAmount: z.number().positive(),
-  assessmentDate: z.string().min(1),
-  rationale: z.string().min(1),
-  status: z.string().optional(),
-  reviewedBy: z.string().optional(),
-});
-
 @ApiTags("advanced-finance-tax-provisioning")
 @ApiBearerAuth()
 @Controller("advanced-finance/tax-provisioning")
@@ -91,7 +55,7 @@ export class TaxProvisioningController {
   @ApiOperation({ summary: "Create provision run" })
   async createProvisionRun(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(createProvisionRunSchema) dto: any,
+    @ZodBody(CreateTaxProvisionRunRequestSchema) dto: any,
   ) {
     return this.taxProvService.createProvisionRun(req.user.tenantId, dto);
   }
@@ -125,7 +89,7 @@ export class TaxProvisioningController {
   async updateProvisionRun(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(createProvisionRunSchema.partial()) dto: any,
+    @ZodBody(UpdateTaxProvisionRunRequestSchema) dto: any,
   ) {
     return this.taxProvService.updateProvisionRun(req.user.tenantId, id, dto);
   }
@@ -179,11 +143,11 @@ export class TaxProvisioningController {
   @ApiOperation({ summary: "Create provision detail" })
   async createProvisionDetail(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(createProvisionDetailSchema) dto: any,
+    @ZodBody(CreateTaxProvisionDetailRequestSchema) dto: any,
   ) {
     return this.taxProvService.createProvisionDetail(
       req.user.tenantId,
-      dto.runId || "",
+      dto.runId,
       dto,
     );
   }
@@ -214,7 +178,7 @@ export class TaxProvisioningController {
   async updateProvisionDetail(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(createProvisionDetailSchema.partial()) dto: any,
+    @ZodBody(UpdateTaxProvisionDetailRequestSchema) dto: any,
   ) {
     return this.taxProvService.updateProvisionDetail(
       req.user.tenantId,
@@ -248,11 +212,11 @@ export class TaxProvisioningController {
   @ApiOperation({ summary: "Create deferred tax schedule" })
   async createDeferredTaxSchedule(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(createDeferredTaxScheduleSchema) dto: any,
+    @ZodBody(CreateDeferredTaxScheduleRequestSchema) dto: any,
   ) {
     return this.taxProvService.createDeferredTaxSchedule(
       req.user.tenantId,
-      dto.runId || "",
+      dto.runId,
       dto,
     );
   }
@@ -286,7 +250,7 @@ export class TaxProvisioningController {
   async updateDeferredTaxSchedule(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(createDeferredTaxScheduleSchema.partial()) dto: any,
+    @ZodBody(UpdateDeferredTaxScheduleRequestSchema) dto: any,
   ) {
     return this.taxProvService.updateDeferredTaxSchedule(
       req.user.tenantId,
@@ -320,11 +284,11 @@ export class TaxProvisioningController {
   @ApiOperation({ summary: "Create uncertain tax position" })
   async createUncertainTaxPosition(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(createUncertainTaxPositionSchema) dto: any,
+    @ZodBody(CreateUncertainTaxPositionRequestSchema) dto: any,
   ) {
     return this.taxProvService.createUncertainTaxPosition(
       req.user.tenantId,
-      dto.runId || "",
+      dto.runId,
       dto,
     );
   }
@@ -360,7 +324,7 @@ export class TaxProvisioningController {
   async updateUncertainTaxPosition(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(createUncertainTaxPositionSchema.partial()) dto: any,
+    @ZodBody(UpdateUncertainTaxPositionRequestSchema) dto: any,
   ) {
     return this.taxProvService.updateUncertainTaxPosition(
       req.user.tenantId,
@@ -375,7 +339,7 @@ export class TaxProvisioningController {
   async evaluateUncertainTaxPosition(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(z.object({ probabilityOfLoss: z.number().min(0).max(100) }))
+    @ZodBody(EvaluateUncertainTaxPositionRequestSchema)
     dto: any,
   ) {
     return this.taxProvService.evaluateUncertainTaxPosition(
@@ -391,7 +355,7 @@ export class TaxProvisioningController {
   async reserveUncertainTaxPosition(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(z.object({ reserveAmount: z.number().positive() })) dto: any,
+    @ZodBody(ReserveUncertainTaxPositionRequestSchema) dto: any,
   ) {
     return this.taxProvService.reserveUncertainTaxPosition(
       req.user.tenantId,
@@ -406,7 +370,7 @@ export class TaxProvisioningController {
   async settleUncertainTaxPosition(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(z.object({ settlementAmount: z.number() })) dto: any,
+    @ZodBody(SettleUncertainTaxPositionRequestSchema) dto: any,
   ) {
     return this.taxProvService.settleUncertainTaxPosition(
       req.user.tenantId,
@@ -433,11 +397,11 @@ export class TaxProvisioningController {
   @ApiOperation({ summary: "Create valuation allowance" })
   async createValuationAllowance(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(createValuationAllowanceSchema) dto: any,
+    @ZodBody(CreateValuationAllowanceRequestSchema) dto: any,
   ) {
     return this.taxProvService.createValuationAllowance(
       req.user.tenantId,
-      dto.runId || "",
+      dto.runId,
       dto,
     );
   }
@@ -471,7 +435,7 @@ export class TaxProvisioningController {
   async updateValuationAllowance(
     @Req() req: AuthenticatedRequest,
     @Param("id") id: string,
-    @ZodBody(createValuationAllowanceSchema.partial()) dto: any,
+    @ZodBody(UpdateValuationAllowanceRequestSchema) dto: any,
   ) {
     return this.taxProvService.updateValuationAllowance(
       req.user.tenantId,
@@ -509,7 +473,7 @@ export class TaxProvisioningController {
   @ApiOperation({ summary: "Compute effective tax rate reconciliation" })
   async computeEffectiveRateReconciliation(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(z.object({ runId: z.string().min(1) })) dto: any,
+    @ZodBody(ComputeEffectiveRateReconciliationRequestSchema) dto: any,
   ) {
     return this.taxProvService.computeEffectiveRateReconciliation(
       req.user.tenantId,

@@ -83,6 +83,7 @@ describe("EconomicNexusService", () => {
     it("rejects a duplicate state threshold", async () => {
       vi.mocked(prisma.economicNexusThreshold.findFirst).mockResolvedValue({
         id: "existing",
+        isActive: true,
       } as any);
       await expect(
         service.createThreshold("tenant-1", {
@@ -116,6 +117,21 @@ describe("EconomicNexusService", () => {
           }),
         }),
       );
+    });
+
+    it("reactivates a retired threshold rather than violating the tenant/state uniqueness constraint", async () => {
+      vi.mocked(prisma.economicNexusThreshold.findFirst).mockResolvedValue({ id: "retired-1", isActive: false } as any);
+      vi.mocked(prisma.economicNexusThreshold.update).mockResolvedValue({ id: "retired-1", isActive: true } as any);
+      await service.createThreshold("tenant-1", { state: "CA", revenueThreshold: 250000 });
+      expect(prisma.economicNexusThreshold.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "retired-1" }, data: expect.objectContaining({ isActive: true }) }));
+      expect(prisma.economicNexusThreshold.create).not.toHaveBeenCalled();
+    });
+
+    it("retires a threshold without deleting its audit history", async () => {
+      vi.mocked(prisma.economicNexusThreshold.findFirst).mockResolvedValue({ id: "threshold-1", isActive: true } as any);
+      await expect(service.deleteThreshold("tenant-1", "threshold-1")).resolves.toEqual({ retired: true });
+      expect(prisma.economicNexusThreshold.update).toHaveBeenCalledWith({ where: { id: "threshold-1" }, data: { isActive: false } });
+      expect(prisma.economicNexusThreshold.delete).not.toHaveBeenCalled();
     });
   });
 
@@ -390,6 +406,62 @@ describe("EconomicNexusService", () => {
       await expect(
         service.deleteRegistration("tenant-1", "missing"),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it("deleteRegistration preserves the record as deregistered", async () => {
+      vi.mocked(prisma.nexusRegistration.findFirst).mockResolvedValue({ id: "reg-1", status: "REGISTERED" } as any);
+      vi.mocked(prisma.nexusRegistration.update).mockResolvedValue({ id: "reg-1", status: "DEREGISTERED" } as any);
+      await expect(service.deleteRegistration("tenant-1", "reg-1")).resolves.toEqual({ deregistered: true });
+      expect(prisma.nexusRegistration.update).toHaveBeenCalledWith({ where: { id: "reg-1" }, data: { status: "DEREGISTERED", deregisteredAt: expect.any(Date) } });
+      expect(prisma.nexusRegistration.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("measurement periods & reactivation history", () => {
+    it("resolves measurement period windows accurately", () => {
+      const fixedNow = new Date("2026-09-10T12:00:00Z");
+      const trailing = service.resolveMeasurementPeriodWindow("TRAILING_12_MONTHS", fixedNow);
+      expect(trailing.periodEnd).toEqual(fixedNow);
+      expect(trailing.periodStart.getFullYear()).toBe(2025);
+      expect(trailing.periodStart.getMonth()).toBe(8); // September (0-indexed 8)
+
+      const prior = service.resolveMeasurementPeriodWindow("PRIOR_CALENDAR_YEAR", fixedNow);
+      expect(prior.periodStart.getUTCFullYear()).toBe(2025);
+      expect(prior.periodStart.getUTCMonth()).toBe(0); // Jan 1
+      expect(prior.periodEnd.getUTCFullYear()).toBe(2025);
+      expect(prior.periodEnd.getUTCMonth()).toBe(11); // Dec 31
+
+      const calYear = service.resolveMeasurementPeriodWindow("CALENDAR_YEAR", fixedNow);
+      expect(calYear.periodStart.getUTCFullYear()).toBe(2026);
+      expect(calYear.periodStart.getUTCMonth()).toBe(0);
+      expect(calYear.periodEnd).toEqual(fixedNow);
+    });
+
+    it("preserves threshold history in notes when reactivating an inactive threshold", async () => {
+      vi.mocked(prisma.economicNexusThreshold.findFirst).mockResolvedValue({
+        id: "t-old",
+        isActive: false,
+        revenueThreshold: 100000,
+        measurementPeriod: "TRAILING_12_MONTHS",
+        notes: "Historical notes",
+      } as any);
+      vi.mocked(prisma.economicNexusThreshold.update).mockImplementation((args: any) => Promise.resolve(args.data) as any);
+
+      await service.createThreshold("tenant-1", {
+        state: "CA",
+        revenueThreshold: 500000,
+        notes: "New guidance applied",
+      });
+
+      expect(prisma.economicNexusThreshold.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "t-old" },
+          data: expect.objectContaining({
+            isActive: true,
+            notes: expect.stringContaining("Reactivated on"),
+          }),
+        }),
+      );
     });
   });
 });

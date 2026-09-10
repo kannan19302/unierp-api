@@ -196,10 +196,31 @@ export class EconomicNexusService {
     const existing = await prisma.economicNexusThreshold.findFirst({
       where: { tenantId, country: dto.country ?? "US", state: dto.state },
     });
-    if (existing) {
+    if (existing?.isActive) {
       throw new BadRequestException(
         `A threshold already exists for ${dto.country ?? "US"}/${dto.state}. Update it instead.`,
       );
+    }
+    if (existing) {
+      const historyAudit = `[Reactivated on ${new Date().toISOString()}; prior threshold: $${existing.revenueThreshold}, period: ${existing.measurementPeriod}]`;
+      const combinedNotes = existing.notes
+        ? `${existing.notes} | ${historyAudit} ${dto.notes ?? ""}`.trim()
+        : `${historyAudit} ${dto.notes ?? ""}`.trim();
+
+      return prisma.economicNexusThreshold.update({
+        where: { id: existing.id },
+        data: {
+          revenueThreshold: new Prisma.Decimal(dto.revenueThreshold),
+          transactionThreshold: dto.transactionThreshold ?? null,
+          measurementPeriod: dto.measurementPeriod ?? "TRAILING_12_MONTHS",
+          includesExemptSales: dto.includesExemptSales ?? false,
+          marketplaceFacilitatorLaw: dto.marketplaceFacilitatorLaw ?? true,
+          sourceUrl: dto.sourceUrl,
+          notes: combinedNotes,
+          effectiveFrom: new Date(),
+          isActive: true,
+        },
+      });
     }
     return prisma.economicNexusThreshold.create({
       data: {
@@ -259,8 +280,11 @@ export class EconomicNexusService {
 
   async deleteThreshold(tenantId: string, id: string) {
     await this.getThreshold(tenantId, id);
-    await prisma.economicNexusThreshold.delete({ where: { id } });
-    return { deleted: true };
+    await prisma.economicNexusThreshold.update({
+      where: { id },
+      data: { isActive: false },
+    });
+    return { retired: true };
   }
 
   /** Seed the tenant's threshold table with reference US state economic-nexus rules (idempotent). */
@@ -418,35 +442,45 @@ export class EconomicNexusService {
   }
 
   /**
-   * Compute trailing-12-month revenue + transaction counts per state from posted invoices,
-   * compare against each state's threshold, and persist a snapshot per state.
+   * Resolve canonical date boundaries for a measurement period.
+   * Supports TRAILING_12_MONTHS, CALENDAR_YEAR, PRIOR_CALENDAR_YEAR, and legacy aliases.
+   */
+  resolveMeasurementPeriodWindow(
+    measurementPeriod?: string,
+    now = new Date(),
+  ): { periodStart: Date; periodEnd: Date } {
+    const period = measurementPeriod?.toUpperCase() ?? "TRAILING_12_MONTHS";
+    if (period === "PRIOR_CALENDAR_YEAR") {
+      const priorYear = now.getFullYear() - 1;
+      return {
+        periodStart: new Date(Date.UTC(priorYear, 0, 1, 0, 0, 0, 0)),
+        periodEnd: new Date(Date.UTC(priorYear, 11, 31, 23, 59, 59, 999)),
+      };
+    }
+    if (period === "CALENDAR_YEAR" || period === "CURRENT_CALENDAR_YEAR") {
+      const curYear = now.getFullYear();
+      return {
+        periodStart: new Date(Date.UTC(curYear, 0, 1, 0, 0, 0, 0)),
+        periodEnd: now,
+      };
+    }
+    const start = new Date(now);
+    start.setMonth(start.getMonth() - 12);
+    return {
+      periodStart: start,
+      periodEnd: now,
+    };
+  }
+
+  /**
+   * Compute per-state revenue + transaction counts from posted invoices according
+   * to each state's measurement period, compare against thresholds, and persist snapshots.
    */
   async refreshMonitoring(tenantId: string) {
-    const periodEnd = new Date();
-    const periodStart = new Date(periodEnd);
+    const now = new Date();
+    const periodEnd = now;
+    const periodStart = new Date(now);
     periodStart.setMonth(periodStart.getMonth() - 12);
-
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        tenantId,
-        status: { notIn: ["DRAFT", "VOID"] },
-        issueDate: { gte: periodStart, lte: periodEnd },
-      },
-      include: {
-        customer: { select: { billingAddress: true, shippingAddress: true } },
-      },
-    });
-
-    const byState: Record<string, { revenue: number; count: number }> = {};
-    for (const inv of invoices) {
-      const state =
-        this.extractState(inv.customer?.shippingAddress) ??
-        this.extractState(inv.customer?.billingAddress);
-      if (!state) continue;
-      if (!byState[state]) byState[state] = { revenue: 0, count: 0 };
-      byState[state]!.revenue += Number(inv.totalAmount);
-      byState[state]!.count += 1;
-    }
 
     const thresholds = await prisma.economicNexusThreshold.findMany({
       where: { tenantId, isActive: true },
@@ -457,33 +491,72 @@ export class EconomicNexusService {
     const thresholdByState = new Map(thresholds.map((t) => [t.state, t]));
     const registrationByState = new Map(registrations.map((r) => [r.state, r]));
 
-    const snapshots: any[] = [];
+    let earliestStart = new Date(periodStart);
+    for (const t of thresholds) {
+      const w = this.resolveMeasurementPeriodWindow(t.measurementPeriod, now);
+      if (w.periodStart < earliestStart) earliestStart = w.periodStart;
+    }
+
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        tenantId,
+        status: { notIn: ["DRAFT", "VOID"] },
+        issueDate: { gte: earliestStart, lte: periodEnd },
+      },
+      include: {
+        customer: { select: { billingAddress: true, shippingAddress: true } },
+      },
+    });
+
+    const parsedInvoices: Array<{ state: string; amount: number; issueDate: Date }> = [];
+    for (const inv of invoices) {
+      const state =
+        this.extractState(inv.customer?.shippingAddress) ??
+        this.extractState(inv.customer?.billingAddress);
+      if (!state) continue;
+      parsedInvoices.push({
+        state,
+        amount: Number(inv.totalAmount),
+        issueDate: inv.issueDate ? new Date(inv.issueDate) : now,
+      });
+    }
+
     const states = new Set([
-      ...Object.keys(byState),
+      ...parsedInvoices.map((i) => i.state),
       ...thresholds.map((t) => t.state),
     ]);
 
+    const snapshots: any[] = [];
     for (const state of states) {
-      const activity = byState[state] ?? { revenue: 0, count: 0 };
       const threshold = thresholdByState.get(state);
+      const window = this.resolveMeasurementPeriodWindow(threshold?.measurementPeriod, now);
+
+      let revenue = 0;
+      let count = 0;
+      for (const inv of parsedInvoices) {
+        if (inv.state === state && inv.issueDate >= window.periodStart && inv.issueDate <= window.periodEnd) {
+          revenue += inv.amount;
+          count += 1;
+        }
+      }
+
       const revenueThreshold = threshold
         ? Number(threshold.revenueThreshold)
         : 100000;
       const transactionThreshold = threshold?.transactionThreshold ?? null;
 
       const revenuePct =
-        revenueThreshold > 0 ? (activity.revenue / revenueThreshold) * 100 : 0;
+        revenueThreshold > 0 ? (revenue / revenueThreshold) * 100 : 0;
       const transactionPct =
         transactionThreshold && transactionThreshold > 0
-          ? (activity.count / transactionThreshold) * 100
+          ? (count / transactionThreshold) * 100
           : null;
 
       const isRegistered =
         registrationByState.get(state)?.status === "REGISTERED";
       const exceeded =
-        activity.revenue >= revenueThreshold ||
-        (transactionThreshold != null &&
-          activity.count >= transactionThreshold);
+        revenue >= revenueThreshold ||
+        (transactionThreshold != null && count >= transactionThreshold);
       const approaching =
         !exceeded &&
         (revenuePct >= 80 || (transactionPct !== null && transactionPct >= 80));
@@ -499,12 +572,12 @@ export class EconomicNexusService {
       const snapshot = await prisma.nexusMonitoringSnapshot.create({
         data: {
           tenantId,
-          country: "US",
+          country: threshold?.country ?? "US",
           state,
-          periodStart,
-          periodEnd,
-          totalRevenue: new Prisma.Decimal(activity.revenue),
-          transactionCount: activity.count,
+          periodStart: window.periodStart,
+          periodEnd: window.periodEnd,
+          totalRevenue: new Prisma.Decimal(revenue),
+          transactionCount: count,
           revenueThreshold: new Prisma.Decimal(revenueThreshold),
           transactionThreshold,
           revenuePct: new Prisma.Decimal(Math.min(999, revenuePct)),
@@ -675,8 +748,12 @@ export class EconomicNexusService {
   }
 
   async deleteRegistration(tenantId: string, id: string) {
-    await this.getRegistration(tenantId, id);
-    await prisma.nexusRegistration.delete({ where: { id } });
-    return { deleted: true };
+    const registration = await this.getRegistration(tenantId, id);
+    if (registration.status === "DEREGISTERED") return { deregistered: true };
+    await prisma.nexusRegistration.update({
+      where: { id },
+      data: { status: "DEREGISTERED", deregisteredAt: new Date() },
+    });
+    return { deregistered: true };
   }
 }

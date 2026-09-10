@@ -2,13 +2,20 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from "@nestjs/common";
 import { prisma } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "../../../common/idp-client";
 import { Prisma } from "@kannan19302/database/prisma";
+import { GlAccountingService } from "./gl-accounting.service";
 
 @Injectable()
 export class TaxProvisioningService {
+  constructor(
+    @Optional()
+    private readonly glService?: GlAccountingService,
+  ) {}
+
   // ── Provision Runs ───────────────────────────────────────────────────────
 
   async listProvisionRuns(tenantId: string, fiscalYear?: number) {
@@ -82,7 +89,22 @@ export class TaxProvisioningService {
   }
 
   async deleteProvisionRun(tenantId: string, id: string) {
-    await this.getProvisionRun(tenantId, id);
+    const run = await this.getProvisionRun(tenantId, id);
+    if (run.status !== "DRAFT") {
+      throw new BadRequestException("Only DRAFT provision runs can be deleted");
+    }
+
+    const [detailsCount, schedulesCount, positionsCount, allowancesCount] = await Promise.all([
+      prisma.taxProvisionDetail.count({ where: { tenantId, runId: id } }),
+      prisma.deferredTaxSchedule.count({ where: { tenantId, runId: id } }),
+      prisma.uncertainTaxPosition.count({ where: { tenantId, runId: id } }),
+      prisma.valuationAllowanceAssessment.count({ where: { tenantId, runId: id } }),
+    ]);
+
+    if (detailsCount > 0 || schedulesCount > 0 || positionsCount > 0 || allowancesCount > 0) {
+      throw new BadRequestException("Cannot delete provision run with dependent records");
+    }
+
     return prisma.taxProvisionRun.delete({ where: { id } });
   }
 
@@ -153,6 +175,41 @@ export class TaxProvisioningService {
       throw new BadRequestException(
         "Provision must be reviewed before posting",
       );
+
+    const totalAmount = Number(run.totalTaxProvision || 0);
+    if (this.glService && totalAmount !== 0) {
+      const [expenseAccount, liabilityAccount] = await Promise.all([
+        prisma.account.findFirst({
+          where: { tenantId, type: "EXPENSE", name: { contains: "Tax", mode: "insensitive" } },
+        }),
+        prisma.account.findFirst({
+          where: { tenantId, type: "LIABILITY", name: { contains: "Tax", mode: "insensitive" } },
+        }),
+      ]);
+
+      if (expenseAccount && liabilityAccount) {
+        const absAmount = Math.abs(totalAmount);
+        await this.glService.createJournal(tenantId, tenantId, {
+          entryNumber: `TAX-PROV-${run.fiscalYear}-P${run.period}-${Date.now().toString().slice(-4)}`,
+          notes: `Tax provision GL posting for FY${run.fiscalYear} ${run.period}`,
+          entries: [
+            {
+              accountId: expenseAccount.id,
+              debit: absAmount,
+              credit: 0,
+              description: `Tax provision expense for FY${run.fiscalYear} ${run.period}`,
+            },
+            {
+              accountId: liabilityAccount.id,
+              debit: 0,
+              credit: absAmount,
+              description: `Tax provision liability for FY${run.fiscalYear} ${run.period}`,
+            },
+          ],
+        });
+      }
+    }
+
     return prisma.taxProvisionRun.update({
       where: { id },
       data: { status: "POSTED", postedAt: new Date() },
@@ -239,6 +296,10 @@ export class TaxProvisioningService {
     }>,
   ) {
     const detail = await this.getProvisionDetail(tenantId, id);
+    const run = await this.getProvisionRun(tenantId, detail.runId);
+    if (run.status === "POSTED") {
+      throw new BadRequestException("Posted provision runs and their details are immutable");
+    }
     const data: Record<string, unknown> = {};
     const taxableIncome =
       dto.taxableIncome !== undefined
@@ -301,7 +362,11 @@ export class TaxProvisioningService {
   }
 
   async deleteProvisionDetail(tenantId: string, id: string) {
-    await this.getProvisionDetail(tenantId, id);
+    const detail = await this.getProvisionDetail(tenantId, id);
+    const run = await this.getProvisionRun(tenantId, detail.runId);
+    if (run.status === "POSTED") {
+      throw new BadRequestException("Cannot delete details of a posted provision run");
+    }
     return prisma.taxProvisionDetail.delete({ where: { id } });
   }
 
@@ -371,7 +436,13 @@ export class TaxProvisioningService {
       categorization: string;
     }>,
   ) {
-    await this.getDeferredTaxSchedule(tenantId, id);
+    const schedule = await this.getDeferredTaxSchedule(tenantId, id);
+    if (schedule.runId) {
+      const run = await this.getProvisionRun(tenantId, schedule.runId);
+      if (run.status === "POSTED") {
+        throw new BadRequestException("Posted provision runs and their schedules are immutable");
+      }
+    }
     const data: Record<string, unknown> = {};
     if (dto.temporaryDifference !== undefined) {
       const tempDiff = new Prisma.Decimal(dto.temporaryDifference);
@@ -400,10 +471,27 @@ export class TaxProvisioningService {
     return prisma.deferredTaxSchedule.update({ where: { id }, data });
   }
 
-  async computeDeferredTaxes(tenantId: string, runId: string) {
-    await this.getProvisionRun(tenantId, runId);
+  async computeDeferredTaxes(tenantId: string, id: string) {
+    const schedule = await prisma.deferredTaxSchedule.findFirst({
+      where: { id, tenantId },
+    });
+    if (schedule) {
+      const tempDiff = schedule.temporaryDifference || new Prisma.Decimal(0);
+      const taxRate = schedule.taxRate || new Prisma.Decimal(0);
+      const deferredTax = tempDiff.mul(taxRate).div(100);
+      const isAsset = tempDiff.isNeg();
+      return prisma.deferredTaxSchedule.update({
+        where: { id },
+        data: {
+          deferredTaxAsset: isAsset ? deferredTax.abs() : null,
+          deferredTaxLiability: isAsset ? null : deferredTax,
+        },
+      });
+    }
+
+    const run = await this.getProvisionRun(tenantId, id);
     const schedules = await prisma.deferredTaxSchedule.findMany({
-      where: { tenantId, runId },
+      where: { tenantId, runId: id },
     });
 
     let totalDeferredAsset = new Prisma.Decimal(0);
@@ -421,7 +509,7 @@ export class TaxProvisioningService {
     const netDeferred = totalDeferredLiability.sub(totalDeferredAsset);
 
     return {
-      runId,
+      runId: id,
       totalDeferredTaxAsset: totalDeferredAsset,
       totalDeferredTaxLiability: totalDeferredLiability,
       netDeferredTaxPosition: netDeferred,
@@ -430,7 +518,13 @@ export class TaxProvisioningService {
   }
 
   async deleteDeferredTaxSchedule(tenantId: string, id: string) {
-    await this.getDeferredTaxSchedule(tenantId, id);
+    const schedule = await this.getDeferredTaxSchedule(tenantId, id);
+    if (schedule.runId) {
+      const run = await this.getProvisionRun(tenantId, schedule.runId);
+      if (run.status === "POSTED") {
+        throw new BadRequestException("Cannot delete schedules of a posted provision run");
+      }
+    }
     return prisma.deferredTaxSchedule.delete({ where: { id } });
   }
 
@@ -555,7 +649,13 @@ export class TaxProvisioningService {
       probabilityOfLoss: number;
     }>,
   ) {
-    await this.getUncertainTaxPosition(tenantId, id);
+    const pos = await this.getUncertainTaxPosition(tenantId, id);
+    if (pos.runId) {
+      const run = await this.getProvisionRun(tenantId, pos.runId);
+      if (run.status === "POSTED") {
+        throw new BadRequestException("Posted provision runs and their positions are immutable");
+      }
+    }
     const data: Record<string, unknown> = {};
     if (dto.positionName !== undefined) data.positionName = dto.positionName;
     if (dto.jurisdiction !== undefined) data.jurisdiction = dto.jurisdiction;
@@ -575,7 +675,13 @@ export class TaxProvisioningService {
   }
 
   async deleteUncertainTaxPosition(tenantId: string, id: string) {
-    await this.getUncertainTaxPosition(tenantId, id);
+    const pos = await this.getUncertainTaxPosition(tenantId, id);
+    if (pos.runId) {
+      const run = await this.getProvisionRun(tenantId, pos.runId);
+      if (run.status === "POSTED") {
+        throw new BadRequestException("Cannot delete positions of a posted provision run");
+      }
+    }
     return prisma.uncertainTaxPosition.delete({ where: { id } });
   }
 
@@ -642,7 +748,13 @@ export class TaxProvisioningService {
       reviewerId: string;
     }>,
   ) {
-    await this.getValuationAllowance(tenantId, id);
+    const va = await this.getValuationAllowance(tenantId, id);
+    if (va.runId) {
+      const run = await this.getProvisionRun(tenantId, va.runId);
+      if (run.status === "POSTED") {
+        throw new BadRequestException("Posted provision runs and their assessments are immutable");
+      }
+    }
     const data: Record<string, unknown> = {};
     if (dto.allowanceAmount !== undefined)
       data.allowanceAmount = new Prisma.Decimal(dto.allowanceAmount);
@@ -676,7 +788,13 @@ export class TaxProvisioningService {
   }
 
   async deleteValuationAllowance(tenantId: string, id: string) {
-    await this.getValuationAllowance(tenantId, id);
+    const va = await this.getValuationAllowance(tenantId, id);
+    if (va.runId) {
+      const run = await this.getProvisionRun(tenantId, va.runId);
+      if (run.status === "POSTED") {
+        throw new BadRequestException("Cannot delete assessments of a posted provision run");
+      }
+    }
     return prisma.valuationAllowanceAssessment.delete({ where: { id } });
   }
 

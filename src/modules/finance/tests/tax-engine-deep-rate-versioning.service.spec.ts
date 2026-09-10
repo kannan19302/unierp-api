@@ -126,4 +126,10 @@ describe("E12 · TaxEngineDeepService rate changes are versioned by effective da
       expect(jurisdictions[0].rate).toBe(7.25);
     });
   });
+
+  it("retires a jurisdiction version without deleting its historical rate", async () => {
+    await service.deleteJurisdiction("t1", "jx-1");
+    expect(jurisdictions[0]).toMatchObject({ id: "jx-1", rate: 7.25, isActive: false });
+    expect(jurisdictions[0].effectiveTo).toBeInstanceOf(Date);
+  });
 });

@@ -12,6 +12,34 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { z } from "zod";
+import {
+  AddCapitalProjectCostRequestSchema as addCapitalProjectCostSchema,
+  BulkDisposeAssetsRequestSchema as bulkDisposeAssetsSchema,
+  BulkUploadAssetsRequestSchema as bulkUploadAssetsSchema,
+  BulkGenerateWithholdingCertificatesRequestSchema as bulkGenerateWithholdingCertificatesSchema,
+  ChangeTaxJurisdictionRateRequestSchema as changeJurisdictionRateSchema,
+  ComputeTaxReconciliationRequestSchema as computeTaxReconciliationSchema,
+  ConvertCapitalProjectToAssetRequestSchema as convertCapitalProjectToAssetSchema,
+  CreateAssetDisposalRequestSchema as createAssetDisposalSchema,
+  CreateAssetImpairmentRequestSchema as createAssetImpairmentSchema,
+  CreateAssetInsuranceRequestSchema as createAssetInsuranceSchema,
+  CreateAssetRevaluationRequestSchema as createAssetRevaluationSchema,
+  CreateCapitalProjectRequestSchema as createCapitalProjectSchema,
+  CreateAmendedTaxFilingRequestSchema as createAmendedFilingSchema,
+  CreateNexusRegistrationRequestSchema as createNexusRegistrationSchema,
+  CreateNexusThresholdRequestSchema as createNexusThresholdSchema,
+  CreateTaxExemptionCertificateRequestSchema as createExemptionCertificateSchema,
+  CreateTaxJurisdictionRequestSchema,
+  CreateWithholdingCertificateRequestSchema as createWithholdingCertificateSchema,
+  UpdateAmendedTaxFilingStatusRequestSchema as updateAmendedFilingStatusSchema,
+  UpdateNexusRegistrationRequestSchema as updateNexusRegistrationSchema,
+  UpdateNexusThresholdRequestSchema as updateNexusThresholdSchema,
+  UpdateTaxExemptionCertificateRequestSchema as updateExemptionCertificateSchema,
+  UpdateTaxJurisdictionRequestSchema as updateTaxJurisdictionSchema,
+  UpdateTaxReconciliationRequestSchema as updateTaxReconciliationSchema,
+  UpdateAssetInsuranceRequestSchema as updateAssetInsuranceSchema,
+  UpdateCapitalProjectRequestSchema as updateCapitalProjectSchema,
+} from "@kannan19302/contracts";
 import { ZodBody } from "../../../common/decorators/zod-body.decorator";
 import { Request } from "express";
 import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
@@ -363,50 +391,6 @@ const createAccountingBookSchema = z.object({
   isPrimary: z.boolean().optional(),
 });
 
-const createNexusThresholdSchema = z.object({
-  country: z.string().min(1).optional(),
-  state: z.string().min(2).max(2),
-  revenueThreshold: z.number().min(0),
-  transactionThreshold: z.number().int().min(0).optional().nullable(),
-  measurementPeriod: z.string().min(1).optional(),
-  includesExemptSales: z.boolean().optional(),
-  marketplaceFacilitatorLaw: z.boolean().optional(),
-  sourceUrl: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const updateNexusThresholdSchema = z.object({
-  revenueThreshold: z.number().min(0).optional(),
-  transactionThreshold: z.number().int().min(0).optional().nullable(),
-  measurementPeriod: z.string().min(1).optional(),
-  includesExemptSales: z.boolean().optional(),
-  marketplaceFacilitatorLaw: z.boolean().optional(),
-  sourceUrl: z.string().optional(),
-  notes: z.string().optional(),
-  isActive: z.boolean().optional(),
-});
-
-const createNexusRegistrationSchema = z.object({
-  country: z.string().min(1).optional(),
-  state: z.string().min(2).max(2),
-  status: z.string().optional(),
-  registrationNumber: z.string().optional(),
-  registeredAt: z.string().optional(),
-  effectiveDate: z.string().optional(),
-  filingFrequency: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const updateNexusRegistrationSchema = z.object({
-  status: z.string().optional(),
-  registrationNumber: z.string().optional(),
-  registeredAt: z.string().optional(),
-  effectiveDate: z.string().optional(),
-  filingFrequency: z.string().optional(),
-  nextFilingDueDate: z.string().optional(),
-  notes: z.string().optional(),
-});
-
 const createAccountingBookRuleSchema = z.object({
   sourceBookId: z.string().min(1),
   destinationBookId: z.string().min(1),
@@ -572,73 +556,6 @@ const requestLimitIncreaseSchema = z.object({
   reason: z.string().optional(),
 });
 
-const updateTaxJurisdictionSchema = z.object({
-  name: z.string().optional(),
-  effectiveTo: z.string().optional(),
-  isActive: z.boolean().optional(),
-  description: z.string().optional(),
-});
-
-const changeJurisdictionRateSchema = z.object({
-  rate: z.number(),
-  effectiveFrom: z.string(),
-});
-
-const createExemptionCertificateSchema = z.object({
-  entityType: z.string(),
-  entityId: z.string(),
-  jurisdictionId: z.string(),
-  certificateNumber: z.string(),
-  exemptionType: z.string(),
-  exemptionPct: z.number().optional(),
-  validFrom: z.string(),
-  validTo: z.string().optional(),
-  documentUrl: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const updateExemptionCertificateSchema = z.object({
-  status: z.string().optional(),
-  validTo: z.string().optional(),
-  documentUrl: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const computeTaxReconciliationSchema = z.object({
-  periodStart: z.string(),
-  periodEnd: z.string(),
-  taxType: z.string(),
-});
-
-const updateTaxReconciliationSchema = z.object({
-  paymentsMade: z.number().optional(),
-  status: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const createWithholdingCertificateSchema = z.object({
-  vendorId: z.string(),
-  year: z.number(),
-  grossAmount: z.number(),
-  taxWithheld: z.number(),
-  withholdingTaxId: z.string().optional(),
-  certificateNumber: z.string().optional(),
-});
-
-const bulkGenerateWithholdingCertificatesSchema = z.object({
-  year: z.number(),
-});
-
-const createAmendedFilingSchema = z.object({
-  originalFilingId: z.string(),
-  amendedReason: z.string(),
-  changes: z.record(z.unknown()).optional(),
-  refundAmount: z.number().optional(),
-  additionalTax: z.number().optional(),
-});
-
-const updateAmendedFilingStatusSchema = z.object({ status: z.string() });
-
 const createTreasuryPositionSchema = z.object({
   currency: z.string(),
   bookBalance: z.number(),
@@ -773,87 +690,6 @@ const updateArDisputeSchema = z.object({
 const computeBadDebtProvisionSchema = z.object({ period: z.string() });
 const postBadDebtProvisionSchema = z.object({
   glAccountId: z.string().optional(),
-});
-
-const createAssetInsuranceSchema = z.object({
-  assetId: z.string(),
-  policyNumber: z.string(),
-  insurer: z.string(),
-  coverageType: z.string(),
-  coverageAmount: z.number(),
-  premium: z.number(),
-  startDate: z.string(),
-  renewalDate: z.string(),
-  documentUrl: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const updateAssetInsuranceSchema = z.object({
-  status: z.string().optional(),
-  renewalDate: z.string().optional(),
-  premium: z.number().optional(),
-  notes: z.string().optional(),
-});
-
-const createAssetImpairmentSchema = z.object({
-  assetId: z.string(),
-  testDate: z.string(),
-  carryingAmount: z.number(),
-  recoverableAmount: z.number(),
-  reason: z.string().optional(),
-});
-
-const createCapitalProjectSchema = z.object({
-  code: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  budgetAmount: z.number(),
-  startDate: z.string(),
-  expectedCompletion: z.string().optional(),
-  costGlAccountId: z.string().optional(),
-});
-
-const addCapitalProjectCostSchema = z.object({
-  costDate: z.string(),
-  description: z.string().optional(),
-  costType: z.string(),
-  amount: z.number(),
-  vendorId: z.string().optional(),
-  invoiceId: z.string().optional(),
-  glAccountId: z.string().optional(),
-});
-
-const updateCapitalProjectSchema = z.object({
-  status: z.string().optional(),
-  completedDate: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const convertCapitalProjectToAssetSchema = z.object({
-  assetName: z.string(),
-  categoryId: z.string(),
-  assetDate: z.string(),
-});
-
-const bulkUploadAssetsSchema = z.object({
-  rows: z.array(
-    z.object({
-      name: z.string(),
-      categoryId: z.string().optional(),
-      purchaseDate: z.string(),
-      purchaseCost: z.number().optional(),
-      purchaseValue: z.number().optional(),
-      salvageValue: z.number().optional(),
-      usefulLifeYears: z.number().optional(),
-      locationId: z.string().optional(),
-      assetCode: z.string().optional(),
-      depreciationMethod: z.string().optional(),
-      depreciationRate: z.number().optional(),
-      accountId: z.string().optional(),
-      accumDepAccountId: z.string().optional(),
-      custodianId: z.string().optional(),
-    }),
-  ),
 });
 
 const upsertRollingForecastLineSchema = z.object({
@@ -1078,27 +914,6 @@ const recordLoanRepaymentSchema = z.object({
 });
 
 const postAccruedInterestGLSchema = z.object({ asOfDate: z.string() });
-
-const createAssetRevaluationSchema = z.object({
-  assetId: z.string(),
-  revaluationDate: z.string(),
-  revaluedValue: z.number(),
-  notes: z.string().optional(),
-});
-
-const createAssetDisposalSchema = z.object({
-  assetId: z.string(),
-  disposalDate: z.string(),
-  disposalType: z.string(),
-  salePrice: z.number().optional(),
-  notes: z.string().optional(),
-});
-
-const bulkDisposeAssetsSchema = z.object({
-  assetIds: z.array(z.string()),
-  disposalDate: z.string(),
-  disposalType: z.string(),
-});
 
 const createCashPoolSchema = z.object({
   orgId: z.string(),
@@ -5298,21 +5113,8 @@ export class AdvancedFinanceController {
   @TrackChanges("TaxJurisdiction")
   async createTaxJurisdiction(
     @Req() req: AuthenticatedRequest,
-    @ZodBody(
-      z.object({
-        name: z.string().min(1),
-        code: z.string().min(1),
-        country: z.string().min(1),
-        state: z.string().optional(),
-        county: z.string().optional(),
-        taxType: z.string().min(1),
-        rate: z.number().nonnegative(),
-        effectiveFrom: z.string().min(1),
-        effectiveTo: z.string().optional(),
-        description: z.string().optional(),
-      }),
-    )
-    dto: z.infer<z.ZodObject<z.ZodRawShape>>,
+    @ZodBody(CreateTaxJurisdictionRequestSchema)
+    dto: z.infer<typeof CreateTaxJurisdictionRequestSchema>,
   ) {
     return this.taxDeepService.createJurisdiction(
       req.user.tenantId,
