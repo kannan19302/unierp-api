@@ -20,37 +20,37 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+const { MockDecimal } = vi.hoisted(() => {
+  class MockDecimal {
+    value: number;
+    constructor(value: unknown) {
+      this.value = value instanceof MockDecimal ? value.value : Number(value);
+    }
+    plus(other: any) {
+      return new MockDecimal(
+        (this.value + Number(other.value ?? other)).toFixed(4),
+      );
+    }
+    greaterThan(other: any) {
+      return this.value > Number(other.value ?? other);
+    }
+    equals(other: any) {
+      return this.value === Number(other.value ?? other);
+    }
+    toString() {
+      return String(this.value);
+    }
+    valueOf() {
+      return this.value;
+    }
+  }
+  return { MockDecimal };
+});
+
 vi.mock("@kannan19302/database/prisma", () => {
   return {
     Prisma: {
-      Decimal: class Decimal {
-        value: number;
-        constructor(value: unknown) {
-          this.value = value instanceof Decimal ? value.value : Number(value);
-        }
-        plus(other: any) {
-          // Real Prisma.Decimal does exact arbitrary-precision decimal
-          // arithmetic (no IEEE 754 drift). Rounding to the column's
-          // declared scale (4 dp, matching Decimal(19,4)) after each op
-          // reproduces that exactness for test purposes without pulling
-          // in a full decimal library.
-          return new Decimal(
-            (this.value + Number(other.value ?? other)).toFixed(4),
-          );
-        }
-        greaterThan(other: any) {
-          return this.value > Number(other.value ?? other);
-        }
-        equals(other: any) {
-          return this.value === Number(other.value ?? other);
-        }
-        toString() {
-          return String(this.value);
-        }
-        valueOf() {
-          return this.value;
-        }
-      },
+      Decimal: MockDecimal,
     },
   };
 });
@@ -59,6 +59,9 @@ let invoiceRow: any;
 let updatedInvoice: any;
 
 vi.mock("@kannan19302/database", () => ({
+  Prisma: {
+    Decimal: MockDecimal,
+  },
   prisma: {
     invoice: {
       findFirst: vi.fn(() => invoiceRow),

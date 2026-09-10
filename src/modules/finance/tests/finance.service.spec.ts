@@ -2,38 +2,46 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FinanceService } from "../services/finance.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 
+const { MockDecimal } = vi.hoisted(() => {
+  class MockDecimal {
+    value: number;
+    constructor(value: unknown) {
+      this.value = value instanceof MockDecimal ? value.value : Number(value);
+    }
+    plus(other: any) {
+      return new MockDecimal(
+        (this.value + Number(other?.value ?? other)).toFixed(4),
+      );
+    }
+    greaterThan(other: any) {
+      return this.value > Number(other?.value ?? other);
+    }
+    equals(other: any) {
+      return this.value === Number(other?.value ?? other);
+    }
+    toString() {
+      return String(this.value);
+    }
+    valueOf() {
+      return this.value;
+    }
+  }
+  return { MockDecimal };
+});
+
 vi.mock("@kannan19302/database/prisma", () => {
   return {
     Prisma: {
-      Decimal: class Decimal {
-        value: number;
-        constructor(value: unknown) {
-          this.value = value instanceof Decimal ? value.value : Number(value);
-        }
-        plus(other: any) {
-          return new Decimal(
-            (this.value + Number(other?.value ?? other)).toFixed(4),
-          );
-        }
-        greaterThan(other: any) {
-          return this.value > Number(other?.value ?? other);
-        }
-        equals(other: any) {
-          return this.value === Number(other?.value ?? other);
-        }
-        toString() {
-          return String(this.value);
-        }
-        valueOf() {
-          return this.value;
-        }
-      },
+      Decimal: MockDecimal,
     },
   };
 });
 
 vi.mock("@kannan19302/database", () => {
   return {
+    Prisma: {
+      Decimal: MockDecimal,
+    },
     prisma: {
       invoice: {
         findMany: vi.fn(),
