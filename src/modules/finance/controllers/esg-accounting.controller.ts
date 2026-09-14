@@ -121,6 +121,7 @@ export class EsgAccountingController {
   }
 
   @Get("emission-sources")
+  @Get("emissions")
   @Permissions("finance.esg.read")
   @ApiOperation({ summary: "List emission sources" })
   async listEmissionSources(
@@ -167,6 +168,7 @@ export class EsgAccountingController {
   }
 
   @Post("emissions/record")
+  @Post("emissions")
   @Permissions("finance.esg.manage")
   @ApiOperation({ summary: "Record emission" })
   async recordEmission(
@@ -464,6 +466,7 @@ export class EsgAccountingController {
   }
 
   @Post("sustainability-targets")
+  @Post("targets")
   @Permissions("finance.esg.manage")
   @ApiOperation({ summary: "Create sustainability target" })
   async createSustainabilityTarget(
@@ -474,6 +477,7 @@ export class EsgAccountingController {
   }
 
   @Get("sustainability-targets")
+  @Get("targets")
   @Permissions("finance.esg.read")
   @ApiOperation({ summary: "List sustainability targets" })
   async listSustainabilityTargets(
