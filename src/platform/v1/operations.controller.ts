@@ -45,12 +45,35 @@ export class OperationsController {
     return this.operationsService.getSystemHealth();
   }
 
+  @ApiOperation({ summary: "Get control plane services health matrix" })
+  @Get("health/services")
+  @Permissions("system.operations.read")
+  @SkipTenantScope()
+  async getHealthServices() {
+    return this.operationsService.getHealthServices();
+  }
+
   @ApiOperation({ summary: "Get operations dashboard summary (platform-wide)" })
   @Get("dashboard")
   @Permissions("system.operations.read")
   @SkipTenantScope()
   async getDashboard() {
     return this.operationsService.getDashboardSummary();
+  }
+
+  @ApiOperation({ summary: "Get message queues status and depth" })
+  @Get("queues")
+  @Permissions("system.operations.read")
+  @SkipTenantScope()
+  async getQueues() {
+    return this.operationsService.getQueues();
+  }
+
+  @ApiOperation({ summary: "Get automation rules" })
+  @Get("automation")
+  @Permissions("system.operations.read")
+  async getAutomation(@Req() req: AuthenticatedRequest) {
+    return this.operationsService.getAutomationRules(req.user.tenantId);
   }
 
   @ApiOperation({ summary: "Get background jobs" })

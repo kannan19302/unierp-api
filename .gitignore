@@ -52,3 +52,9 @@ var/
 .stryker-tmp/
 mutation-report/
 mutation-report-proof/
+
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage

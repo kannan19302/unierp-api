@@ -51,6 +51,20 @@ export class BillingController {
     );
   }
 
+  @ApiOperation({ summary: "Create customer portal session" })
+  @Permissions("saas.create")
+  @Post("customer-portal")
+  async createCustomerPortal(
+    @Req() req: AuthReq,
+    @ZodBody(z.any())
+    body: { returnUrl: string },
+  ) {
+    return this.billingService.createCustomerPortalSession(
+      req.user.tenantId,
+      body.returnUrl,
+    );
+  }
+
   @ApiOperation({ summary: "Change plan" })
   @Permissions("saas.create")
   @Post("change-plan")

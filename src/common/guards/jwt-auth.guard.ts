@@ -27,15 +27,16 @@ export class JwtAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
-    // 1. Prefer httpOnly cookie
-    let token: string | undefined = request.cookies?.[AUTH_COOKIE];
+    // 1. Explicit Authorization header takes precedence (API clients, proxies, fresh session tokens)
+    let token: string | undefined;
+    const authHeader = request.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
 
-    // 2. Fall back to Authorization header (backwards-compat during migration)
+    // 2. Fall back to httpOnly cookie
     if (!token) {
-      const authHeader = request.headers.authorization;
-      if (authHeader?.startsWith("Bearer ")) {
-        token = authHeader.split(" ")[1];
-      }
+      token = request.cookies?.[AUTH_COOKIE];
     }
 
     if (!token) {

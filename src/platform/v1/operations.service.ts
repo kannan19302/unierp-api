@@ -95,7 +95,7 @@ export class OperationsService {
       select: { availableAt: true },
     });
     const outboxLagSeconds = oldestDelivery 
-      ? Math.floor((Date.now() - oldestDelivery.availableAt.getTime()) / 1000)
+      ? Math.max(0, Math.floor((Date.now() - oldestDelivery.availableAt.getTime()) / 1000))
       : 0;
 
     // Node health & degraded tenants
@@ -111,7 +111,7 @@ export class OperationsService {
       }
     });
 
-    const migrationState = "Up to date"; // Placeholder for Prisma migration status
+    const migrationState = "UNKNOWN";
 
     return {
       status: degradedTenants.length > 0 ? "DEGRADED" : "HEALTHY",
@@ -457,5 +457,129 @@ export class OperationsService {
         { tableName: "organizations", rowCount: 0, status: "ACTIVE" },
       ];
     }
+  }
+
+  /**
+   * Health and status of each individual control-plane platform service.
+   */
+  async getHealthServices() {
+    const start = Date.now();
+    const status = await this.checkDatabase();
+    // A single measured probe is not a percentile or proof of other services.
+    return [{
+      service: "postgres-primary",
+      name: "Application database",
+      status,
+      latencyMs: Date.now() - start,
+      observedAt: new Date().toISOString(),
+    }];
+  }
+  /**
+   * Live message queues and queue depth across BullMQ and Outbox.
+   */
+  async getQueues() {
+    const queueNames = [
+      "email",
+      "export",
+      "payroll",
+      "data-import",
+      "outbox-deliveries",
+      "audit-stream",
+    ];
+
+    const results: Array<{
+      name: string;
+      pending?: number;
+      processing?: number;
+      scheduled?: number;
+      total?: number;
+      deadLetter?: number;
+      status: string;
+    }> = [];
+
+    for (const name of queueNames) {
+      const q = this.resolveQueue(name);
+      if (q) {
+        try {
+          const [waiting, active, delayed, failed, completed] =
+            await Promise.all([
+              q.getWaitingCount(),
+              q.getActiveCount(),
+              q.getDelayedCount(),
+              q.getFailedCount(),
+              q.getCompletedCount(),
+            ]);
+
+          results.push({
+            name,
+            pending: waiting,
+            processing: active,
+            scheduled: delayed,
+            deadLetter: failed,
+            total: waiting + active + delayed + failed + completed,
+            status: "ACTIVE",
+          });
+          continue;
+        } catch {
+          // Fall through to DB query
+        }
+      }
+
+      // Check DB backgroundJob records for this queue
+      const dbCounts = await prisma.backgroundJob
+        .groupBy({
+          by: ["status"],
+          where: { queueName: name },
+          _count: { id: true },
+        })
+        .catch(() => null);
+
+      if (dbCounts === null || dbCounts.length === 0) {
+        results.push({ name, status: "UNKNOWN" });
+        continue;
+      }
+      let pending = 0;
+      let processing = 0;
+      let deadLetter = 0;
+      let total = 0;
+
+      for (const row of dbCounts) {
+        if (row.status === "PENDING" || row.status === "WAITING") {
+          pending += row._count.id;
+        } else if (row.status === "RUNNING" || row.status === "ACTIVE") {
+          processing += row._count.id;
+        } else if (row.status === "FAILED") {
+          deadLetter += row._count.id;
+        }
+        total += row._count.id;
+      }
+
+      results.push({
+        name,
+        pending,
+        processing,
+        scheduled: 0,
+        deadLetter,
+        total,
+        status: "UNKNOWN",
+      });
+    }
+
+    return results;
+  }
+
+  /**
+   * Get operational automation rules and self-healing policies.
+   */
+  async getAutomationRules(tenantId: string) {
+    const setting = await prisma.setting.findUnique({
+      where: { tenantId_key: { tenantId, key: "operations.automation_rules" } },
+    });
+
+    if (setting && Array.isArray(setting.value)) {
+      return setting.value;
+    }
+
+    return [];
   }
 }

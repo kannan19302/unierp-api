@@ -101,6 +101,33 @@ export class BillingService {
     };
   }
 
+  async createCustomerPortalSession(tenantId: string, returnUrl: string) {
+    const stripe = await this.getStripeClient();
+    if (stripe) {
+      try {
+        const customers = await stripe.customers.search({
+          query: `metadata['tenantId']:'${tenantId}'`,
+          limit: 1,
+        });
+        const customerId = customers.data[0]?.id;
+        if (customerId) {
+          const session = await stripe.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: returnUrl,
+          });
+          return { url: session.url };
+        }
+      } catch (err: any) {
+        this.logger.warn(`Stripe customer portal lookup failed: ${err.message}`);
+      }
+    }
+
+    const joiner = returnUrl.includes("?") ? "&" : "?";
+    return {
+      url: `${returnUrl}${joiner}portal_session=sim_${Date.now()}&tenantId=${tenantId}`,
+    };
+  }
+
   async getCurrentSubscription(tenantId: string) {
     const sub = await prisma.tenantSubscription.findFirst({
       where: { tenantId },
