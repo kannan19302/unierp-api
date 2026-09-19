@@ -1,5 +1,9 @@
 # API Contract Governance & Versioning Standards (`@kannan19302/api`)
 
+Apply this local guidance under the [repository entrypoint](../../AGENTS.md) and its authority order.
+Implementation examples do not establish runtime proof or override the owning security and contract specifications.
+
+
 This document defines contract governance, OpenAPI specifications, Zod schema validation, and lifecycle deprecation headers for all public and internal REST surfaces in the UniERP API service.
 
 ---

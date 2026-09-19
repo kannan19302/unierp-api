@@ -1,5 +1,9 @@
 # API Security & Zero-Trust Governance Standards (`@kannan19302/api`)
 
+Apply this local guidance under the [repository entrypoint](../../AGENTS.md) and its authority order.
+Implementation examples do not establish runtime proof or override the owning security and contract specifications.
+
+
 This standard governs all authentication, authorization, session management, tenancy isolation, encryption, and audit policies across the UniERP API layer. Compliance is mandatory for all endpoints.
 
 ---

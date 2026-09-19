@@ -1,5 +1,9 @@
 # API Testing & Quality Assurance Standards (`@kannan19302/api`)
 
+Apply this local guidance under the [repository entrypoint](../../AGENTS.md) and its authority order.
+Implementation examples do not establish runtime proof or override the owning security and contract specifications.
+
+
 This document defines the testing pyramid, quality gates, tenant isolation assertions, and mutation testing standards for the UniERP API repository. Every contribution MUST meet these verification requirements.
 
 ---

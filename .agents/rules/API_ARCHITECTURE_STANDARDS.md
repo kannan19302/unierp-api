@@ -1,5 +1,9 @@
 # API Architecture Standards & Governance (`@kannan19302/api`)
 
+Apply this local guidance under the [repository entrypoint](../../AGENTS.md) and its authority order.
+Implementation examples do not establish runtime proof or override the owning security and contract specifications.
+
+
 This document defines the authoritative architecture, module boundaries, layering, and domain invariants for the UniERP API service. Every AI agent and software engineer modifying or extending this repository MUST strictly follow these standards to maintain a 10/10 enterprise-grade architecture.
 
 ---

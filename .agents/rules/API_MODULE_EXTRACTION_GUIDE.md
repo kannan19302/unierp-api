@@ -1,5 +1,9 @@
 # API Module Extraction & Cell Architecture Guide (`@kannan19302/api`)
 
+Apply this local guidance under the [repository entrypoint](../../AGENTS.md) and its authority order.
+Implementation examples do not establish runtime proof or override the owning security and contract specifications.
+
+
 This guide provides the step-by-step procedure for extracting vertical industry modules from the monolithic NestJS runtime into dedicated, out-of-process cell services or microservices.
 
 ---

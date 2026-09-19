@@ -1,5 +1,9 @@
 # API Observability, Telemetry & SRE Standards (`@kannan19302/api`)
 
+Apply this local guidance under the [repository entrypoint](../../AGENTS.md) and its authority order.
+Implementation examples do not establish runtime proof or override the owning security and contract specifications.
+
+
 This standard governs structured logging, Prometheus metrics, OpenTelemetry distributed tracing, error envelopes, and health probe readiness for the UniERP API service.
 
 ---
