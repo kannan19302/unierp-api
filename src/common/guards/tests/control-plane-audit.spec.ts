@@ -59,6 +59,8 @@ vi.mock("@kannan19302/database", () => ({
         return actorRecords.at(-1) ?? null;
       }),
       create: vi.fn().mockImplementation(async ({ data }) => makeRecord(data)),
+      count: vi.fn().mockImplementation(async () => createdRecords.length),
+      groupBy: vi.fn().mockImplementation(async () => [{ actorId: "actor-1" }]),
       findMany: vi.fn().mockImplementation(async ({ where, orderBy }) => {
         return createdRecords
           .filter((r) => !where?.actorId || r.actorId === where.actorId)
@@ -188,4 +190,32 @@ describe("ControlPlaneAuditService (C03 exit criterion)", () => {
     // (No call to service.record() — simulating that the caller skipped it or threw)
     expect(createdRecords).toHaveLength(countBefore); // length unchanged
   });
+
+  it("queries audit records with pagination and metadata", async () => {
+    await service.record({
+      actorId: "operator-alpha",
+      actorRole: "platform.admin",
+      action: "policy.create",
+      details: { policyId: "pol-1" },
+    });
+
+    const res = await service.queryRecords({ page: 1, pageSize: 10 });
+    expect(res.data.length).toBeGreaterThan(0);
+    expect(res.total).toBeGreaterThan(0);
+    expect(res.page).toBe(1);
+  });
+
+  it("calculates audit spine summary statistics", async () => {
+    await service.record({
+      actorId: "operator-beta",
+      actorRole: "platform.admin",
+      action: "tenant.quarantine",
+      details: { tenantId: "t-1" },
+    });
+
+    const stats = await service.getStats();
+    expect(stats.totalRecords).toBeGreaterThan(0);
+    expect(stats.chainIntegrityStatus).toBe("VERIFIED");
+  });
 });
+

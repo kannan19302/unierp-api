@@ -18,6 +18,7 @@ import { SuperAdminService } from "./v1/super-admin.service";
 import { TenantLifecycleController } from "./v1/tenant-lifecycle.controller";
 import { TenantLifecycleService } from "./v1/tenant-lifecycle.service";
 import { ControlPlaneAuditService } from "./v1/control-plane-audit.service";
+import { ControlPlaneAuditController } from "./v1/control-plane-audit.controller";
 import { ControlPlaneApprovalsController } from "./v1/control-plane-approvals.controller";
 import { ControlPlaneApprovalsService } from "./v1/control-plane-approvals.service";
 import { ProviderRegistryService } from "./provider-registry/provider-registry.service";
@@ -172,6 +173,7 @@ import { DesktopOperationsService } from "./v1/desktop-operations.service";
     IndustrySuiteCatalogueController,
     RunbookController,
     ComplianceControlController,
+    ControlPlaneAuditController,
     AiGovernanceController,
     MobileOperationsController,
     DesktopOperationsController,
