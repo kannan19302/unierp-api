@@ -5,7 +5,7 @@
  * that changes what this controller can return, because the service
  * behind it has nowhere to read a raw value from.
  */
-import { Controller, Get, Post, Delete, Param, Body, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
@@ -22,6 +22,41 @@ import { CertificateLifecycleService } from "./certificate-lifecycle.service";
 export class CertificateLifecycleController {
   constructor(private readonly certificates: CertificateLifecycleService) {}
 
+  @ApiOperation({ summary: "List active dynamic secret leases" })
+  @Get("leases")
+  @Permissions("system.certificate.read")
+  async listLeases() {
+    return this.certificates.listLeases();
+  }
+
+  @ApiOperation({ summary: "Issue dynamic secret lease" })
+  @Post("leases")
+  @Permissions("system.certificate.manage")
+  async createLease(@Body() body: { secretKey: string; clientIdentity: string; ttlSeconds?: number }) {
+    return this.certificates.createLease(body.secretKey, body.clientIdentity, body.ttlSeconds);
+  }
+
+  @ApiOperation({ summary: "Revoke dynamic secret lease" })
+  @Delete("leases/:id")
+  @Permissions("system.certificate.manage")
+  async revokeLease(@Param("id") id: string, @Body() body?: { reason?: string }) {
+    return this.certificates.revokeLease(id, body?.reason);
+  }
+
+  @ApiOperation({ summary: "View certificate chain (Root -> Intermediate -> Leaf)" })
+  @Get("chain/:id")
+  @Permissions("system.certificate.read")
+  async getCertificateChain(@Param("id") id: string) {
+    return this.certificates.getCertificateChain(id);
+  }
+
+  @ApiOperation({ summary: "Schedule auto-rotation for a certificate" })
+  @Post(":id/schedule-rotation")
+  @Permissions("system.certificate.manage")
+  async scheduleRotation(@Param("id") id: string, @Body() body: { autoRotateDaysBefore: number }) {
+    return this.certificates.scheduleRotation(id, body.autoRotateDaysBefore);
+  }
+
   @ApiOperation({ summary: "Get a certificate by id — returns a redacted secret-ref, never the certificate material" })
   @Get(":id")
   @Permissions("system.certificate.read")
@@ -29,10 +64,13 @@ export class CertificateLifecycleController {
     return this.certificates.get(id);
   }
 
-  @ApiOperation({ summary: "Certificates within their expiry alert window" })
+  @ApiOperation({ summary: "List certificates (all or within alert window)" })
   @Get()
   @Permissions("system.certificate.read")
-  async listAtRisk() {
+  async list(@Query("all") all?: string) {
+    if (all === "true" || all === "1") {
+      return this.certificates.listAll();
+    }
     return this.certificates.checkExpiryAlerts();
   }
 

@@ -109,12 +109,9 @@ describe("M23 · secrets, certificates and keys", () => {
 
   it("C26's certificate lifecycle (issueSslCert) consumes this service, not a duplicate implementation", async () => {
     const { SaasWhiteLabelDeepService } = await import("./white-label.service");
-    const { DnsService } = await import("../provider-registry/dns.service");
-    const { ProviderRegistryService } = await import("../provider-registry/provider-registry.service");
-    const { RoutingService } = await import("../provider-registry/routing.service");
 
     const whiteLabel = new SaasWhiteLabelDeepService(
-      new DnsService(new ProviderRegistryService(), new RoutingService(new ProviderRegistryService())),
+      {} as any,
       certificates,
     );
 
@@ -124,5 +121,41 @@ describe("M23 · secrets, certificates and keys", () => {
     // It landed in the SAME store CertificateLifecycleService.get() reads.
     const fetched = await certificates.get(cert.id);
     expect(fetched.domainId).toBe("domain-c26");
+  });
+
+  it("PCC-07: generates 3-level certificate chain (Root -> Intermediate -> Leaf)", async () => {
+    const issued = await certificates.issue("tenant-1", "app.unierp.com");
+    const chain = await certificates.getCertificateChain(issued.id);
+
+    expect(chain).toHaveLength(3);
+    expect(chain[0].level).toBe("ROOT");
+    expect(chain[1].level).toBe("INTERMEDIATE");
+    expect(chain[2].level).toBe("LEAF");
+    expect(chain[2].commonName).toBe("app.unierp.com");
+  });
+
+  it("PCC-07: schedules automated certificate rotation", async () => {
+    const issued = await certificates.issue("tenant-1", "app.unierp.com");
+    const scheduled = await certificates.scheduleRotation(issued.id, 21);
+
+    expect(scheduled.autoRotateDaysBefore).toBe(21);
+    expect(auditLogs.some((a) => a.action === "certificate.rotation_scheduled")).toBe(true);
+  });
+
+  it("PCC-07: manages secret lease lifecycle (list, create, revoke)", async () => {
+    const leases = await certificates.listLeases();
+    expect(leases.length).toBeGreaterThanOrEqual(3);
+
+    const created = await certificates.createLease(
+      "database.temp_read_replica",
+      "analytics-engine@unierp.internal",
+      7200,
+    );
+    expect(created.id).toBeDefined();
+    expect(created.revoked).toBe(false);
+
+    const revoked = await certificates.revokeLease(created.id, "Query completed");
+    expect(revoked.success).toBe(true);
+    expect(auditLogs.some((a) => a.action === "secret.lease_revoked")).toBe(true);
   });
 });
