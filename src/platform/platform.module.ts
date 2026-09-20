@@ -130,6 +130,8 @@ import { MarketplaceController } from "./v1/marketplace/marketplace.controller";
 import { MarketplaceService } from "./v1/marketplace/marketplace.service";
 import { PlatformIntegrationOperationsController } from "./v1/integration-operations.controller";
 import { PlatformIntegrationOperationsService } from "./v1/integration-operations.service";
+import { PlatformAnalyticsController } from "./v1/platform-analytics.controller";
+import { PlatformAnalyticsService } from "./v1/platform-analytics.service";
 
 @Module({
   imports: [],
@@ -140,6 +142,7 @@ import { PlatformIntegrationOperationsService } from "./v1/integration-operation
     PlatformDeveloperEcosystemController,
     MarketplaceController,
     PlatformIntegrationOperationsController,
+    PlatformAnalyticsController,
     SaasEnterpriseScaleMasterController,
     SaasFeatureFlagsMeteringDeepController,
     SaasResellerChannelDeepController,
@@ -267,6 +270,7 @@ import { PlatformIntegrationOperationsService } from "./v1/integration-operation
     PlatformDeveloperEcosystemService,
     MarketplaceService,
     PlatformIntegrationOperationsService,
+    PlatformAnalyticsService,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -289,6 +293,7 @@ import { PlatformIntegrationOperationsService } from "./v1/integration-operation
     PlatformDeveloperEcosystemService,
     MarketplaceService,
     PlatformIntegrationOperationsService,
+    PlatformAnalyticsService,
   ],
 })
 export class PlatformModule {}
