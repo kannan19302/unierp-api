@@ -169,6 +169,39 @@ export class SaasFeatureFlagsMeteringDeepController {
     return this.service.importFeatureFlagConfig(user.tenantId, configData);
   }
 
+  // 1b. Global Configuration & Environment Promotion
+  @Get("config/environments")
+  @ApiOperation({ summary: "List configuration environments and drift states" })
+  @Permissions("system.flags.read")
+  async getConfigEnvironments() {
+    return this.service.getConfigEnvironments();
+  }
+
+  @Get("config/diff")
+  @ApiOperation({ summary: "Diff configuration between two environments" })
+  @Permissions("system.flags.read")
+  async getConfigDiff(
+    @Query("source") source = "dev",
+    @Query("target") target = "staging",
+  ) {
+    return this.service.getConfigDiff(source, target);
+  }
+
+  @Post("config/promote")
+  @ApiOperation({ summary: "Promote configuration bundle across environments" })
+  @Permissions("system.flags.admin")
+  async promoteConfig(
+    @CurrentUser() user: any,
+    @Body() body: { source: string; target: string; reason?: string },
+  ) {
+    return this.service.promoteConfig(
+      body.source,
+      body.target,
+      user?.userId,
+      body.reason,
+    );
+  }
+
   // 2. Metering & Quotas
   @Post("metering/record")
   @ApiOperation({ summary: "Record usage event" })
