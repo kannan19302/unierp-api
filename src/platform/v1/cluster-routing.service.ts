@@ -294,7 +294,7 @@ export class SaasClusterRoutingDeepService {
 
     const idx = this.inMemoryRules.findIndex((r) => r.id === id);
     if (idx >= 0) {
-      this.inMemoryRules[idx] = { ...this.inMemoryRules[idx], ...dto };
+      this.inMemoryRules[idx] = { ...this.inMemoryRules[idx], ...dto } as RateLimitRuleDto;
       return this.inMemoryRules[idx];
     }
     throw new NotFoundException(`Rate limit rule ${id} not found`);

@@ -6,6 +6,7 @@ import type {
   CreateSecurityPolicyDto,
   UpdateSecurityPolicyDto,
   ThreatTriageDto,
+  EvaluateAbacPolicyDto,
 } from './dto/security-crud.dto';
 
 export interface ThreatRecord {
@@ -494,6 +495,69 @@ export class SecurityOperationsService {
       id,
     });
     return { id, deleted: true, deletedAt: new Date() };
+  }
+
+  async evaluateAbacPolicy(dto: EvaluateAbacPolicyDto) {
+    const role = dto.subject?.role || 'OPERATOR';
+    const resourceType = dto.resource?.type || 'database';
+    const action = dto.action || 'read';
+    const hour = dto.context?.hour ?? new Date().getUTCHours();
+    const plan = dto.context?.plan || 'STANDARD';
+
+    // Rule 1: SUPER_ADMIN bypass
+    if (role === 'SUPER_ADMIN') {
+      return {
+        decision: 'ALLOW',
+        matchedPolicy: 'pol-super-admin-bypass',
+        matchedRule: 'SuperAdmin Full Capability Clearance',
+        reasons: ['Subject possesses SUPER_ADMIN role with unrestricted evaluation clearance.'],
+        evaluatedAt: new Date().toISOString(),
+      };
+    }
+
+    // Rule 2: Customer PII Data Perimeter (Deny if not DPO or SUPER_ADMIN)
+    if (resourceType === 'customer_pii' && role !== 'DATA_PROTECTION_OFFICER') {
+      return {
+        decision: 'DENY',
+        matchedPolicy: 'pol-pii-perimeter',
+        matchedRule: 'Strict GDPR/DPDP PII Access Control',
+        reasons: [`Role "${role}" is not authorized for customer_pii. Requires DATA_PROTECTION_OFFICER.`],
+        evaluatedAt: new Date().toISOString(),
+      };
+    }
+
+    // Rule 3: Off-Hours Destructive Mutations (Require Two-Person Approval)
+    if (action === 'delete' && (hour < 8 || hour > 20)) {
+      return {
+        decision: 'REQUIRE_APPROVAL',
+        matchedPolicy: 'pol-break-glass',
+        matchedRule: 'Off-Hours Destructive Mutation Governance',
+        reasons: [
+          `Destructive action "${action}" executed at hour ${hour} (outside 08:00-20:00 window) requires break-glass two-person authorization.`,
+        ],
+        evaluatedAt: new Date().toISOString(),
+      };
+    }
+
+    // Rule 4: Dedicated BYOK Key Management (Requires ENTERPRISE Plan)
+    if (resourceType === 'custom_encryption_key' && plan !== 'ENTERPRISE') {
+      return {
+        decision: 'DENY',
+        matchedPolicy: 'pol-key-envelope',
+        matchedRule: 'BYOK Encryption Entitlement',
+        reasons: [`Custom encryption key access is prohibited for "${plan}" tier. ENTERPRISE plan required.`],
+        evaluatedAt: new Date().toISOString(),
+      };
+    }
+
+    // Rule 5: Default Allow for standard authorized operations
+    return {
+      decision: 'ALLOW',
+      matchedPolicy: 'pol-default-abac-clearance',
+      matchedRule: 'Standard Operational Access Permitted',
+      reasons: [`Subject role "${role}" granted "${action}" on resource "${resourceType}".`],
+      evaluatedAt: new Date().toISOString(),
+    };
   }
 
   // ─── Threat Triage Workflow ───────────────────────────────────────────────

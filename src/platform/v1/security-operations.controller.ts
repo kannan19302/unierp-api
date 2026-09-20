@@ -23,6 +23,7 @@ import type {
   CreateSecurityPolicyDto,
   UpdateSecurityPolicyDto,
   ThreatTriageDto,
+  EvaluateAbacPolicyDto,
 } from './dto/security-crud.dto';
 
 /**
@@ -95,6 +96,13 @@ export class SecurityOperationsController {
   createPolicy(@Body() body: CreateSecurityPolicyDto, @Req() req: any) {
     const actorId = req.user?.userId || req.user?.sub || 'SYSTEM';
     return this.soc.createPolicy(body, actorId);
+  }
+
+  @ApiOperation({ summary: 'Simulate and evaluate ABAC policy rule engine' })
+  @Post('policies/evaluate')
+  @Permissions('system.soc.read', 'system.isolation.read', 'pcc.security.view')
+  evaluatePolicy(@Body() body: EvaluateAbacPolicyDto) {
+    return this.soc.evaluateAbacPolicy(body);
   }
 
   @ApiOperation({ summary: 'Update security isolation policy' })

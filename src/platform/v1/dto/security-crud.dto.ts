@@ -31,3 +31,27 @@ export const ThreatTriageSchema = z.object({
 });
 
 export type ThreatTriageDto = z.infer<typeof ThreatTriageSchema>;
+
+export const EvaluateAbacPolicySchema = z.object({
+  subject: z.object({
+    role: z.string().default("OPERATOR"),
+    department: z.string().optional(),
+    userId: z.string().optional(),
+  }),
+  resource: z.object({
+    type: z.string().default("database"),
+    id: z.string().optional(),
+    tenantId: z.string().optional(),
+  }),
+  action: z.string().default("read"),
+  context: z
+    .object({
+      hour: z.number().optional(),
+      plan: z.string().optional(),
+      ip: z.string().optional(),
+    })
+    .optional(),
+});
+
+export type EvaluateAbacPolicyDto = z.infer<typeof EvaluateAbacPolicySchema>;
+

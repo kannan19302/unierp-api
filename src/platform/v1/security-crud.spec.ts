@@ -136,4 +136,55 @@ describe("Security Operations & Policy Services", () => {
       })
     );
   });
+
+  it("evaluates ABAC policy rules with attribute conditions and access decisions", async () => {
+    // Test 1: SUPER_ADMIN bypass
+    const superAdminRes = await socService.evaluateAbacPolicy({
+      subject: { role: "SUPER_ADMIN" },
+      resource: { type: "financial_ledger" },
+      action: "write",
+    });
+    expect(superAdminRes.decision).toBe("ALLOW");
+    expect(superAdminRes.matchedPolicy).toBe("pol-super-admin-bypass");
+
+    // Test 2: PII perimeter denied for standard roles
+    const piiDeniedRes = await socService.evaluateAbacPolicy({
+      subject: { role: "OPERATOR" },
+      resource: { type: "customer_pii" },
+      action: "read",
+    });
+    expect(piiDeniedRes.decision).toBe("DENY");
+    expect(piiDeniedRes.matchedPolicy).toBe("pol-pii-perimeter");
+
+    // Test 3: Off-hours destructive action requires break-glass two-person approval
+    const offHoursRes = await socService.evaluateAbacPolicy({
+      subject: { role: "OPERATOR" },
+      resource: { type: "database" },
+      action: "delete",
+      context: { hour: 23 },
+    });
+    expect(offHoursRes.decision).toBe("REQUIRE_APPROVAL");
+    expect(offHoursRes.matchedPolicy).toBe("pol-break-glass");
+
+    // Test 4: BYOK key management requires ENTERPRISE plan
+    const byokDeniedRes = await socService.evaluateAbacPolicy({
+      subject: { role: "OPERATOR" },
+      resource: { type: "custom_encryption_key" },
+      action: "read",
+      context: { plan: "STARTER" },
+    });
+    expect(byokDeniedRes.decision).toBe("DENY");
+    expect(byokDeniedRes.matchedPolicy).toBe("pol-key-envelope");
+
+    // Test 5: Standard allowed action
+    const allowedRes = await socService.evaluateAbacPolicy({
+      subject: { role: "OPERATOR" },
+      resource: { type: "database" },
+      action: "read",
+      context: { hour: 14, plan: "ENTERPRISE" },
+    });
+    expect(allowedRes.decision).toBe("ALLOW");
+    expect(allowedRes.matchedPolicy).toBe("pol-default-abac-clearance");
+  });
 });
+

@@ -179,12 +179,17 @@ export class PlatformAnalyticsService {
   ): Promise<CustomDashboard> {
     const idx = this.dashboards.findIndex((item) => item.id === id);
     if (idx === -1) throw new NotFoundException(`Dashboard ${id} not found`);
-    this.dashboards[idx] = {
-      ...this.dashboards[idx],
+    const current = this.dashboards[idx]!;
+    const updated: CustomDashboard = {
+      ...current,
       ...input,
+      id: current.id,
+      name: input.name ?? current.name,
+      category: input.category ?? current.category,
       updatedAt: new Date().toISOString(),
     };
-    return this.dashboards[idx];
+    this.dashboards[idx] = updated;
+    return updated;
   }
 
   async deleteDashboard(id: string): Promise<{ success: boolean }> {
