@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { SubscriptionManagementService, SubscriptionTransitionDto } from './subscription-management.service';
 import { Request } from 'express';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -20,6 +20,22 @@ import { Permissions } from '../../common/decorators/permissions.decorator';
 @UseGuards(JwtAuthGuard, RbacGuard, ControlPlaneGuard)
 export class SubscriptionManagementController {
   constructor(private readonly subService: SubscriptionManagementService) {}
+
+  @Get()
+  @Permissions('system.subscription.read')
+  async listSubscriptions(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.subService.listSubscriptions({
+      page: page ? Number(page) : undefined,
+      pageSize: pageSize ? Number(pageSize) : undefined,
+      status,
+      search,
+    });
+  }
 
   @Get(':tenantId')
   @Permissions('system.subscription.read')

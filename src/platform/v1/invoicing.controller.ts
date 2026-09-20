@@ -24,8 +24,18 @@ export class InvoicingController {
 
   @Get()
   @Permissions('system.invoice.read')
-  listInvoices(@Query('tenantId') tenantId?: string, @Query('status') status?: string) {
-    return this.invoicing.listInvoices(tenantId, status);
+  listInvoices(
+    @Query('tenantId') tenantId?: string,
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.invoicing.listInvoices(tenantId, status, {
+      page: page ? Number(page) : undefined,
+      pageSize: pageSize ? Number(pageSize) : undefined,
+      search,
+    });
   }
 
   @Get(':id')

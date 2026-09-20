@@ -198,4 +198,27 @@ export class PlansService {
       return newPlan;
     });
   }
+
+  async archivePlan(id: string, actorId: string) {
+    return prisma.$transaction(async (tx) => {
+      const plan = await tx.saaSPlan.update({
+        where: { id },
+        data: { status: 'ARCHIVED' } as any,
+      });
+
+      await this.audit.record(
+        {
+          actorId,
+          actorRole: 'SUPER_ADMIN',
+          action: 'plan.archive',
+          targetId: id,
+          details: {},
+        },
+        tx as any,
+      );
+
+      return plan;
+    });
+  }
 }
+

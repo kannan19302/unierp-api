@@ -296,4 +296,49 @@ export class SubscriptionManagementService {
       return updated;
     });
   }
+
+  async listSubscriptions(query: {
+    page?: number;
+    pageSize?: number;
+    status?: string;
+    search?: string;
+  }) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 25));
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (query.status) {
+      where.status = query.status;
+    }
+    if (query.search) {
+      where.OR = [
+        { tenantId: { contains: query.search, mode: 'insensitive' } },
+        { plan: { name: { contains: query.search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [total, items] = await Promise.all([
+      prisma.tenantSubscription.count({ where }),
+      prisma.tenantSubscription.findMany({
+        where,
+        include: {
+          plan: { include: { prices: true } },
+          tenant: { select: { id: true, name: true, slug: true, status: true } },
+        },
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      data: items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
 }
+

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Req, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RbacGuard } from '../../common/guards/rbac.guard';
@@ -84,4 +84,15 @@ export class PlansController {
       throw new NotFoundException(`Plan ${id} not found`);
     }
   }
+
+  @Delete(':id')
+  @Permissions('system.plan.write')
+  async archivePlan(@Param('id') id: string, @Req() req: Request) {
+    try {
+      return await this.plansService.archivePlan(id, (req as any).user?.id || 'SUPER_ADMIN');
+    } catch (e) {
+      throw new NotFoundException(`Plan ${id} not found`);
+    }
+  }
 }
+

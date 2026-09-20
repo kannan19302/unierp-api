@@ -30,10 +30,45 @@ export class InvoicingService {
     return { subtotal, discountAmount, taxAmount, totalAmount };
   }
 
-  async listInvoices(tenantId?: string, status?: string) {
+  async listInvoices(
+    tenantId?: string,
+    status?: string,
+    pagination?: { page?: number; pageSize?: number; search?: string },
+  ) {
     const where: any = {};
     if (tenantId) where.tenantId = tenantId;
     if (status) where.status = status;
+    if (pagination?.search) {
+      where.OR = [
+        { invoiceNumber: { contains: pagination.search, mode: 'insensitive' } },
+        { tenant: { name: { contains: pagination.search, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (pagination?.page || pagination?.pageSize) {
+      const page = Math.max(1, pagination.page || 1);
+      const pageSize = Math.min(100, Math.max(1, pagination.pageSize || 25));
+      const skip = (page - 1) * pageSize;
+
+      const [total, items] = await Promise.all([
+        prisma.saaSInvoice.count({ where }),
+        prisma.saaSInvoice.findMany({
+          where,
+          include: { lines: true, tenant: true },
+          skip,
+          take: pageSize,
+          orderBy: { createdAt: 'desc' },
+        }),
+      ]);
+
+      return {
+        data: items,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      };
+    }
 
     return prisma.saaSInvoice.findMany({
       where,
