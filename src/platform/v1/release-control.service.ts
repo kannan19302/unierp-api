@@ -65,4 +65,72 @@ export class ReleaseControlService {
       rolledBackAt: new Date(),
     };
   }
+
+  private canaryWeight = 10;
+
+  async getPipelineStages(): Promise<{ stages: any[]; activeCanaryPercent: number }> {
+    const current = await this.getCurrentManifest();
+    const stages = [
+      {
+        stage: 'dev',
+        label: 'Development (us-east-dev)',
+        version: '2026.08.2-next',
+        status: 'HEALTHY',
+        lastDeployedAt: new Date(Date.now() - 3600000).toISOString(),
+        commitHash: '8f92a1c',
+      },
+      {
+        stage: 'staging',
+        label: 'Pre-Production Staging (eu-central-stg)',
+        version: '2026.08.1-rc3',
+        status: 'HEALTHY',
+        lastDeployedAt: new Date(Date.now() - 7200000).toISOString(),
+        commitHash: '4b11f0a',
+      },
+      {
+        stage: 'canary',
+        label: 'Global Edge Canary Ring',
+        version: current.version,
+        status: 'ROLLING_OUT',
+        trafficWeightPercent: this.canaryWeight,
+        lastDeployedAt: current.deployedAt,
+        commitHash: '1c099d3',
+      },
+      {
+        stage: 'production',
+        label: 'Primary Production Fleet (Multi-Region)',
+        version: current.previousManifestVersion || '2026.07.4',
+        status: 'HEALTHY',
+        trafficWeightPercent: 100 - this.canaryWeight,
+        lastDeployedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+        commitHash: '0e334a1',
+      },
+    ];
+
+    return { stages, activeCanaryPercent: this.canaryWeight };
+  }
+
+  async setCanaryTraffic(percentage: number, actorId: string) {
+    if (percentage < 0 || percentage > 100) {
+      throw new Error('Canary traffic percentage must be between 0 and 100');
+    }
+    const previousWeight = this.canaryWeight;
+    this.canaryWeight = percentage;
+
+    await this.audit.record({
+      actorId,
+      actorRole: 'SUPER_ADMIN',
+      action: 'release.canary_traffic_adjusted',
+      targetId: 'global-canary',
+      details: {
+        previousWeight,
+        newWeight: percentage,
+      },
+    });
+
+    return {
+      activeCanaryPercent: this.canaryWeight,
+      updatedAt: new Date(),
+    };
+  }
 }

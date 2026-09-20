@@ -34,6 +34,18 @@ export class ReleaseControlController {
     return this.releaseControl.getCurrentManifest();
   }
 
+  @Get('pipeline')
+  @Permissions('system.release.read')
+  getPipeline() {
+    return this.releaseControl.getPipelineStages();
+  }
+
+  @Post('pipeline/canary-traffic')
+  @Permissions('system.release.promote')
+  setCanaryTraffic(@Body() body: { percentage: number; actorId?: string }) {
+    return this.releaseControl.setCanaryTraffic(body.percentage, body.actorId || 'SYSTEM');
+  }
+
   // Platform-wide and destructive: every tenant is affected at once.
   @Post('rollback')
   @Permissions('system.release.rollback')
