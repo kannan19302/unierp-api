@@ -84,9 +84,10 @@ vi.mock("@kannan19302/database", () => {
           evidenceRows.push(row);
           return row;
         }),
-        findMany: vi.fn(({ where }: any) =>
-          evidenceRows.filter((r) => r.controlCode === where.controlCode),
-        ),
+        findMany: vi.fn(({ where }: any = {}) => {
+          if (!where || !where.controlCode) return [...evidenceRows];
+          return evidenceRows.filter((r) => r.controlCode === where.controlCode);
+        }),
       },
     },
   };
@@ -213,5 +214,55 @@ describe("M38 · compliance controls and evidence", () => {
     const list = await compliance.listEvidence("AUDIT-COMPLETE");
     expect(list).toHaveLength(2);
     expect(list.map((e) => e.auditorQuestion).sort()).toEqual(["First question", "Second question"]);
+  });
+
+  it("lists all evidence artefacts across all controls", async () => {
+    seedRealAuditRows();
+    await compliance.exportEvidence("AUDIT-COMPLETE", "First question", "auditor-1");
+    await compliance.exportEvidence("AUDIT-COMPLETE", "Second question", "auditor-2");
+    const all = await compliance.listAllEvidence();
+    expect(all).toHaveLength(2);
+  });
+
+  it("aggregates compliance controls by framework and computes coverage percentage", async () => {
+    seedRealAuditRows();
+    await compliance.evaluateControl("AUDIT-COMPLETE");
+    const frameworks = await compliance.listFrameworks();
+    expect(frameworks.length).toBe(5);
+    const soc2 = frameworks.find((f) => f.id === "soc2");
+    expect(soc2).toBeDefined();
+    expect(soc2?.name).toBe("SOC 2 Type II");
+    expect(soc2?.coveragePct).toBeGreaterThanOrEqual(0);
+  });
+
+  it("allows registering, updating, and deleting custom compliance controls", async () => {
+    const created = await compliance.createControl({
+      code: "CUSTOM-DR-TEST",
+      title: "Quarterly Disaster Recovery Simulation",
+      frameworks: "ISO27001,SOC2",
+      description: "Must verify automated failover logs exist",
+      minRecords: 2,
+    });
+    expect(created.code).toBe("CUSTOM-DR-TEST");
+
+    // Must be present in catalogue
+    const catalogue = await compliance.listCatalogue();
+    expect(catalogue.some((c) => c.code === "CUSTOM-DR-TEST")).toBe(true);
+
+    // Update
+    const updated = await compliance.updateControl("CUSTOM-DR-TEST", {
+      title: "Updated DR Drill Control",
+    });
+    expect(updated.title).toBe("Updated DR Drill Control");
+
+    // Cannot delete built-in control
+    await expect(compliance.deleteControl("AUDIT-COMPLETE")).rejects.toThrow(/built-in/);
+
+    // Delete custom control
+    const deleteResult = await compliance.deleteControl("CUSTOM-DR-TEST");
+    expect(deleteResult.success).toBe(true);
+
+    const postDelete = await compliance.listCatalogue();
+    expect(postDelete.some((c) => c.code === "CUSTOM-DR-TEST")).toBe(false);
   });
 });

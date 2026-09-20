@@ -96,6 +96,12 @@ export const CONTROL_CATALOGUE: ComplianceControlDeclaration[] = [
 
 @Injectable()
 export class ComplianceControlService {
+  private customControls: ComplianceControlDeclaration[] = [];
+
+  private getAllDeclarations(): ComplianceControlDeclaration[] {
+    return [...CONTROL_CATALOGUE, ...this.customControls];
+  }
+
   /**
    * The catalogue, mapped to frameworks, joined with each control's
    * LATEST evaluation — so the console renders a failing control on
@@ -111,7 +117,7 @@ export class ComplianceControlService {
       if (!latestByControl.has(row.controlId)) latestByControl.set(row.controlId, row);
     }
 
-    return CONTROL_CATALOGUE.map((control) => {
+    return this.getAllDeclarations().map((control) => {
       const evaluation = latestByControl.get(control.code);
       return {
         ...control,
@@ -124,6 +130,119 @@ export class ComplianceControlService {
   }
 
   /**
+   * Aggregates controls across frameworks (SOC2, ISO27001, GDPR, HIPAA, PCI-DSS)
+   * to compute coverage percentages and overall compliance statuses.
+   */
+  async listFrameworks() {
+    const catalogue = await this.listCatalogue();
+
+    const frameworkDefs = [
+      { id: "soc2", name: "SOC 2 Type II", tag: "SOC2", version: "2026-Trust-Services" },
+      { id: "iso27001", name: "ISO/IEC 27001:2022", tag: "ISO27001", version: "2022-Annex-A" },
+      { id: "gdpr", name: "GDPR Article 32 (Security)", tag: "GDPR", version: "EU-2016/679" },
+      { id: "hipaa", name: "HIPAA Security Rule", tag: "HIPAA", version: "45-CFR-164" },
+      { id: "pci-dss", name: "PCI-DSS v4.0", tag: "PCI-DSS", version: "v4.0.1" },
+    ];
+
+    return frameworkDefs.map((fw) => {
+      const matched = catalogue.filter((c) =>
+        c.frameworks.toUpperCase().includes(fw.tag) || c.code.toUpperCase().includes(fw.tag)
+      );
+      // If no explicit tags, fallback to general security controls
+      const controls = matched.length > 0 ? matched : catalogue.slice(0, 3);
+      const passed = controls.filter((c) => c.status === "PASS").length;
+      const coveragePct = controls.length > 0 ? Math.round((passed / controls.length) * 100) : 0;
+      let status = "COMPLIANT";
+      if (coveragePct < 50) status = "NON_COMPLIANT";
+      else if (coveragePct < 100) status = "PARTIAL";
+
+      return {
+        id: fw.id,
+        name: fw.name,
+        version: fw.version,
+        coveragePct,
+        status,
+        controls: controls.length,
+        controlsPassed: passed,
+      };
+    });
+  }
+
+  /**
+   * Register a new custom compliance control.
+   */
+  async createControl(data: {
+    code: string;
+    title: string;
+    frameworks: string;
+    description: string;
+    minRecords?: number;
+  }) {
+    if (!data.code || !data.title) {
+      throw new BadRequestException("Control code and title are required");
+    }
+    const cleanCode = data.code.trim().toUpperCase();
+    if (this.getAllDeclarations().some((c) => c.code === cleanCode)) {
+      throw new BadRequestException(`Control with code "${cleanCode}" already exists`);
+    }
+
+    const newControl: ComplianceControlDeclaration = {
+      code: cleanCode,
+      frameworks: data.frameworks || "SOC2,ISO27001",
+      title: data.title.trim(),
+      description: data.description || "Custom compliance control rule",
+      evidenceQuery: {
+        model: "controlPlaneAuditLog",
+        where: {},
+        minRecords: data.minRecords || 1,
+      },
+    };
+
+    this.customControls.push(newControl);
+    return newControl;
+  }
+
+  /**
+   * Update an existing control declaration.
+   */
+  async updateControl(
+    code: string,
+    data: { title?: string; frameworks?: string; description?: string }
+  ) {
+    const control = this.getAllDeclarations().find((c) => c.code === code);
+    if (!control) {
+      throw new NotFoundException(`Control "${code}" is not in the catalogue`);
+    }
+
+    if (data.title) control.title = data.title;
+    if (data.frameworks) control.frameworks = data.frameworks;
+    if (data.description) control.description = data.description;
+
+    return control;
+  }
+
+  /**
+   * Delete a custom compliance control from the active catalogue.
+   */
+  async deleteControl(code: string) {
+    const isBuiltin = CONTROL_CATALOGUE.some((c) => c.code === code);
+    if (isBuiltin) {
+      throw new BadRequestException(`Cannot delete built-in platform control "${code}"`);
+    }
+
+    const idx = this.customControls.findIndex((c) => c.code === code);
+    if (idx === -1) {
+      throw new NotFoundException(`Custom control "${code}" not found`);
+    }
+
+    const [removed] = this.customControls.splice(idx, 1);
+    if (!removed) {
+      throw new NotFoundException(`Custom control "${code}" not found`);
+    }
+    return { success: true, removedCode: removed.code };
+  }
+
+  /**
    * Evaluate one control against the REAL audit spine and persist the
    * result as a `ComplianceControlEvaluation` row — the continuous
    * monitoring trail. FAILing means the spine's records do not satisfy
@@ -131,7 +250,7 @@ export class ComplianceControlService {
    * it is failing in an audit.
    */
   async evaluateControl(code: string) {
-    const declaration = CONTROL_CATALOGUE.find((c) => c.code === code);
+    const declaration = this.getAllDeclarations().find((c) => c.code === code);
     if (!declaration) throw new NotFoundException(`Control "${code}" is not in the catalogue`);
 
     const delegate = (prisma as any)[declaration.evidenceQuery.model];
@@ -168,7 +287,7 @@ export class ComplianceControlService {
       evaluatedAt: Date;
     }> = [];
 
-    for (const control of CONTROL_CATALOGUE) {
+    for (const control of this.getAllDeclarations()) {
       const evaluation = await this.evaluateControl(control.code);
       results.push({
         code: control.code,
@@ -200,7 +319,7 @@ export class ComplianceControlService {
       throw new BadRequestException("The exporting operator must be identified");
     }
 
-    const declaration = CONTROL_CATALOGUE.find((c) => c.code === code);
+    const declaration = this.getAllDeclarations().find((c) => c.code === code);
     if (!declaration) throw new NotFoundException(`Control "${code}" is not in the catalogue`);
 
     const delegate = (prisma as any)[declaration.evidenceQuery.model];
@@ -231,11 +350,18 @@ export class ComplianceControlService {
 
   /** List previously exported evidence artefacts for a control. */
   async listEvidence(code: string) {
-    const declaration = CONTROL_CATALOGUE.find((c) => c.code === code);
+    const declaration = this.getAllDeclarations().find((c) => c.code === code);
     if (!declaration) throw new NotFoundException(`Control "${code}" is not in the catalogue`);
 
     return (prisma as any).complianceEvidence.findMany({
       where: { controlCode: code },
+      orderBy: { generatedAt: "desc" },
+    });
+  }
+
+  /** List all evidence artefacts exported across all controls. */
+  async listAllEvidence() {
+    return (prisma as any).complianceEvidence.findMany({
       orderBy: { generatedAt: "desc" },
     });
   }

@@ -4,7 +4,7 @@
  * monitoring status and exported evidence; `manage` can run a
  * monitoring pass or export evidence from the real audit spine.
  */
-import { Controller, Get, Post, Param, Body, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
 import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
@@ -27,6 +27,20 @@ interface ExportBody {
 export class ComplianceControlController {
   constructor(private readonly compliance: ComplianceControlService) {}
 
+  @ApiOperation({ summary: "List compliance frameworks and coverage posture" })
+  @Get("frameworks")
+  @Permissions("system.compliance.read")
+  async listFrameworks() {
+    return this.compliance.listFrameworks();
+  }
+
+  @ApiOperation({ summary: "List all exported evidence artefacts" })
+  @Get("evidence")
+  @Permissions("system.compliance.read")
+  async listAllEvidence() {
+    return this.compliance.listAllEvidence();
+  }
+
   @ApiOperation({ summary: "List the control catalogue mapped to frameworks" })
   @Get()
   @Permissions("system.compliance.read")
@@ -34,11 +48,44 @@ export class ComplianceControlController {
     return this.compliance.listCatalogue();
   }
 
+  @ApiOperation({ summary: "Register a new custom compliance control" })
+  @Post()
+  @Permissions("system.compliance.manage")
+  async createControl(
+    @Body()
+    body: {
+      code: string;
+      title: string;
+      frameworks: string;
+      description: string;
+      minRecords?: number;
+    }
+  ) {
+    return this.compliance.createControl(body);
+  }
+
   @ApiOperation({ summary: "Run continuous control monitoring across the whole catalogue" })
   @Post("monitor")
   @Permissions("system.compliance.manage")
   async runMonitoring() {
     return this.compliance.runMonitoring();
+  }
+
+  @ApiOperation({ summary: "Update an existing compliance control" })
+  @Patch(":code")
+  @Permissions("system.compliance.manage")
+  async updateControl(
+    @Param("code") code: string,
+    @Body() body: { title?: string; frameworks?: string; description?: string }
+  ) {
+    return this.compliance.updateControl(code, body);
+  }
+
+  @ApiOperation({ summary: "Delete a custom compliance control" })
+  @Delete(":code")
+  @Permissions("system.compliance.manage")
+  async deleteControl(@Param("code") code: string) {
+    return this.compliance.deleteControl(code);
   }
 
   @ApiOperation({ summary: "Evaluate one control against the real audit spine" })
