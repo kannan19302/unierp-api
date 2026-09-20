@@ -128,6 +128,8 @@ import { PlatformDeveloperEcosystemController } from "./v1/developer-ecosystem.c
 import { PlatformDeveloperEcosystemService } from "./v1/developer-ecosystem.service";
 import { MarketplaceController } from "./v1/marketplace/marketplace.controller";
 import { MarketplaceService } from "./v1/marketplace/marketplace.service";
+import { PlatformIntegrationOperationsController } from "./v1/integration-operations.controller";
+import { PlatformIntegrationOperationsService } from "./v1/integration-operations.service";
 
 @Module({
   imports: [],
@@ -137,6 +139,7 @@ import { MarketplaceService } from "./v1/marketplace/marketplace.service";
     PlatformEntitlementsController,
     PlatformDeveloperEcosystemController,
     MarketplaceController,
+    PlatformIntegrationOperationsController,
     SaasEnterpriseScaleMasterController,
     SaasFeatureFlagsMeteringDeepController,
     SaasResellerChannelDeepController,
@@ -263,6 +266,7 @@ import { MarketplaceService } from "./v1/marketplace/marketplace.service";
     PlatformEntitlementsService,
     PlatformDeveloperEcosystemService,
     MarketplaceService,
+    PlatformIntegrationOperationsService,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -284,6 +288,7 @@ import { MarketplaceService } from "./v1/marketplace/marketplace.service";
     DesktopOperationsService,
     PlatformDeveloperEcosystemService,
     MarketplaceService,
+    PlatformIntegrationOperationsService,
   ],
 })
 export class PlatformModule {}
