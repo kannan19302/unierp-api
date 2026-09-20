@@ -122,12 +122,15 @@ import { MobileOperationsController } from "./v1/mobile-operations.controller";
 import { MobileOperationsService } from "./v1/mobile-operations.service";
 import { DesktopOperationsController } from "./v1/desktop-operations.controller";
 import { DesktopOperationsService } from "./v1/desktop-operations.service";
+import { PlatformEntitlementsController } from "./v1/platform-entitlements.controller";
+import { PlatformEntitlementsService } from "./v1/platform-entitlements.service";
 
 @Module({
   imports: [],
   controllers: [
     OperationsController,
     SaasClusterRoutingDeepController,
+    PlatformEntitlementsController,
     SaasEnterpriseScaleMasterController,
     SaasFeatureFlagsMeteringDeepController,
     SaasResellerChannelDeepController,
@@ -251,6 +254,7 @@ import { DesktopOperationsService } from "./v1/desktop-operations.service";
     AiGovernanceService,
     MobileOperationsService,
     DesktopOperationsService,
+    PlatformEntitlementsService,
   ],
   exports: [
     ControlPlaneAuditService,

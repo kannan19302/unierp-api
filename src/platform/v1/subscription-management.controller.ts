@@ -37,10 +37,55 @@ export class SubscriptionManagementController {
     });
   }
 
+  @Get('renewals/pipeline')
+  @Permissions('system.subscription.read')
+  async getRenewalPipeline() {
+    return this.subService.getRenewalPipeline();
+  }
+
   @Get(':tenantId')
   @Permissions('system.subscription.read')
   async getSubscription(@Param('tenantId') tenantId: string) {
     return this.subService.getSubscription(tenantId);
+  }
+
+  @Post(':tenantId/amend/preview')
+  @Permissions('system.subscription.read')
+  async previewAmendment(
+    @Param('tenantId') tenantId: string,
+    @Body() dto: SubscriptionTransitionDto,
+  ) {
+    return this.subService.previewAmendment(tenantId, dto);
+  }
+
+  @Post(':tenantId/amend')
+  @Permissions('system.subscription.write')
+  async executeAmendment(
+    @Param('tenantId') tenantId: string,
+    @Body() dto: SubscriptionTransitionDto,
+    @Req() req: Request,
+  ) {
+    return this.subService.transitionSubscription(tenantId, dto, (req as any).user?.id || 'SUPER_ADMIN');
+  }
+
+  @Post(':tenantId/renewals/toggle-auto')
+  @Permissions('system.subscription.write')
+  async toggleAutoRenew(
+    @Param('tenantId') tenantId: string,
+    @Body() body: { enabled: boolean },
+    @Req() req: Request,
+  ) {
+    return this.subService.toggleAutoRenew(tenantId, body.enabled, (req as any).user?.id || 'SUPER_ADMIN');
+  }
+
+  @Post(':tenantId/trial/extend')
+  @Permissions('system.subscription.write')
+  async extendTrial(
+    @Param('tenantId') tenantId: string,
+    @Body() body: { days: number },
+    @Req() req: Request,
+  ) {
+    return this.subService.extendTrial(tenantId, body.days, (req as any).user?.id || 'SUPER_ADMIN');
   }
 
   @Post(':tenantId')
