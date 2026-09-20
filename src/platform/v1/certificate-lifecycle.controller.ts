@@ -5,7 +5,7 @@
  * that changes what this controller can return, because the service
  * behind it has nowhere to read a raw value from.
  */
-import { Controller, Get, Post, Param, Body, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Delete, Param, Body, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RbacGuard } from "../../common/guards/rbac.guard";
@@ -48,5 +48,12 @@ export class CertificateLifecycleController {
   @Permissions("system.certificate.manage")
   async issue(@Body() body: { tenantId: string; domainId: string; provider?: string }) {
     return this.certificates.issue(body.tenantId, body.domainId, body.provider);
+  }
+
+  @ApiOperation({ summary: "Revoke / delete a certificate" })
+  @Delete(":id")
+  @Permissions("system.certificate.manage")
+  async revoke(@Param("id") id: string, @Body() body?: { reason?: string }) {
+    return this.certificates.revoke(id, body?.reason);
   }
 }

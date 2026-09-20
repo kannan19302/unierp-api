@@ -128,6 +128,25 @@ export class CertificateLifecycleService {
     return atRisk.map((c: any) => this.toSummary(c));
   }
 
+  async revoke(id: string, reason = "Manual administrator revocation", actorId = "SYSTEM"): Promise<CertificateSummary> {
+    const cert = await (prisma as any).saasSslCertificate.findUnique({ where: { id } });
+    if (!cert) {
+      throw new NotFoundException(`Certificate ${id} not found`);
+    }
+    const updated = await (prisma as any).saasSslCertificate.update({
+      where: { id },
+      data: { status: "REVOKED" },
+    });
+    await this.audit.record({
+      actorId,
+      actorRole: "SUPER_ADMIN",
+      action: "certificate.revoked",
+      targetId: cert.domainId,
+      details: { certId: id, reason },
+    });
+    return this.toSummary(updated);
+  }
+
   private toSummary(cert: any): CertificateSummary {
     return {
       id: cert.id,
