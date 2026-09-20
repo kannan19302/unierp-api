@@ -5,6 +5,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   UseGuards,
   Req,
@@ -22,6 +23,7 @@ import { SkipTenantScope } from "../../common/decorators/skip-tenant-scope.decor
 import { TwoPersonControl } from "../../common/decorators/two-person-control.decorator";
 import { TwoPersonControlGuard } from "../../common/guards/two-person-control.guard";
 import { SuperAdminService } from "./super-admin.service";
+import { tenantQuerySchema } from "./dto/tenant-crud.dto";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 // Deliberately cross-tenant: this controller aggregates data across every
@@ -49,8 +51,9 @@ export class SuperAdminController {
   @Get("tenants")
   @Permissions("system.tenant.read")
   @TwoPersonControl()
-  async getTenants() {
-    return this.superAdminService.getTenants();
+  async getTenants(@Query() rawQuery?: Record<string, unknown>) {
+    const parsed = rawQuery ? tenantQuerySchema.safeParse(rawQuery) : undefined;
+    return this.superAdminService.getTenants(parsed?.success ? parsed.data : undefined);
   }
 
   @ApiOperation({ summary: "Get tenant detail" })
@@ -98,6 +101,17 @@ export class SuperAdminController {
     @Req() req: Request,
   ) {
     return this.superAdminService.updateTenant(id, body, this.auditCtx(req));
+  }
+
+  @ApiOperation({ summary: "Delete tenant" })
+  @Delete("tenants/:id")
+  @Permissions("system.tenant.delete")
+  @TwoPersonControl()
+  async deleteTenant(
+    @Param("id") id: string,
+    @Req() req: Request,
+  ) {
+    return this.superAdminService.deleteTenant(id, this.auditCtx(req));
   }
 
   @ApiOperation({ summary: "Get all admins" })

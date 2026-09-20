@@ -3,6 +3,7 @@ import { prisma, runWithTenantSession } from "@kannan19302/database";
 import { idpClient as idpPrisma } from "../../common/idp-client";
 import { ControlPlaneAuditService } from "./control-plane-audit.service";
 import { ConsoleGateway } from "./console.gateway";
+import { TenantQueryInput } from "./dto/tenant-crud.dto";
 
 @Injectable()
 export class SuperAdminService {
@@ -11,16 +12,45 @@ export class SuperAdminService {
     private readonly consoleGateway: ConsoleGateway,
   ) {}
 
-  async getTenants() {
-    const tenants = await prisma.tenant.findMany({
-      include: {
-        _count: { select: { organizations: true } },
-        subscription: { include: { plan: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+  async getTenants(query?: TenantQueryInput) {
+    const page = Math.max(1, Number(query?.page) || 1);
+    const pageSize = Math.max(1, Math.min(100, Number(query?.pageSize) || 25));
+    const skip = (page - 1) * pageSize;
 
-    return tenants.map((t) => ({
+    const where: Record<string, any> = {};
+    if (query?.status && query.status !== "all") {
+      where.status = query.status.toUpperCase();
+    }
+    if (query?.search && query.search.trim()) {
+      where.OR = [
+        { name: { contains: query.search.trim(), mode: "insensitive" } },
+        { slug: { contains: query.search.trim(), mode: "insensitive" } },
+        { id: { contains: query.search.trim(), mode: "insensitive" } },
+      ];
+    }
+
+    const sortField =
+      query?.sort && ["name", "slug", "status", "plan", "createdAt"].includes(query.sort)
+        ? query.sort
+        : "createdAt";
+    const sortDir = query?.dir === "asc" ? "asc" : "desc";
+    const orderBy: Record<string, "asc" | "desc"> = { [sortField]: sortDir };
+
+    const [tenants, total] = await Promise.all([
+      prisma.tenant.findMany({
+        where,
+        include: {
+          _count: { select: { organizations: true } },
+          subscription: { include: { plan: true } },
+        },
+        orderBy,
+        skip: query ? skip : undefined,
+        take: query ? pageSize : undefined,
+      }),
+      prisma.tenant.count({ where }),
+    ]);
+
+    const mapped = tenants.map((t) => ({
       id: t.id,
       name: t.name,
       slug: t.slug,
@@ -34,6 +64,11 @@ export class SuperAdminService {
         : null,
       createdAt: t.createdAt,
     }));
+
+    if (query) {
+      return { data: mapped, total, page, pageSize };
+    }
+    return mapped;
   }
 
   async getTenantDetail(id: string) {
@@ -188,6 +223,42 @@ export class SuperAdminService {
       this.consoleGateway.emitTenantUpdate({ action: "updated", tenantId: id });
       
       return updatedTenant;
+    });
+  }
+
+  async deleteTenant(
+    id: string,
+    auditCtx: {
+      actorId: string;
+      actorRole: string;
+      correlationId?: string;
+      ipAddress?: string;
+    },
+  ) {
+    const tenant = await prisma.tenant.findUnique({ where: { id } });
+    if (!tenant) throw new NotFoundException("Tenant not found");
+
+    return prisma.$transaction(async (tx) => {
+      await this.audit.record(
+        {
+          actorId: auditCtx.actorId,
+          actorRole: auditCtx.actorRole,
+          action: "tenant.delete",
+          targetId: id,
+          details: { name: tenant.name, slug: tenant.slug, status: tenant.status },
+          correlationId: auditCtx.correlationId,
+          ipAddress: auditCtx.ipAddress,
+        },
+        tx,
+      );
+
+      const updatedTenant = await (tx as typeof prisma).tenant.update({
+        where: { id },
+        data: { status: "ARCHIVED" },
+      });
+
+      this.consoleGateway.emitTenantUpdate({ action: "deleted", tenantId: id });
+      return { success: true, tenant: updatedTenant };
     });
   }
 
