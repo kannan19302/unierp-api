@@ -126,6 +126,8 @@ import { PlatformEntitlementsController } from "./v1/platform-entitlements.contr
 import { PlatformEntitlementsService } from "./v1/platform-entitlements.service";
 import { PlatformDeveloperEcosystemController } from "./v1/developer-ecosystem.controller";
 import { PlatformDeveloperEcosystemService } from "./v1/developer-ecosystem.service";
+import { MarketplaceController } from "./v1/marketplace/marketplace.controller";
+import { MarketplaceService } from "./v1/marketplace/marketplace.service";
 
 @Module({
   imports: [],
@@ -134,6 +136,7 @@ import { PlatformDeveloperEcosystemService } from "./v1/developer-ecosystem.serv
     SaasClusterRoutingDeepController,
     PlatformEntitlementsController,
     PlatformDeveloperEcosystemController,
+    MarketplaceController,
     SaasEnterpriseScaleMasterController,
     SaasFeatureFlagsMeteringDeepController,
     SaasResellerChannelDeepController,
@@ -259,6 +262,7 @@ import { PlatformDeveloperEcosystemService } from "./v1/developer-ecosystem.serv
     DesktopOperationsService,
     PlatformEntitlementsService,
     PlatformDeveloperEcosystemService,
+    MarketplaceService,
   ],
   exports: [
     ControlPlaneAuditService,
@@ -279,6 +283,7 @@ import { PlatformDeveloperEcosystemService } from "./v1/developer-ecosystem.serv
     MobileOperationsService,
     DesktopOperationsService,
     PlatformDeveloperEcosystemService,
+    MarketplaceService,
   ],
 })
 export class PlatformModule {}
