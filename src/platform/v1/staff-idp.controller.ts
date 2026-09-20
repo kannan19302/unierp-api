@@ -1,7 +1,15 @@
-/**
- * M32 — multi-provider staff IdP, console-facing surface.
- */
-import { Controller, Get, Post, Body, Param, Req, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
 import type { Request } from "express";
 import { z } from "zod";
 import { ZodBody } from "../../common/decorators/zod-body.decorator";
@@ -14,6 +22,18 @@ import { ControlPlaneGuard } from "../../common/guards/control-plane.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
 import { SkipTenantScope } from "../../common/decorators/skip-tenant-scope.decorator";
 import { StaffIdpService } from "./staff-idp.service";
+import {
+  createStaffPrincipalSchema,
+  updateStaffPrincipalSchema,
+  createRoleSchema,
+  updateRoleSchema,
+  type CreateStaffPrincipalInput,
+  type UpdateStaffPrincipalInput,
+  type StaffPrincipalQueryInput,
+  type CreateRoleInput,
+  type UpdateRoleInput,
+  type RoleQueryInput,
+} from "./dto/staff-crud.dto";
 
 @ApiTags("platform")
 @ApiBearerAuth()
@@ -28,6 +48,15 @@ export class StaffIdpController {
 
   private providerTenantId(req: Request & { user?: { tenantId?: string } }) {
     return req.user?.tenantId ?? "";
+  }
+
+  private auditCtx(req: Request & { user?: { userId?: string; realm?: string } }) {
+    return {
+      actorId: req.user?.userId ?? "provider-admin",
+      actorRole: req.user?.realm ?? "SUPER_ADMIN",
+      ipAddress: req.ip,
+      correlationId: (req.headers["x-correlation-id"] as string) || undefined,
+    };
   }
 
   private providerScoped<T>(
@@ -46,8 +75,52 @@ export class StaffIdpController {
   @ApiOperation({ summary: "List provider workforce principals" })
   @Get("principals")
   @Permissions("pcc.identity-governance.access")
-  async listPrincipals(@Req() req: Request & { user?: { tenantId?: string } }) {
-    return this.idp.listPrincipals(this.providerTenantId(req));
+  async listPrincipals(
+    @Req() req: Request & { user?: { tenantId?: string } },
+    @Query() query?: StaffPrincipalQueryInput,
+  ) {
+    return this.idp.listPrincipals(this.providerTenantId(req), query);
+  }
+
+  @ApiOperation({ summary: "Get provider workforce principal by id" })
+  @Get("principals/:id")
+  @Permissions("pcc.identity-governance.access")
+  async getPrincipal(
+    @Req() req: Request & { user?: { tenantId?: string } },
+    @Param("id") id: string,
+  ) {
+    return this.idp.getPrincipal(this.providerTenantId(req), id);
+  }
+
+  @ApiOperation({ summary: "Create a provider workforce principal" })
+  @Post("principals")
+  @Permissions("pcc.identity-governance.access")
+  async createPrincipal(
+    @Req() req: Request & { user?: { tenantId?: string; userId?: string; realm?: string } },
+    @ZodBody(createStaffPrincipalSchema) body: CreateStaffPrincipalInput,
+  ) {
+    return this.idp.createPrincipal(this.providerTenantId(req), body, this.auditCtx(req));
+  }
+
+  @ApiOperation({ summary: "Update a provider workforce principal" })
+  @Patch("principals/:id")
+  @Permissions("pcc.identity-governance.access")
+  async updatePrincipal(
+    @Req() req: Request & { user?: { tenantId?: string; userId?: string; realm?: string } },
+    @Param("id") id: string,
+    @ZodBody(updateStaffPrincipalSchema) body: UpdateStaffPrincipalInput,
+  ) {
+    return this.idp.updatePrincipal(this.providerTenantId(req), id, body, this.auditCtx(req));
+  }
+
+  @ApiOperation({ summary: "Deactivate/delete a provider workforce principal" })
+  @Delete("principals/:id")
+  @Permissions("pcc.identity-governance.access")
+  async deletePrincipal(
+    @Req() req: Request & { user?: { tenantId?: string; userId?: string; realm?: string } },
+    @Param("id") id: string,
+  ) {
+    return this.idp.deletePrincipal(this.providerTenantId(req), id, this.auditCtx(req));
   }
 
   @ApiOperation({ summary: "List provider workforce groups" })
@@ -60,8 +133,52 @@ export class StaffIdpController {
   @ApiOperation({ summary: "List provider roles and permissions" })
   @Get("roles")
   @Permissions("pcc.identity-governance.access")
-  async listRoles(@Req() req: Request & { user?: { tenantId?: string } }) {
-    return this.idp.listRoles(this.providerTenantId(req));
+  async listRoles(
+    @Req() req: Request & { user?: { tenantId?: string } },
+    @Query() query?: RoleQueryInput,
+  ) {
+    return this.idp.listRoles(this.providerTenantId(req), query);
+  }
+
+  @ApiOperation({ summary: "Get provider role by ID" })
+  @Get("roles/:id")
+  @Permissions("pcc.identity-governance.access")
+  async getRole(
+    @Req() req: Request & { user?: { tenantId?: string } },
+    @Param("id") id: string,
+  ) {
+    return this.idp.getRole(this.providerTenantId(req), id);
+  }
+
+  @ApiOperation({ summary: "Create a provider role" })
+  @Post("roles")
+  @Permissions("pcc.identity-governance.access")
+  async createRole(
+    @Req() req: Request & { user?: { tenantId?: string; userId?: string; realm?: string } },
+    @ZodBody(createRoleSchema) body: CreateRoleInput,
+  ) {
+    return this.idp.createRole(this.providerTenantId(req), body, this.auditCtx(req));
+  }
+
+  @ApiOperation({ summary: "Update a provider role" })
+  @Patch("roles/:id")
+  @Permissions("pcc.identity-governance.access")
+  async updateRole(
+    @Req() req: Request & { user?: { tenantId?: string; userId?: string; realm?: string } },
+    @Param("id") id: string,
+    @ZodBody(updateRoleSchema) body: UpdateRoleInput,
+  ) {
+    return this.idp.updateRole(this.providerTenantId(req), id, body, this.auditCtx(req));
+  }
+
+  @ApiOperation({ summary: "Delete a provider role" })
+  @Delete("roles/:id")
+  @Permissions("pcc.identity-governance.access")
+  async deleteRole(
+    @Req() req: Request & { user?: { tenantId?: string; userId?: string; realm?: string } },
+    @Param("id") id: string,
+  ) {
+    return this.idp.deleteRole(this.providerTenantId(req), id, this.auditCtx(req));
   }
 
   @ApiOperation({ summary: "List provider access packages" })
@@ -83,6 +200,26 @@ export class StaffIdpController {
   @Permissions("pcc.identity-governance.access")
   async listSessions(@Req() req: Request & { user?: { tenantId?: string } }) {
     return this.idp.listSessions(this.providerTenantId(req));
+  }
+
+  @ApiOperation({ summary: "Revoke a provider operator session" })
+  @Delete("sessions/:id")
+  @Permissions("pcc.identity-governance.access")
+  async revokeSession(
+    @Req() req: Request & { user?: { tenantId?: string; userId?: string; realm?: string } },
+    @Param("id") id: string,
+  ) {
+    return this.idp.revokeSession(this.providerTenantId(req), id, this.auditCtx(req));
+  }
+
+  @ApiOperation({ summary: "Revoke all provider operator sessions" })
+  @Post("sessions/revoke-all")
+  @Permissions("pcc.identity-governance.access")
+  async revokeAllSessions(
+    @Req() req: Request & { user?: { tenantId?: string; userId?: string; realm?: string } },
+    @Body() body?: { userId?: string },
+  ) {
+    return this.idp.revokeAllSessions(this.providerTenantId(req), body?.userId, this.auditCtx(req));
   }
 
   @ApiOperation({ summary: "Get effective provider access and grant provenance" })
