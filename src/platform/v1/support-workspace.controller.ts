@@ -46,4 +46,72 @@ export class SupportWorkspaceController {
   getSessionReplayPointers(@Param('tenantId') tenantId: string) {
     return this.support.getSessionReplayPointers(tenantId);
   }
+
+  // ── Global Support & Service Operations (PCC-22) ──
+
+  @Get('tickets')
+  @Permissions('system.support.read')
+  listAllTickets(@Query('status') status?: string, @Query('severity') severity?: string) {
+    return this.support.listAllTickets({ status, severity });
+  }
+
+  @Post('tickets')
+  @Permissions('system.support.write')
+  createTicket(
+    @Body()
+    body: {
+      tenantId: string;
+      tenantName?: string;
+      subject: string;
+      severity?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+      category?: string;
+      description: string;
+      createdBy?: string;
+    },
+  ) {
+    return this.support.createTicket(body);
+  }
+
+  @Get('tickets/:ticketId')
+  @Permissions('system.support.read')
+  getTicketDetails(@Param('ticketId') ticketId: string) {
+    return this.support.getTicketDetails(ticketId);
+  }
+
+  @Post('tickets/:ticketId/messages')
+  @Permissions('system.support.write')
+  addTicketMessage(
+    @Param('ticketId') ticketId: string,
+    @Body() body: { message: string; isStaff: boolean; senderName?: string },
+  ) {
+    return this.support.addTicketMessage(ticketId, body);
+  }
+
+  @Get('diagnostic-consents')
+  @Permissions('system.support.read')
+  listDiagnosticConsents(@Query('tenantId') tenantId?: string) {
+    return this.support.listDiagnosticConsents(tenantId);
+  }
+
+  @Post('diagnostic-consents')
+  @Permissions('system.support.write')
+  requestDiagnosticConsent(
+    @Body()
+    body: {
+      tenantId: string;
+      tenantName?: string;
+      scope: string;
+      durationHours?: number;
+      reason: string;
+      requestedBy?: string;
+    },
+  ) {
+    return this.support.requestDiagnosticConsent(body);
+  }
+
+  @Post('diagnostic-consents/:id/grant')
+  @Permissions('system.support.write')
+  grantDiagnosticConsent(@Param('id') id: string) {
+    return this.support.grantDiagnosticConsent(id);
+  }
 }
