@@ -214,4 +214,38 @@ export class AiGovernanceController {
   async activatePromptVersion(@Param("id") id: string) {
     return this.governance.activatePromptVersion(id);
   }
+
+  // ── model registry & status (EC-21.1) ──
+
+  @ApiOperation({ summary: "List all registered AI models across providers with operational status" })
+  @Get("models")
+  @Permissions("system.ai.read")
+  async listAllModels() {
+    return this.governance.listAllModels();
+  }
+
+  @ApiOperation({ summary: "Toggle AI model enable/disable operational status" })
+  @Post("models/:id/toggle")
+  @Permissions("system.ai.manage")
+  async toggleModelStatus(@Param("id") id: string, @Body() body?: { status?: string }) {
+    return this.governance.toggleModelStatus(id, body?.status);
+  }
+
+  // ── guardrail live test (EC-21.2) ──
+
+  @ApiOperation({ summary: "Test live prompt against active guardrails" })
+  @Post("guardrails/test")
+  @Permissions("system.ai.read")
+  async testGuardrail(@Body() body: { prompt: string }) {
+    return this.governance.testGuardrailEvaluation(body.prompt);
+  }
+
+  // ── cost & token telemetry (EC-21.3) ──
+
+  @ApiOperation({ summary: "Aggregate AI platform cost and token telemetry" })
+  @Get("cost-metrics")
+  @Permissions("system.ai.read")
+  async getCostMetrics() {
+    return this.governance.getCostMetrics();
+  }
 }
