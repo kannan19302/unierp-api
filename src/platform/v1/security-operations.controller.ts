@@ -73,7 +73,7 @@ export class SecurityOperationsController {
 
   @ApiOperation({ summary: 'List security isolation policies' })
   @Get('policies')
-  @Permissions('system.soc.read', 'system.isolation.read', 'pcc.security.view')
+  @Permissions('system.soc.read')
   listPolicies(
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
@@ -85,14 +85,14 @@ export class SecurityOperationsController {
 
   @ApiOperation({ summary: 'Get policy details' })
   @Get('policies/:id')
-  @Permissions('system.soc.read', 'system.isolation.read', 'pcc.security.view')
+  @Permissions('system.soc.read')
   getPolicy(@Param('id') id: string) {
     return this.soc.getPolicy(id);
   }
 
   @ApiOperation({ summary: 'Create new security isolation policy' })
   @Post('policies')
-  @Permissions('system.soc.execute', 'system.isolation.write')
+  @Permissions('system.soc.execute')
   createPolicy(@Body() body: CreateSecurityPolicyDto, @Req() req: any) {
     const actorId = req.user?.userId || req.user?.sub || 'SYSTEM';
     return this.soc.createPolicy(body, actorId);
@@ -100,14 +100,14 @@ export class SecurityOperationsController {
 
   @ApiOperation({ summary: 'Simulate and evaluate ABAC policy rule engine' })
   @Post('policies/evaluate')
-  @Permissions('system.soc.read', 'system.isolation.read', 'pcc.security.view')
+  @Permissions('system.soc.read')
   evaluatePolicy(@Body() body: EvaluateAbacPolicyDto) {
     return this.soc.evaluateAbacPolicy(body);
   }
 
   @ApiOperation({ summary: 'Update security isolation policy' })
   @Patch('policies/:id')
-  @Permissions('system.soc.execute', 'system.isolation.write')
+  @Permissions('system.soc.execute')
   updatePolicy(
     @Param('id') id: string,
     @Body() body: UpdateSecurityPolicyDto,
@@ -119,7 +119,7 @@ export class SecurityOperationsController {
 
   @ApiOperation({ summary: 'Delete security isolation policy' })
   @Delete('policies/:id')
-  @Permissions('system.soc.execute', 'system.isolation.write')
+  @Permissions('system.soc.execute')
   deletePolicy(@Param('id') id: string, @Req() req: any) {
     const actorId = req.user?.userId || req.user?.sub || 'SYSTEM';
     return this.soc.deletePolicy(id, actorId);
@@ -129,7 +129,7 @@ export class SecurityOperationsController {
 
   @ApiOperation({ summary: 'List live security threats and anomalies' })
   @Get('threats')
-  @Permissions('system.soc.read', 'pcc.security.view')
+  @Permissions('system.soc.read')
   listThreats(
     @Query('severity') severity?: string,
     @Query('status') status?: string,

@@ -27,7 +27,7 @@ export class ControlPlaneAuditController {
 
   @ApiOperation({ summary: "Query control plane audit records" })
   @Get("records")
-  @Permissions("system.audit.read", "pcc.security.view", "system.compliance.read")
+  @Permissions("system.audit.read")
   async queryRecords(
     @Query("page") page?: string,
     @Query("pageSize") pageSize?: string,
@@ -48,7 +48,7 @@ export class ControlPlaneAuditController {
 
   @ApiOperation({ summary: "Get audit spine summary metrics" })
   @Get("stats")
-  @Permissions("system.audit.read", "pcc.security.view", "system.compliance.read")
+  @Permissions("system.audit.read")
   async getStats() {
     return this.audit.getStats();
   }
