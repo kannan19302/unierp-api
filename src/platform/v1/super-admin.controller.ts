@@ -50,7 +50,6 @@ export class SuperAdminController {
   @ApiOperation({ summary: "Get tenants" })
   @Get("tenants")
   @Permissions("system.tenant.read")
-  @TwoPersonControl()
   async getTenants(@Query() rawQuery?: Record<string, unknown>) {
     const parsed = rawQuery ? tenantQuerySchema.safeParse(rawQuery) : undefined;
     return this.superAdminService.getTenants(parsed?.success ? parsed.data : undefined);
@@ -59,7 +58,6 @@ export class SuperAdminController {
   @ApiOperation({ summary: "Get tenant detail" })
   @Get("tenants/:id")
   @Permissions("system.tenant.read")
-  @TwoPersonControl()
   async getTenantDetail(@Param("id") id: string) {
     return this.superAdminService.getTenantDetail(id);
   }
